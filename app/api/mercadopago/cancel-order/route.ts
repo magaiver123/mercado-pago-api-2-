@@ -1,6 +1,6 @@
-import { type NextRequest, NextResponse } from "next"
+import { NextResponse } from "next/server";
 
-export async function DELETE(request: NextRequest) {
+export async function DELETE(request: NextResponse) {
   try {
     const { searchParams } = new URL(request.url)
     const orderId = searchParams.get("orderId")

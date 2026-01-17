@@ -1,12 +1,12 @@
 import type React from "react"
 import type { Metadata, Viewport } from "next"
-import { Geist, Geist_Mono } from "next/font/google"
+import { Inter } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { IdleProvider } from "@/components/IdleProvider"
 
-const _geist = Geist({ subsets: ["latin"] })
-const _geistMono = Geist_Mono({ subsets: ["latin"] })
+const _geist = Inter ({ subsets: ["latin"] })
+const _geistMono = Inter ({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "Alabama Comidaria - Sistema de Pedidos",
