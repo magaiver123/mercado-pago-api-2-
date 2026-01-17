@@ -1,112 +1,124 @@
-"use client"
+"use client";
 
-import type React from "react"
+import type React from "react";
 
-import { createClient } from "@/lib/supabase/client"
-import { validateCPF, formatCPF } from "@/lib/cpf-validator"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import Link from "next/link"
-import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { createClient } from "@/lib/supabase/client";
+import { validateCPF, formatCPF } from "@/lib/cpf-validator";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { NOMEM } from "dns";
 
 export default function RegisterPage() {
-  const [cpf, setCpf] = useState("")
-  const [name, setName] = useState("")
-  const [phone, setPhone] = useState("")
-  const [email, setEmail] = useState("")
-  const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
-  const router = useRouter()
+  const [cpf, setCpf] = useState("");
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
 
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, "")
+    const value = e.target.value.replace(/\D/g, "");
     if (value.length <= 11) {
-      setCpf(value)
+      setCpf(value);
     }
-  }
+  };
 
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, "")
+    const value = e.target.value.replace(/\D/g, "");
     if (value.length <= 11) {
-      setPhone(value)
+      setPhone(value);
     }
-  }
+  };
+
+  const [password, setPassword] = useState("");
 
   const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
-    setError(null)
+    e.preventDefault();
+    setIsLoading(true);
+    setError(null);
 
-    // Validate CPF
     if (!validateCPF(cpf)) {
-      setError("CPF inválido")
-      setIsLoading(false)
-      return
+      setError("CPF inválido");
+      setIsLoading(false);
+      return;
     }
 
-    // Validate phone
     if (phone.length < 10) {
-      setError("Telefone inválido")
-      setIsLoading(false)
-      return
+      setError("Telefone inválido");
+      setIsLoading(false);
+      return;
+    }
+
+    if (password.length < 6) {
+      setError("A senha deve ter no mínimo 6 dígitos");
+      setIsLoading(false);
+      return;
     }
 
     try {
-      const supabase = createClient()
+      const supabase = createClient();
 
-      // Check if CPF already exists
-      const { data: existingUsers } = await supabase.from("users").select("cpf").eq("cpf", cpf).limit(1)
+      const { data: existingUsers } = await supabase
+        .from("users")
+        .select("cpf")
+        .eq("cpf", cpf)
+        .limit(1);
 
       if (existingUsers && existingUsers.length > 0) {
-        setError("CPF já cadastrado")
-        setIsLoading(false)
-        return
+        setError("CPF já cadastrado");
+        setIsLoading(false);
+        return;
       }
 
-      // Insert new user
       const { error: insertError } = await supabase.from("users").insert({
         cpf,
         name,
         phone,
         email,
-      })
+        password_hash: password,
+      });
 
-      if (insertError) throw insertError
+      if (insertError) throw insertError;
 
-      // Redirect to login
-      router.push("/auth/login?registered=true")
+      router.push("/auth/login?registered=true");
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "Erro ao cadastrar")
+      setError(error instanceof Error ? error.message : "Erro ao cadastrar");
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-black p-6">
+    <div className="flex min-h-screen w-full items-center justify-center bg-white p-6">
       <div className="w-full max-w-md">
-        <Card className="bg-zinc-900 border-zinc-800">
+        <Card className="bg-white border-zinc-200">
           <CardHeader className="text-center">
-            <div className="mx-auto mb-4 h-20 w-20 bg-white rounded-lg flex items-center justify-center">
-              <div className="text-black font-bold text-xs">
+            <div className="mx-auto mb-4 h-20 w-20 bg-orange-500 rounded-lg flex items-center justify-center">
+              <div className="text-white font-bold text-xs">
                 ALABAMA
                 <br />
                 COMIDARIA
                 <br />
-                <span className="text-[#E11D48]">Delivery</span>
+                <span className="text-black">Delivery</span>
               </div>
             </div>
-            <CardTitle className="text-2xl text-white">Cadastro</CardTitle>
-            <p className="text-zinc-400 text-sm mt-2">Preencha seus dados para cadastrar</p>
+            <CardTitle className="text-2xl text-black">Cadastro</CardTitle>
+            <p className="text-zinc-600 text-sm mt-2">
+              Preencha seus dados para cadastrar
+            </p>
           </CardHeader>
+
           <CardContent>
             <form onSubmit={handleRegister}>
               <div className="flex flex-col gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="cpf" className="text-white">
+                  <Label htmlFor="cpf" className="text-black">
                     CPF
                   </Label>
                   <Input
@@ -116,12 +128,12 @@ export default function RegisterPage() {
                     required
                     value={formatCPF(cpf)}
                     onChange={handleCPFChange}
-                    className="bg-zinc-800 border-zinc-700 text-white"
+                    className="bg-white border-zinc-300 text-black"
                   />
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="name" className="text-white">
+                  <Label htmlFor="name" className="text-black">
                     Nome Completo
                   </Label>
                   <Input
@@ -131,12 +143,12 @@ export default function RegisterPage() {
                     required
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="bg-zinc-800 border-zinc-700 text-white"
+                    className="bg-white border-zinc-300 text-black"
                   />
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="phone" className="text-white">
+                  <Label htmlFor="phone" className="text-black">
                     Telefone
                   </Label>
                   <Input
@@ -146,12 +158,12 @@ export default function RegisterPage() {
                     required
                     value={phone.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3")}
                     onChange={handlePhoneChange}
-                    className="bg-zinc-800 border-zinc-700 text-white"
+                    className="bg-white border-zinc-300 text-black"
                   />
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="email" className="text-white">
+                  <Label htmlFor="email" className="text-black">
                     Email
                   </Label>
                   <Input
@@ -161,15 +173,32 @@ export default function RegisterPage() {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="bg-zinc-800 border-zinc-700 text-white"
+                    className="bg-white border-zinc-300 text-black"
                   />
                 </div>
 
-                {error && <p className="text-sm text-red-500 text-center">{error}</p>}
+                {error && (
+                  <p className="text-sm text-red-600 text-center">{error}</p>
+                )}
+
+                <div className="grid gap-2">
+                  <Label htmlFor="password" className="text-black">
+                    Senha
+                  </Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="bg-white border-zinc-300 text-black"
+                  />
+                </div>
 
                 <Button
                   type="submit"
-                  className="w-full bg-[#E11D48] hover:bg-[#BE123C] text-white"
+                  className="w-full bg-orange-500 hover:bg-orange-600 text-white"
                   disabled={isLoading}
                 >
                   {isLoading ? "Cadastrando..." : "Cadastrar"}
@@ -177,7 +206,11 @@ export default function RegisterPage() {
 
                 <div className="text-center">
                   <Link href="/auth/login">
-                    <Button type="button" variant="ghost" className="text-zinc-400 hover:text-white">
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="text-zinc-600 hover:text-orange-500"
+                    >
                       Já tem cadastro? Fazer login
                     </Button>
                   </Link>
@@ -188,5 +221,5 @@ export default function RegisterPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

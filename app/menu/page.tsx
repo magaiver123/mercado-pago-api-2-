@@ -9,7 +9,7 @@ import { Cart } from "@/components/cart";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { getAuthUser } from "@/lib/auth-store";
-import { clearAuthUser } from "@/lib/auth-store"
+import { clearAuthUser } from "@/lib/auth-store";
 
 export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState("lanches");
@@ -37,7 +37,7 @@ export default function Home() {
   };
 
   const handleCancel = () => {
-     clearAuthUser()
+    clearAuthUser();
     router.push("/");
   };
 
@@ -70,7 +70,7 @@ export default function Home() {
 
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar */}
-        <aside className="w-48 md:w-52 lg:w-60 bg-white border-r border-zinc-200 overflow-y-auto">
+        <aside className="hidden md:block w-52 lg:w-60 bg-white border-r border-zinc-200 overflow-y-auto">
           <div className="p-4 md:p-6">
             <h2 className="text-black font-bold text-2xl mb-6">MENU</h2>
 
@@ -94,12 +94,34 @@ export default function Home() {
 
         {/* Main Content */}
         <main className="flex-1 overflow-y-auto p-6 lg:p-8 bg-white">
-          <h1 className="text-black font-bold text-3xl lg:text-4xl mb-8 capitalize">
+          {/* Categorias Mobile */}
+          <div className="md:hidden mb-4">
+            <div
+              className="flex gap-2 overflow-x-auto hide-scrollbar touch-pan-x overscroll-x-contain pb-2"
+              style={{ WebkitOverflowScrolling: "touch" }}
+            >
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => setSelectedCategory(category.id)}
+                  className={`flex-shrink-0 px-4 py-2 rounded-full whitespace-nowrap text-sm font-medium transition-colors ${
+                    selectedCategory === category.id
+                      ? "bg-orange-500 text-white"
+                      : "bg-zinc-100 text-black"
+                  }`}
+                >
+                  {category.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <h1 className="text-black font-bold text-2xl md:text-3xl lg:text-4xl mb-4 md:mb-8 capitalize">
             {categories.find((c) => c.id === selectedCategory)?.name}
           </h1>
 
           {filteredProducts.length > 0 ? (
-            <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
               {filteredProducts.map((product) => (
                 <button
                   key={product.id}
@@ -115,8 +137,8 @@ export default function Home() {
                     />
                   </div>
 
-                  <div className="p-4 text-left">
-                    <h3 className="text-black font-semibold text-base lg:text-lg mb-1 line-clamp-2">
+                  <div className="p-3 sm:p-4 text-left">
+                    <h3 className="text-black font-semibold text-sm sm:text-base lg:text-lg mb-1 line-clamp-2">
                       {product.name}
                     </h3>
 

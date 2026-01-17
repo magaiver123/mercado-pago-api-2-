@@ -1,9 +1,8 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useCallback } from "react"
-import Image from "next/image"
-import { useRouter } from "next/navigation"
-
+import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 const promotionalSlides = [
   {
@@ -48,53 +47,58 @@ const promotionalSlides = [
     title: "Sobremesas",
     subtitle: "Docinho da tarde",
   },
-]
+];
 
 export function KioskWelcomeScreen() {
-  const router = useRouter()
+  const router = useRouter();
 
-  const [currentSlide, setCurrentSlide] = useState(0)
-  const [nextSlideIndex, setNextSlideIndex] = useState(1)
-  const [isAnimating, setIsAnimating] = useState(false)
-  const [isPulsing, setIsPulsing] = useState(true)
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [nextSlideIndex, setNextSlideIndex] = useState(1);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [isPulsing, setIsPulsing] = useState(true);
 
   const goToNextSlide = useCallback(() => {
-    if (isAnimating) return
-    setIsAnimating(true)
-    setNextSlideIndex((currentSlide + 1) % promotionalSlides.length)
+    if (isAnimating) return;
+    setIsAnimating(true);
+    setNextSlideIndex((currentSlide + 1) % promotionalSlides.length);
 
     setTimeout(() => {
-      setCurrentSlide((prev) => (prev + 1) % promotionalSlides.length)
-      setIsAnimating(false)
-    }, 800)
-  }, [currentSlide, isAnimating])
+      setCurrentSlide((prev) => (prev + 1) % promotionalSlides.length);
+      setIsAnimating(false);
+    }, 800);
+  }, [currentSlide, isAnimating]);
 
   useEffect(() => {
-    const interval = setInterval(goToNextSlide, 5000)
-    return () => clearInterval(interval)
-  }, [goToNextSlide])
+    const interval = setInterval(goToNextSlide, 5000);
+    return () => clearInterval(interval);
+  }, [goToNextSlide]);
 
   useEffect(() => {
     const pulseInterval = setInterval(() => {
-      setIsPulsing((prev) => !prev)
-    }, 2000)
-    return () => clearInterval(pulseInterval)
-  }, [])
+      setIsPulsing((prev) => !prev);
+    }, 2000);
+    return () => clearInterval(pulseInterval);
+  }, []);
 
   const handleStartOrder = () => {
-  router.push("/auth/login")
-}
+    router.push("/auth/login");
+  };
 
-  const currentSlideData = promotionalSlides[currentSlide]
-  const nextSlideData = promotionalSlides[nextSlideIndex]
+  const currentSlideData = promotionalSlides[currentSlide];
+  const nextSlideData = promotionalSlides[nextSlideIndex];
 
   return (
     <div
-      className="relative mx-auto aspect-[16/10] w-full max-w-[1280px] overflow-hidden bg-black cursor-pointer"
+      className="relative w-screen h-screen overflow-hidden bg-black cursor-pointer md:aspect-[16/10] md:h-auto md:max-w-[1280px] md:mx-auto"
       onClick={handleStartOrder}
     >
       <div className="absolute inset-0">
-        <Image src={nextSlideData.src || "/placeholder.svg"} alt={nextSlideData.alt} fill className="object-cover" />
+        <Image
+          src={nextSlideData.src || "/placeholder.svg"}
+          alt={nextSlideData.alt}
+          fill
+          className="object-cover"
+        />
       </div>
 
       <div
@@ -117,24 +121,33 @@ export function KioskWelcomeScreen() {
       <div className="absolute inset-0 shadow-[inset_0_0_100px_rgba(249,115,22,0.15)]" />
 
       <div
-        className={`absolute left-6 top-1/4 transition-all duration-500 ${
-          isAnimating ? "opacity-0 -translate-x-8" : "opacity-100 translate-x-0"
-        }`}
+        className={`
+    absolute left-4 top-1/2 -translate-y-1/2
+    md:left-6 md:top-1/4 md:translate-y-0
+    transition-all duration-500
+    ${isAnimating ? "opacity-0 -translate-x-8" : "opacity-100 translate-x-0"}
+  `}
       >
-        <span className="mb-2 inline-block rounded-full bg-orange-500/90 px-3 py-1 text-xs font-medium uppercase tracking-wider text-white backdrop-blur-sm">
+        <span className="mb-2 inline-block rounded-full bg-orange-500/90 px-3 py-1 text-xs font-medium uppercase tracking-wider text-white">
           Destaque
         </span>
-        <h2 className="text-3xl font-black uppercase text-white drop-shadow-2xl">{currentSlideData.title}</h2>
-        <p className="mt-1 text-base font-light text-white/90 drop-shadow-lg">{currentSlideData.subtitle}</p>
+
+        <h2 className="text-2xl md:text-3xl lg:text-4xl font-black uppercase text-white">
+          {currentSlideData.title}
+        </h2>
+
+        <p className="mt-1 text-sm md:text-base text-white/90">
+          {currentSlideData.subtitle}
+        </p>
       </div>
 
-      <div className="absolute right-4 top-1/2 flex -translate-y-1/2 flex-col gap-2">
+      <div className="hidden md:flex absolute right-4 top-1/2 flex -translate-y-1/2 flex-col gap-2">
         {promotionalSlides.map((_, index) => (
           <button
             key={index}
             onClick={(e) => {
-              e.stopPropagation()
-              setCurrentSlide(index)
+              e.stopPropagation();
+              setCurrentSlide(index);
             }}
             className={`group relative h-2.5 w-2.5 transition-all duration-300 ${
               index === currentSlide ? "scale-125" : "hover:scale-110"
@@ -148,7 +161,9 @@ export function KioskWelcomeScreen() {
                   : "bg-white/40 group-hover:bg-white/70"
               }`}
             />
-            {index === currentSlide && <span className="absolute inset-0 animate-ping rounded-full bg-orange-500/50" />}
+            {index === currentSlide && (
+              <span className="absolute inset-0 animate-ping rounded-full bg-orange-500/50" />
+            )}
           </button>
         ))}
       </div>
@@ -163,10 +178,10 @@ export function KioskWelcomeScreen() {
         />
       </div>
 
-      <div className="absolute bottom-8 left-1/2 -translate-x-1/2">
+      <div className="absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2">
         <button
           onClick={handleStartOrder}
-          className={`group relative overflow-hidden rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-8 py-3 text-base font-bold text-white shadow-[0_8px_30px_rgba(249,115,22,0.4)] transition-all duration-300 hover:scale-105 hover:shadow-[0_12px_40px_rgba(249,115,22,0.6)] active:scale-95 ${
+          className={`group relative overflow-hidden rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-10 py-4 md:px-8 md:py-3 text-base font-bold text-white shadow-[0_8px_30px_rgba(249,115,22,0.4)] transition-all duration-300 hover:scale-105 hover:shadow-[0_12px_40px_rgba(249,115,22,0.6)] active:scale-95 ${
             isPulsing ? "animate-pulse" : ""
           }`}
           style={{ animationDuration: "2s" }}
@@ -182,7 +197,12 @@ export function KioskWelcomeScreen() {
               viewBox="0 0 24 24"
               stroke="currentColor"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2.5}
+                d="M13 7l5 5m0 0l-5 5m5-5H6"
+              />
             </svg>
           </span>
         </button>
@@ -190,12 +210,18 @@ export function KioskWelcomeScreen() {
 
       <div className="absolute left-4 top-4 flex items-center gap-2">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 backdrop-blur-md">
-          <svg className="h-5 w-5 text-orange-500" fill="currentColor" viewBox="0 0 24 24">
+          <svg
+            className="h-5 w-5 text-orange-500"
+            fill="currentColor"
+            viewBox="0 0 24 24"
+          >
             <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
           </svg>
         </div>
         <div className="text-white">
-          <p className="text-[10px] font-medium uppercase tracking-widest text-white/60">Pegue, pague, pronto</p>
+          <p className="text-[10px] font-medium uppercase tracking-widest text-white/60">
+            Pegue, pague, pronto
+          </p>
           <p className="text-sm font-bold">MR SMART</p>
         </div>
       </div>
@@ -217,10 +243,17 @@ export function KioskWelcomeScreen() {
 
       <style jsx>{`
         @keyframes float {
-          0%, 100% { transform: translateY(0px) scale(1); opacity: 0.3; }
-          50% { transform: translateY(-20px) scale(1.5); opacity: 0.6; }
+          0%,
+          100% {
+            transform: translateY(0px) scale(1);
+            opacity: 0.3;
+          }
+          50% {
+            transform: translateY(-20px) scale(1.5);
+            opacity: 0.6;
+          }
         }
       `}</style>
     </div>
-  )
+  );
 }
