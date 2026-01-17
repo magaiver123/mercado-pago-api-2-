@@ -85,7 +85,7 @@ function ProcessingContent() {
 
         setStatus(data.status);
 
-        if (data.status === "processed" && data.statusDetail === "accredited") {
+        if (data.status === "processed" && data.statusDetail === "processed") {
           clearInterval(intervalId);
           clearTimeout(timeoutId);
           router.push("/payment/success");
