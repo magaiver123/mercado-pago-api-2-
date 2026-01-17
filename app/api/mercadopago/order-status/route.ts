@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server"
 import { orderStatusStore } from "@/lib/order-status-store"
 
+export const dynamic = "force-dynamic";
+
 const MERCADOPAGO_ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN
 
 export async function GET(request: Request) {
