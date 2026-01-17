@@ -84,4 +84,12 @@ export const products: Product[] = [
     category: "refrigerantes-350ml",
     image: "/guarana-soda-can.jpg",
   },
+
+  {
+    id: "3",
+    name: "Monster Tradicional",
+    price: 5.0,
+    category: "energéticos",
+    image: "/guarana-soda-can.jpg",
+  },
 ]
