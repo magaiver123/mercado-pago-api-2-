@@ -1,52 +1,50 @@
-import { NextResponse } from "next/server"
-import crypto from "crypto"
-import { createClient } from "@supabase/supabase-js"
+import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
-export const dynamic = "force-dynamic"
+export const dynamic = "force-dynamic";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY! // obrigatório aqui
-)
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json()
+    const body = await request.json();
 
-    console.log("[webhook] received:", body)
+    console.log("[WEBHOOK RECEIVED]", body);
 
-    const { id: mercadopagoOrderId, state, payment } = body
+    const mpOrderId = body?.data?.id;
+    const status = body?.data?.status;
 
-    if (!mercadopagoOrderId) {
-      return NextResponse.json({ ok: true })
+    if (!mpOrderId || !status) {
+      // ⚠️ Mesmo inválido, RESPONDE 200
+      return NextResponse.json({ ok: true });
     }
 
-    // Mapeamento Mercado Pago → seu sistema
-    let newStatus = "pending"
+    let newStatus = "pending";
 
-    if (state === "FINISHED" && payment?.state === "processed") {
-      newStatus = "processed"
-    } else if (state === "CANCELED") {
-      newStatus = "cancelled"
-    } else if (state === "ERROR") {
-      newStatus = "failed"
+    if (status === "processed") {
+      newStatus = "processed";
+    } else if (status === "canceled" || status === "cancelled") {
+      newStatus = "cancelled";
+    } else if (status === "error" || status === "failed") {
+      newStatus = "failed";
     }
 
     await supabase
       .from("orders")
       .update({ status: newStatus })
-      .eq("mercadopago_order_id", mercadopagoOrderId)
+      .eq("mercadopago_order_id", mpOrderId);
 
-    console.log(
-      "[webhook] order updated:",
-      mercadopagoOrderId,
-      "status:",
-      newStatus
-    )
+    console.log("[WEBHOOK UPDATED]", mpOrderId, newStatus);
 
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    console.error("[webhook] error:", error)
-    return NextResponse.json({ error: "Internal error" }, { status: 500 })
+    // ✅ SEMPRE 200
+    return NextResponse.json({ ok: true });
+  } catch (err) {
+    console.error("[WEBHOOK ERROR]", err);
+
+    // ⚠️ MESMO COM ERRO, RETORNE 200
+    return NextResponse.json({ ok: true });
   }
 }
