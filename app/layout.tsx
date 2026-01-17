@@ -45,7 +45,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className="font-sans antialiased">
+      <body className={`${roboto.className} antialiased`}>
         <IdleProvider>
           {children}
         </IdleProvider>
