@@ -1,77 +1,83 @@
-import { NextResponse } from "next/server"
-import { orderStatusStore } from "@/lib/order-status-store"
+import { NextResponse } from "next/server";
+import { createClient } from "@supabase/supabase-js";
 
 export const dynamic = "force-dynamic";
 
-const MERCADOPAGO_ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+const MERCADOPAGO_ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN!;
 
 export async function GET(request: Request) {
+  console.log("🔥 ORDER-STATUS ROUTE NOVA EXECUTANDO");
   try {
-    if (!MERCADOPAGO_ACCESS_TOKEN) {
-      return NextResponse.json({ error: "Mercado Pago access token not configured" }, { status: 500 })
+    const { searchParams } = new URL(request.url);
+    const mpOrderId = searchParams.get("orderId"); // ← ID do Mercado Pago
+
+    if (!mpOrderId) {
+      return NextResponse.json({ error: "orderId is required" }, { status: 400 });
     }
 
-    const { searchParams } = new URL(request.url)
-    const orderId = searchParams.get("orderId")
+    // 1️⃣ LÊ DO BANCO PELO ID DO MP
+    const { data: order } = await supabase
+      .from("orders")
+      .select("status")
+      .eq("mercadopago_order_id", mpOrderId)
+      .single();
 
-    if (!orderId) {
-      return NextResponse.json({ error: "Order ID is required" }, { status: 400 })
+    if (!order) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 });
     }
 
-    const cachedStatus = orderStatusStore.get(orderId)
-    if (cachedStatus) {
-      console.log("[v0] Returning cached status from webhook:", cachedStatus)
-
-      // Map webhook states to order status format
-      let status = cachedStatus.state.toLowerCase()
-      let statusDetail = ""
-
-      if (cachedStatus.state === "FINISHED" && cachedStatus.payment?.state === "approved") {
-        status = "processed"
-        statusDetail = "accredited"
-      } else if (cachedStatus.state === "CANCELED") {
-        status = "cancelled"
-      } else if (cachedStatus.state === "ERROR") {
-        status = "error"
-      }
-
+    // 2️⃣ SE JÁ FINALIZOU, RETORNA DIRETO
+    if (order.status !== "pending") {
       return NextResponse.json({
-        orderId: cachedStatus.orderId,
-        status,
-        statusDetail,
-        payment: cachedStatus.payment,
-        source: "webhook",
-      })
+        orderId: mpOrderId,
+        status: order.status,
+        source: "database",
+      });
     }
 
-    const response = await fetch(`https://api.mercadopago.com/v1/orders/${orderId}`, {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${MERCADOPAGO_ACCESS_TOKEN}`,
-        "Content-Type": "application/json",
-      },
-    })
+    // 3️⃣ FALLBACK: CONSULTA MP
+    const response = await fetch(
+      `https://api.mercadopago.com/v1/orders/${mpOrderId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${MERCADOPAGO_ACCESS_TOKEN}`,
+        },
+      }
+    );
 
-    const data = await response.json()
+    const mpOrder = await response.json();
 
-    if (!response.ok) {
-      console.error("[v0] Mercado Pago API error:", data)
-      return NextResponse.json(
-        { error: data.message || "Erro ao consultar status do pedido" },
-        { status: response.status },
-      )
+    let newStatus = "pending";
+
+    // ✅ MAPA CORRETO DO POINT
+    if (mpOrder.status === "processed") {
+      newStatus = "processed";
+    } else if (mpOrder.state === "CANCELED") {
+      newStatus = "cancelled";
+    } else if (mpOrder.state === "ERROR") {
+      newStatus = "failed";
+    }
+
+    // 4️⃣ SE MUDOU, ATUALIZA O BANCO
+    if (newStatus !== "pending") {
+      await supabase
+        .from("orders")
+        .update({ status: newStatus })
+        .eq("mercadopago_order_id", mpOrderId);
     }
 
     return NextResponse.json({
-      orderId: data.id,
-      status: data.status,
-      statusDetail: data.status_detail,
-      transactions: data.transactions,
-      externalReference: data.external_reference,
-      source: "api",
-    })
+      orderId: mpOrderId,
+      status: newStatus,
+      source: "fallback",
+    });
   } catch (error) {
-    console.error("[v0] Error in order-status route:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    console.error("[order-status]", error);
+    return NextResponse.json({ error: "Internal error" }, { status: 500 });
   }
 }
