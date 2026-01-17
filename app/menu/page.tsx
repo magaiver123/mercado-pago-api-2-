@@ -11,7 +11,7 @@ import Image from "next/image";
 import { getAuthUser } from "@/lib/auth-store";
 import { clearAuthUser } from "@/lib/auth-store";
 
-export default function Home() {
+export function Home() {
   const [selectedCategory, setSelectedCategory] = useState("lanches");
   const [isCartOpen, setIsCartOpen] = useState(false);
   const { addItem, getTotal, getItemCount } = useCartStore();
