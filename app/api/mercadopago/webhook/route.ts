@@ -1,50 +1,63 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { NextResponse } from "next/server"
+import { createClient } from "@supabase/supabase-js"
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic"
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+)
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body = await request.json()
 
-    console.log("[WEBHOOK RECEIVED]", body);
+    console.log("[WEBHOOK RECEIVED]", JSON.stringify(body, null, 2))
 
-    const mpOrderId = body?.data?.id;
-    const status = body?.data?.status;
+    const action = body.action
+    const mpOrderId = body?.data?.id
 
-    if (!mpOrderId || !status) {
-      // ⚠️ Mesmo inválido, RESPONDE 200
-      return NextResponse.json({ ok: true });
+    if (!action || !mpOrderId) {
+      return NextResponse.json({ ok: true })
     }
 
-    let newStatus = "pending";
+    let newStatus: string | null = null
 
-    if (status === "processed") {
-      newStatus = "processed";
-    } else if (status === "canceled" || status === "cancelled") {
-      newStatus = "cancelled";
-    } else if (status === "error" || status === "failed") {
-      newStatus = "failed";
+    switch (action) {
+      case "order.processed":
+        newStatus = "processed"
+        break
+      case "order.canceled":
+        newStatus = "canceled"
+        break
+      case "order.failed":
+        newStatus = "failed"
+        break
+      case "order.expired":
+        newStatus = "expired"
+        break
+      case "order.refunded":
+        newStatus = "refunded"
+        break
+      case "order.action_required":
+        newStatus = "action_required"
+        break
     }
 
-    await supabase
-      .from("orders")
-      .update({ status: newStatus })
-      .eq("mercadopago_order_id", mpOrderId);
+    if (newStatus) {
+      await supabase
+        .from("orders")
+        .update({ status: newStatus })
+        .eq("mercadopago_order_id", mpOrderId)
 
-    console.log("[WEBHOOK UPDATED]", mpOrderId, newStatus);
+      console.log("[WEBHOOK UPDATED]", mpOrderId, newStatus)
+    }
 
-    // ✅ SEMPRE 200
-    return NextResponse.json({ ok: true });
-  } catch (err) {
-    console.error("[WEBHOOK ERROR]", err);
-
-    // ⚠️ MESMO COM ERRO, RETORNE 200
-    return NextResponse.json({ ok: true });
+    // ⚠️ SEMPRE 200
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    console.error("[WEBHOOK ERROR]", error)
+    // ⚠️ Mesmo com erro, sempre 200
+    return NextResponse.json({ ok: true })
   }
 }
