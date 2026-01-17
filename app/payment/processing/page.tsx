@@ -12,11 +12,13 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/lib/cart-store";
+import { createClient } from "@/lib/supabase/client";
 
 function ProcessingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const orderId = searchParams.get("orderId");
+
   const [status, setStatus] = useState<string>("processing");
   const [cancelling, setCancelling] = useState(false);
   const [elapsedTime, setElapsedTime] = useState(0);
@@ -51,8 +53,7 @@ function ProcessingContent() {
         alert("Pedido cancelado com sucesso!");
         router.push("/");
       } else {
-        const errorMessage = data.error || "Erro desconhecido";
-        alert(errorMessage);
+        alert(data.error || "Erro desconhecido");
         setCancelling(false);
       }
     } catch (error) {
@@ -68,60 +69,66 @@ function ProcessingContent() {
       return;
     }
 
+    const supabase = createClient();
     const maxWaitTimeSeconds = 60;
+
     let intervalId: NodeJS.Timeout;
     let timeoutId: NodeJS.Timeout;
+    let timerId: NodeJS.Timeout;
 
     const checkOrderStatus = async () => {
       try {
-        const response = await fetch(
-          `/api/mercadopago/order-status?orderId=${orderId}`
-        );
-        const data = await response.json();
+        const { data, error } = await supabase
+          .from("orders")
+          .select("status")
+          .eq("mercadopago_order_id", orderId)
+          .single();
 
-        if (!response.ok) {
-          return;
-        }
+        if (error || !data) return;
 
         setStatus(data.status);
 
-        if (data.status === "processed" && data.statusDetail === "processed") {
+        if (data.status === "processed") {
           clearInterval(intervalId);
           clearTimeout(timeoutId);
+          clearInterval(timerId);
           router.push("/payment/success");
-        } else if (
-          data.status === "cancelled" ||
+        }
+
+        if (
           data.status === "canceled" ||
-          data.status === "rejected" ||
+          data.status === "cancelled" ||
+          data.status === "failed" ||
           data.status === "error" ||
-          data.status === "failed"
+          data.status === "expired"
         ) {
           clearInterval(intervalId);
           clearTimeout(timeoutId);
+          clearInterval(timerId);
           router.push("/payment/error");
         }
       } catch (err) {
-        console.error("[v0] Error checking order status:", err);
+        console.error("[processing] Error checking order in DB:", err);
       }
     };
 
-    const timeIntervalId = setInterval(() => {
+    timerId = setInterval(() => {
       setElapsedTime((prev) => prev + 1);
     }, 1000);
 
     timeoutId = setTimeout(() => {
       clearInterval(intervalId);
-      clearInterval(timeIntervalId);
+      clearInterval(timerId);
       router.push("/payment/error");
     }, maxWaitTimeSeconds * 1000);
 
     checkOrderStatus();
-    intervalId = setInterval(checkOrderStatus, 5000);
+    intervalId = setInterval(checkOrderStatus, 3000);
 
     return () => {
-      if (intervalId) clearInterval(intervalId);
-      if (timeoutId) clearTimeout(timeoutId);
-      if (timeIntervalId) clearInterval(timeIntervalId);
+      clearInterval(intervalId);
+      clearTimeout(timeoutId);
+      clearInterval(timerId);
     };
   }, [orderId, router]);
 
