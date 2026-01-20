@@ -89,7 +89,7 @@ export function KioskWelcomeScreen() {
 
   return (
     <div
-      className="relative w-screen h-screen overflow-hidden bg-black cursor-pointer md:aspect-[16/10] md:h-auto md:max-w-[1280px] md:mx-auto"
+      className="relative w-screen h-screen overflow-hidden bg-black cursor-pointer"
       onClick={handleStartOrder}
     >
       <div className="absolute inset-0">

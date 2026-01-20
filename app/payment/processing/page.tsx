@@ -50,15 +50,14 @@ function ProcessingContent() {
       const data = await response.json();
 
       if (response.ok) {
-        alert("Pedido cancelado com sucesso!");
-        router.push("/");
+        router.push("/payment/canceled");
       } else {
         alert(data.error || "Erro desconhecido");
         setCancelling(false);
       }
     } catch (error) {
-      console.error("[v0] Exception during cancel:", error);
-      alert("Erro ao cancelar pedido. Tente cancelar manualmente no terminal.");
+      console.error("[processing] cancel error:", error);
+      alert("Erro ao cancelar pedido.");
       setCancelling(false);
     }
   };
@@ -95,17 +94,32 @@ function ProcessingContent() {
           router.push("/payment/success");
         }
 
-        if (
-          data.status === "canceled" ||
-          data.status === "cancelled" ||
-          data.status === "failed" ||
-          data.status === "error" ||
-          data.status === "expired"
-        ) {
+        if (data.status === "failed" || data.status === "error") {
           clearInterval(intervalId);
           clearTimeout(timeoutId);
           clearInterval(timerId);
-          router.push("/payment/error");
+          router.push("/payment/failed");
+        }
+
+        if (data.status === "canceled" || data.status === "cancelled") {
+          clearInterval(intervalId);
+          clearTimeout(timeoutId);
+          clearInterval(timerId);
+          router.push("/payment/canceled");
+        }
+
+        if (data.status === "expired") {
+          clearInterval(intervalId);
+          clearTimeout(timeoutId);
+          clearInterval(timerId);
+          router.push("/payment/expired");
+        }
+
+        if (data.status === "action_required") {
+          clearInterval(intervalId);
+          clearTimeout(timeoutId);
+          clearInterval(timerId);
+          router.push("/payment/action_required");
         }
       } catch (err) {
         console.error("[processing] Error checking order in DB:", err);
@@ -119,7 +133,7 @@ function ProcessingContent() {
     timeoutId = setTimeout(() => {
       clearInterval(intervalId);
       clearInterval(timerId);
-      router.push("/payment/error");
+      router.push("/payment/expired");
     }, maxWaitTimeSeconds * 1000);
 
     checkOrderStatus();
@@ -139,11 +153,14 @@ function ProcessingContent() {
           <div className="flex justify-center mb-4">
             <Spinner className="h-16 w-16 text-orange-500" />
           </div>
-          <CardTitle className="text-black">Processando Pagamento</CardTitle>
+          <CardTitle className="text-black">
+            Processando Pagamento
+          </CardTitle>
           <CardDescription className="text-black/70">
             Aguarde enquanto verificamos o status do seu pagamento...
           </CardDescription>
         </CardHeader>
+
         <CardContent className="text-center space-y-4">
           <div className="bg-white rounded-lg p-4 space-y-1 border border-orange-500">
             <p className="text-xs text-black/70">Status: {status}</p>
@@ -154,8 +171,8 @@ function ProcessingContent() {
 
           <div className="bg-orange-100 border border-orange-500 rounded-lg p-3">
             <p className="text-xs text-orange-700">
-              Nota: Se o pagamento já estiver sendo processado no terminal, você
-              precisará cancelar diretamente na máquina.
+              Nota: Se o pagamento já estiver sendo processado no terminal,
+              você precisará cancelar diretamente na máquina.
             </p>
           </div>
 

@@ -74,19 +74,18 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-zinc-100 p-6">
+    <div className="flex min-h-screen w-full items-center justify-center bg-zinc-100 px-4 sm:px-6">
       <div className="w-full max-w-md">
         <Card className="bg-white border border-zinc-200 shadow-lg">
           <CardHeader className="text-center">
-
             {/* LOGO */}
             <div className="mx-auto mb-4 h-25 w-25 rounded-xl flex items-center justify-center">
               <Image
                 src="/logologin.png"
                 alt="Logo Mr Smart"
-                width={150}
-                height={150}
-                className="object-contain"
+                width={120}
+                height={120}
+                className="object-contain sm:w-[150px] sm:h-[150px]"
               />
             </div>
 

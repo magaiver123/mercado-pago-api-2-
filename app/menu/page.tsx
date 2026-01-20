@@ -5,20 +5,48 @@ export const dynamic = "force-dynamic";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { ShoppingBag } from "lucide-react";
-import { products, categories } from "@/lib/products";
 import { useCartStore } from "@/lib/cart-store";
 import { Cart } from "@/components/cart";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { getAuthUser } from "@/lib/auth-store";
-import { clearAuthUser } from "@/lib/auth-store";
+import { getAuthUser, clearAuthUser } from "@/lib/auth-store";
+import { createClient } from "@/lib/supabase/client";
+
+/* =====================
+   TIPOS (mínimos)
+===================== */
+type Category = {
+  id: string;
+  name: string;
+};
+
+type Product = {
+  id: string;
+  name: string;
+  description?: string | null;
+  price: number;
+  image_url?: string | null;
+  category_id: string;
+  product_stock?:
+    | {
+        quantity: number;
+      }[]
+    | null;
+};
 
 export default function Home() {
-  const [selectedCategory, setSelectedCategory] = useState("lanches");
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
+
   const { addItem, getTotal, getItemCount } = useCartStore();
   const router = useRouter();
+  const supabase = createClient();
 
+  /* =====================
+     AUTH CHECK
+  ====================== */
   useEffect(() => {
     const user = getAuthUser();
     if (!user) {
@@ -26,10 +54,69 @@ export default function Home() {
     }
   }, [router]);
 
-  const filteredProducts = products.filter(
-    (p) => p.category === selectedCategory
-  );
+  /* =====================
+     LOAD CATEGORIES
+  ====================== */
+  useEffect(() => {
+    async function loadCategories() {
+      const { data, error } = await supabase
+        .from("categories")
+        .select("id, name")
+        .eq("is_active", true)
+        .order("name");
 
+      if (error) {
+        console.error("Erro ao carregar categorias:", error);
+        return;
+      }
+
+      setCategories(data || []);
+
+      if (data && data.length > 0) {
+        setSelectedCategory(data[0].id);
+      }
+    }
+
+    loadCategories();
+  }, [supabase]);
+
+  /* =====================
+     LOAD PRODUCTS
+  ====================== */
+  useEffect(() => {
+    if (!selectedCategory) return;
+
+    async function loadProducts() {
+      const { data, error } = await supabase
+        .from("products")
+        .select(
+          `
+        id,
+        name,
+        description,
+        price,
+        image_url,
+        category_id,
+        product_stock!inner ( quantity )
+      `
+        )
+        .eq("is_active", true)
+        .eq("category_id", selectedCategory);
+
+      if (error) {
+        console.error("Erro ao carregar produtos:", error);
+        return;
+      }
+
+      setProducts(data ?? []);
+    }
+
+    loadProducts();
+  }, [selectedCategory, supabase]);
+
+  /* =====================
+     HANDLERS
+  ====================== */
   const itemCount = getItemCount();
   const total = getTotal();
 
@@ -43,6 +130,9 @@ export default function Home() {
     router.push("/");
   };
 
+  /* =====================
+     RENDER
+  ====================== */
   return (
     <div className="h-screen flex flex-col bg-white">
       {/* Header */}
@@ -94,7 +184,7 @@ export default function Home() {
           </div>
         </aside>
 
-        {/* Main Content */}
+        {/* Main */}
         <main className="flex-1 overflow-y-auto p-6 lg:p-8 bg-white">
           {/* Categorias Mobile */}
           <div className="md:hidden mb-4">
@@ -122,9 +212,9 @@ export default function Home() {
             {categories.find((c) => c.id === selectedCategory)?.name}
           </h1>
 
-          {filteredProducts.length > 0 ? (
+          {products.length > 0 ? (
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-              {filteredProducts.map((product) => (
+              {products.map((product) => (
                 <button
                   key={product.id}
                   onClick={() => addItem(product)}
@@ -132,7 +222,7 @@ export default function Home() {
                 >
                   <div className="aspect-square relative bg-gradient-to-br from-orange-100 to-orange-200">
                     <Image
-                      src={product.image || "/placeholder.svg"}
+                      src={product.image_url || "/placeholder.svg"}
                       alt={product.name}
                       fill
                       className="object-cover"
