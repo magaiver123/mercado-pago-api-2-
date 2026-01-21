@@ -69,6 +69,8 @@ export async function POST(request: Request) {
     // 🔴 DESCONTO DE ESTOQUE APENAS NO PROCESSADO
     if (newStatus === "processed") {
       for (const item of order.items as any[]) {
+        console.log("[WEBHOOK ITEM RAW]", item);
+
         const { data: stock } = await supabase
           .from("product_stock")
           .select("quantity")
