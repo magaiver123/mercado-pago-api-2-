@@ -1,10 +1,7 @@
 import { NextResponse } from "next/server"
 import { createClient } from "@supabase/supabase-js"
 
-
 export const dynamic = "force-dynamic"
-
-const STORE_ID = process.env.STORE_ID;
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -29,7 +26,6 @@ export async function GET(request: Request) {
       .from("orders")
       .select("status")
       .eq("mercadopago_order_id", orderId)
-      .eq("store_id", STORE_ID)
       .single()
 
     if (error || !data) {
