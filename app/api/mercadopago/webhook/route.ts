@@ -74,7 +74,7 @@ export async function POST(request: Request) {
         const { data: stock } = await supabase
           .from("product_stock")
           .select("quantity")
-          .eq("product_id", item.product_id)
+          .eq("product_id", item.id)
           .single();
 
         if (!stock) continue;
