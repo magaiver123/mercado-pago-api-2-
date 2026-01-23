@@ -23,9 +23,7 @@ export default function LoginPage() {
 
   const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.replace(/\D/g, "");
-    if (value.length <= 11) {
-      setCpf(value);
-    }
+    if (value.length <= 11) setCpf(value);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -46,17 +44,24 @@ export default function LoginPage() {
         .from("users")
         .select("*")
         .eq("cpf", cpf)
+        .eq("status", "ativo")
         .limit(1);
 
       if (queryError) throw queryError;
 
       if (!users || users.length === 0) {
-        setError("CPF não cadastrado. Faça o cadastro primeiro.");
+        setError("CPF inválido");
         setIsLoading(false);
         return;
       }
 
       const user = users[0];
+
+      await supabase
+        .from("users")
+        .update({ last_access_at: new Date().toISOString() })
+        .eq("id", user.id);
+
       setAuthUser({
         id: user.id,
         cpf: user.cpf,
@@ -78,7 +83,6 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <Card className="bg-white border border-zinc-200 shadow-lg">
           <CardHeader className="text-center">
-            {/* LOGO */}
             <div className="mx-auto mb-4 h-25 w-25 rounded-xl flex items-center justify-center">
               <Image
                 src="/logologin.png"
@@ -98,7 +102,6 @@ export default function LoginPage() {
           <CardContent>
             <form onSubmit={handleLogin}>
               <div className="flex flex-col gap-6">
-                {/* CPF */}
                 <div className="grid gap-2">
                   <Label htmlFor="cpf" className="text-black">
                     CPF
@@ -114,12 +117,10 @@ export default function LoginPage() {
                   />
                 </div>
 
-                {/* ERRO */}
                 {error && (
                   <p className="text-sm text-orange-600 text-center">{error}</p>
                 )}
 
-                {/* BOTÃO ENTRAR */}
                 <Button
                   type="submit"
                   className="w-full bg-orange-500 hover:bg-orange-600 text-white"
@@ -128,7 +129,6 @@ export default function LoginPage() {
                   {isLoading ? "Entrando..." : "Entrar"}
                 </Button>
 
-                {/* BOTÃO CADASTRAR */}
                 <div className="text-center">
                   <Link href="/auth/register">
                     <Button
