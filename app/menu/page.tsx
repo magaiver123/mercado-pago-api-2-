@@ -188,6 +188,25 @@ export default function Home() {
 
         {/* Main */}
         <main className="flex-1 overflow-y-auto p-6 bg-white">
+          {/* Categorias Mobile */}
+          <div className="md:hidden mb-4">
+            <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => setSelectedCategory(category.id)}
+                  className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                    selectedCategory === category.id
+                      ? "bg-orange-500 text-white"
+                      : "bg-zinc-100 text-black"
+                  }`}
+                >
+                  {category.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <h1 className="font-bold text-3xl mb-6">
             {categories.find((c) => c.id === selectedCategory)?.name}
           </h1>
