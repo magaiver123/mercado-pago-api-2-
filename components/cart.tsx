@@ -1,21 +1,23 @@
-"use client"
+"use client";
 
-import { Button } from "@/components/ui/button"
-import { X, Plus, Minus, Trash2, ShoppingBag } from "lucide-react"
-import { useCartStore } from "@/lib/cart-store"
-import Image from "next/image"
+import { Button } from "@/components/ui/button";
+import { X, Plus, Minus, Trash2, ShoppingBag } from "lucide-react";
+import { useCartStore } from "@/lib/cart-store";
+import Image from "next/image";
+import { toast } from "@/components/ui/use-toast";
 
 interface CartProps {
-  isOpen: boolean
-  onClose: () => void
-  onCheckout: () => void
+  isOpen: boolean;
+  onClose: () => void;
+  onCheckout: () => void;
 }
 
 export function Cart({ isOpen, onClose, onCheckout }: CartProps) {
-  const { items, updateQuantity, removeItem, getTotal, clearCart } = useCartStore()
-  const total = getTotal()
+  const { items, updateQuantity, removeItem, getTotal, clearCart } =
+    useCartStore();
+  const total = getTotal();
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   return (
     <>
@@ -28,9 +30,14 @@ export function Cart({ isOpen, onClose, onCheckout }: CartProps) {
         <div className="border-b border-orange-200 p-4 md:p-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <ShoppingBag className="h-6 w-6 text-orange-500" />
-            <h2 className="text-black font-bold text-xl md:text-2xl">Seu Carrinho</h2>
+            <h2 className="text-black font-bold text-xl md:text-2xl">
+              Seu Carrinho
+            </h2>
           </div>
-          <button onClick={onClose} className="text-black/60 hover:text-black p-2">
+          <button
+            onClick={onClose}
+            className="text-black/60 hover:text-black p-2"
+          >
             <X className="h-6 w-6" />
           </button>
         </div>
@@ -38,8 +45,12 @@ export function Cart({ isOpen, onClose, onCheckout }: CartProps) {
         {items.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
             <ShoppingBag className="h-20 w-20 text-orange-300 mb-4" />
-            <p className="text-black text-lg font-semibold">Seu carrinho está vazio</p>
-            <p className="text-black/60 text-sm mt-2">Adicione produtos para continuar</p>
+            <p className="text-black text-lg font-semibold">
+              Seu carrinho está vazio
+            </p>
+            <p className="text-black/60 text-sm mt-2">
+              Adicione produtos para continuar
+            </p>
             <Button
               onClick={onClose}
               variant="outline"
@@ -58,11 +69,18 @@ export function Cart({ isOpen, onClose, onCheckout }: CartProps) {
                   className="bg-white border border-orange-200 rounded-lg p-4 flex gap-4"
                 >
                   <div className="w-20 h-20 rounded-lg overflow-hidden bg-orange-100 relative flex-shrink-0">
-                    <Image src={item.image || "/placeholder.svg"} alt={item.name} fill className="object-cover" />
+                    <Image
+                      src={item.image_url || "/placeholder.svg"}
+                      alt={item.name}
+                      fill
+                      className="object-cover"
+                    />
                   </div>
 
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-black font-semibold text-base truncate">{item.name}</h3>
+                    <h3 className="text-black font-semibold text-base truncate">
+                      {item.name}
+                    </h3>
                     <p className="text-black font-bold text-lg">
                       R$ {item.price.toFixed(2).replace(".", ",")}
                     </p>
@@ -70,7 +88,9 @@ export function Cart({ isOpen, onClose, onCheckout }: CartProps) {
                     <div className="flex items-center gap-3 mt-3">
                       <div className="flex items-center bg-orange-100 rounded-lg">
                         <button
-                          onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                          onClick={() =>
+                            updateQuantity(item.id, item.quantity - 1)
+                          }
                           className="p-2 text-orange-600 hover:bg-orange-200 rounded-l-lg"
                         >
                           <Minus className="h-4 w-4" />
@@ -81,8 +101,25 @@ export function Cart({ isOpen, onClose, onCheckout }: CartProps) {
                         </span>
 
                         <button
-                          onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="p-2 text-orange-600 hover:bg-orange-200 rounded-r-lg"
+                          onClick={() => {
+                            const success = updateQuantity(
+                              item.id,
+                              item.quantity + 1
+                            );
+
+                            if (!success) {
+                              toast({
+                                title: "Estoque máximo atingido",
+                                description: `Disponível: ${item.stock} unidade(s).`,
+                                variant: "warning",
+                              });
+                            }
+                          }}
+                          className={`p-2 text-orange-600 rounded-r-lg transition ${
+                            item.quantity >= item.stock
+                              ? "opacity-50"
+                              : "hover:bg-orange-200"
+                          }`}
                         >
                           <Plus className="h-4 w-4" />
                         </button>
@@ -99,7 +136,10 @@ export function Cart({ isOpen, onClose, onCheckout }: CartProps) {
 
                   <div className="text-right">
                     <p className="text-black font-bold text-lg">
-                      R$ {(item.price * item.quantity).toFixed(2).replace(".", ",")}
+                      R${" "}
+                      {(item.price * item.quantity)
+                        .toFixed(2)
+                        .replace(".", ",")}
                     </p>
                   </div>
                 </div>
@@ -136,5 +176,5 @@ export function Cart({ isOpen, onClose, onCheckout }: CartProps) {
         )}
       </div>
     </>
-  )
+  );
 }

@@ -4,6 +4,8 @@ import { Roboto } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import "./globals.css"
 import { IdleProvider } from "@/components/IdleProvider"
+import { Toaster } from "@/components/ui/toaster"
+
 
 const roboto = Roboto({
   subsets: ["latin"],
@@ -49,6 +51,8 @@ export default function RootLayout({
         <IdleProvider>
           {children}
         </IdleProvider>
+
+          <Toaster />
 
         <Analytics />
       </body>
