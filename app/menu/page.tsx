@@ -238,7 +238,7 @@ export default function Home() {
                           title: "Estoque insuficiente",
                           description:
                             "Você já adicionou a quantidade máxima disponível deste produto.",
-                          variant: "destructive",
+                          variant: "warning",
                         });
                       }
                     }}
