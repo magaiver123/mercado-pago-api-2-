@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 
-import { createClient } from "@/lib/supabase/client";
 import { setAuthUser } from "@/lib/auth-store";
 import { validateCPF, formatCPF } from "@/lib/cpf-validator";
 
@@ -38,41 +37,36 @@ export default function LoginPage() {
     }
 
     try {
-      const supabase = createClient();
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ cpf }),
+      });
 
-      const { data: users, error: queryError } = await supabase
-        .from("users")
-        .select("*")
-        .eq("cpf", cpf)
-        .eq("status", "ativo")
-        .limit(1);
+      const data = await response.json();
 
-      if (queryError) throw queryError;
-
-      if (!users || users.length === 0) {
-        setError("CPF inválido");
+      if (!response.ok) {
+        setError(data.error || "Erro ao fazer login");
         setIsLoading(false);
         return;
       }
 
-      const user = users[0];
-
-      await supabase
-        .from("users")
-        .update({ last_access_at: new Date().toISOString() })
-        .eq("id", user.id);
-
+      // Mantém exatamente o mesmo comportamento anterior
       setAuthUser({
-        id: user.id,
-        cpf: user.cpf,
-        name: user.name,
-        phone: user.phone,
-        email: user.email,
+        id: data.id,
+        cpf: data.cpf,
+        name: data.name,
+        phone: data.phone,
+        email: data.email,
       });
 
       router.push("/menu");
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "Erro ao fazer login");
+      setError(
+        error instanceof Error ? error.message : "Erro ao fazer login"
+      );
     } finally {
       setIsLoading(false);
     }
@@ -118,7 +112,9 @@ export default function LoginPage() {
                 </div>
 
                 {error && (
-                  <p className="text-sm text-orange-600 text-center">{error}</p>
+                  <p className="text-sm text-orange-600 text-center">
+                    {error}
+                  </p>
                 )}
 
                 <Button

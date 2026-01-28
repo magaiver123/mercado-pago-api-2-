@@ -1,35 +1,43 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Spinner } from "@/components/ui/spinner"
-import { useRouter } from "next/navigation"
-import { CreditCard, DollarSign, ArrowLeft, CheckCircle, ShoppingBag } from "lucide-react"
-import { useCartStore } from "@/lib/cart-store"
-import Image from "next/image"
-import { getAuthUser } from "@/lib/auth-store"
-import { createClient } from "@/lib/supabase/client"
+import { useEffect, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Spinner } from "@/components/ui/spinner";
+import { useRouter } from "next/navigation";
+import {
+  CreditCard,
+  DollarSign,
+  ArrowLeft,
+  CheckCircle,
+  ShoppingBag,
+} from "lucide-react";
+import { useCartStore } from "@/lib/cart-store";
+import Image from "next/image";
+import { getAuthUser } from "@/lib/auth-store";
+import { createClient } from "@/lib/supabase/client";
 
-type PaymentMethod = "credit_card" | "debit_card" | "pix"
+type PaymentMethod = "credit_card" | "debit_card" | "pix";
 
 export default function CheckoutPage() {
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null)
-  const [showConfirmation, setShowConfirmation] = useState(false)
-  const [isCreatingOrder, setIsCreatingOrder] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [showConflict, setShowConflict] = useState(false)
-  const router = useRouter()
-  const { items, getTotal, clearCart } = useCartStore()
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(
+    null
+  );
+  const [showConfirmation, setShowConfirmation] = useState(false);
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showConflict, setShowConflict] = useState(false);
+  const router = useRouter();
+  const { items, getTotal, clearCart } = useCartStore();
 
-  const total = getTotal()
+  const total = getTotal();
 
   useEffect(() => {
-    const user = getAuthUser()
+    const user = getAuthUser();
     if (!user) {
-      router.push("/tela-inicial")
+      router.push("/tela-inicial");
     }
-  }, [router])
+  }, [router]);
 
   if (items.length === 0) {
     return (
@@ -38,57 +46,69 @@ export default function CheckoutPage() {
           <CardContent className="pt-6 text-center space-y-4">
             <ShoppingBag className="h-16 w-16 text-orange-400 mx-auto" />
             <h2 className="text-black text-xl font-semibold">Carrinho Vazio</h2>
-            <p className="text-black/70">Adicione produtos antes de finalizar o pedido</p>
-            <Button onClick={() => router.push("/")} className="w-full bg-orange-500 hover:bg-orange-600 text-white">
+            <p className="text-black/70">
+              Adicione produtos antes de finalizar o pedido
+            </p>
+            <Button
+              onClick={() => router.push("/")}
+              className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+            >
               Voltar ao Menu
             </Button>
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   const handleCreateOrder = async () => {
     if (!selectedMethod) {
-      setError("Por favor, selecione um método de pagamento")
-      return
+      setError("Por favor, selecione um método de pagamento");
+      return;
     }
 
-    const user = getAuthUser()
+    const user = getAuthUser();
     if (!user) {
-      router.push("/auth/login")
-      return
+      router.push("/auth/login");
+      return;
     }
 
     try {
-      setIsCreatingOrder(true)
-      setError(null)
-      setShowConflict(false)
+      setIsCreatingOrder(true);
+      setError(null);
+      setShowConflict(false);
 
       const response = await fetch("/api/mercadopago/create-order", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "x-totem-key": process.env.NEXT_PUBLIC_TOTEM_API_KEY!,
+        },
         body: JSON.stringify({
           externalReference: `ORDER-${Date.now()}`,
-          title: `Pedido - ${items.length} ${items.length === 1 ? "item" : "itens"}`,
-          description: items.map((item) => `${item.quantity}x ${item.name}`).join(", "),
-          totalAmount: total,
+          description: items
+            .map((item) => `${item.quantity}x ${item.name}`)
+            .join(", "),
+          items: items.map((item) => ({
+            productId: item.id, // ID REAL do produto no banco
+            quantity: item.quantity,
+          })),
           paymentMethodId: selectedMethod,
         }),
-      })
+      });
 
-      const data = await response.json()
+      const data = await response.json();
 
       if (!response.ok) {
         if (response.status === 409) {
-          setShowConflict(true)
-          setError(data.error || "Já existe um pedido pendente no terminal")
-          return
+          setShowConflict(true);
+          setError(data.error || "Já existe um pedido pendente no terminal");
+          return;
         }
-        throw new Error(data.error || "Erro ao criar pedido")
+        throw new Error(data.error || "Erro ao criar pedido");
       }
 
-      const supabase = createClient()
+      const supabase = createClient();
       await supabase.from("orders").insert({
         user_id: user.id,
         mercadopago_order_id: data.orderId,
@@ -96,66 +116,77 @@ export default function CheckoutPage() {
         payment_method: selectedMethod,
         status: "pending",
         items,
-      })
+      });
 
-      router.push(`/payment/processing?orderId=${data.orderId}`)
+      router.push(`/payment/processing?orderId=${data.orderId}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro desconhecido")
+      setError(err instanceof Error ? err.message : "Erro desconhecido");
     } finally {
-      setIsCreatingOrder(false)
+      setIsCreatingOrder(false);
     }
-  }
+  };
 
   const paymentMethods = [
     { id: "credit_card", name: "Cartão de Crédito", icon: CreditCard },
     { id: "debit_card", name: "Cartão de Débito", icon: CreditCard },
     { id: "pix", name: "PIX", icon: DollarSign },
-  ] as const
+  ] as const;
 
   const handleContinue = () => {
     if (!selectedMethod) {
-      setError("Por favor, selecione um método de pagamento")
-      return
+      setError("Por favor, selecione um método de pagamento");
+      return;
     }
-    setShowConfirmation(true)
-  }
+    setShowConfirmation(true);
+  };
 
   const handleBack = () => {
     if (showConfirmation) {
-      setShowConfirmation(false)
-      setError(null)
-      setShowConflict(false)
+      setShowConfirmation(false);
+      setError(null);
+      setShowConflict(false);
     } else {
-      router.push("/")
+      router.push("/");
     }
-  }
+  };
 
   const getMethodName = (methodId: PaymentMethod) =>
-    paymentMethods.find((m) => m.id === methodId)?.name || methodId
+    paymentMethods.find((m) => m.id === methodId)?.name || methodId;
 
   if (showConfirmation) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center p-4">
         <Card className="w-full max-w-2xl border border-orange-500">
           <CardHeader>
-            <CardTitle className="text-black text-2xl">Confirmar Pagamento</CardTitle>
+            <CardTitle className="text-black text-2xl">
+              Confirmar Pagamento
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="border border-orange-200 rounded-lg p-6 space-y-4">
-              <h3 className="text-black font-semibold text-lg">Resumo do Pedido</h3>
+              <h3 className="text-black font-semibold text-lg">
+                Resumo do Pedido
+              </h3>
               {items.map((item) => (
                 <div key={item.id} className="flex items-center gap-3">
                   <div className="w-12 h-12 rounded bg-orange-100 relative">
-                    <Image src={item.image || "/placeholder.svg"} alt={item.name} fill className="object-cover rounded" />
+                    <Image
+                      src={item.image_url || "/placeholder.svg"}
+                      alt={item.name}
+                      fill
+                      className="object-cover rounded"
+                    />
                   </div>
                   <div className="flex-1">
                     <p className="text-black font-medium">{item.name}</p>
                     <p className="text-black/60 text-sm">
-                      {item.quantity}x R$ {item.price.toFixed(2).replace(".", ",")}
+                      {item.quantity}x R${" "}
+                      {item.price.toFixed(2).replace(".", ",")}
                     </p>
                   </div>
                   <p className="text-black font-semibold">
-                    R$ {(item.price * item.quantity).toFixed(2).replace(".", ",")}
+                    R${" "}
+                    {(item.price * item.quantity).toFixed(2).replace(".", ",")}
                   </p>
                 </div>
               ))}
@@ -163,7 +194,9 @@ export default function CheckoutPage() {
 
             <div className="text-center space-y-2">
               <p className="text-black/60">Método de Pagamento</p>
-              <p className="text-black text-2xl font-bold">{getMethodName(selectedMethod!)}</p>
+              <p className="text-black text-2xl font-bold">
+                {getMethodName(selectedMethod!)}
+              </p>
               <p className="text-black text-4xl font-bold mt-2">
                 R$ {total.toFixed(2).replace(".", ",")}
               </p>
@@ -195,25 +228,30 @@ export default function CheckoutPage() {
           </CardContent>
         </Card>
       </div>
-    )
+    );
   }
 
   return (
     <div className="min-h-screen bg-white flex items-center justify-center p-4">
       <Card className="w-full max-w-2xl border border-orange-500">
         <CardHeader>
-          <CardTitle className="text-black text-2xl">Forma de Pagamento</CardTitle>
+          <CardTitle className="text-black text-2xl">
+            Forma de Pagamento
+          </CardTitle>
           <p className="text-black/60 mt-2">Selecione como deseja pagar</p>
         </CardHeader>
         <CardContent className="space-y-6">
           <p className="text-black">
-            Valor total: <span className="font-bold text-xl ml-2">R$ {total.toFixed(2).replace(".", ",")}</span>
+            Valor total:{" "}
+            <span className="font-bold text-xl ml-2">
+              R$ {total.toFixed(2).replace(".", ",")}
+            </span>
           </p>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {paymentMethods.map((method) => {
-              const Icon = method.icon
-              const active = selectedMethod === method.id
+              const Icon = method.icon;
+              const active = selectedMethod === method.id;
               return (
                 <button
                   key={method.id}
@@ -224,10 +262,14 @@ export default function CheckoutPage() {
                       : "border-gray-300 hover:border-orange-300"
                   }`}
                 >
-                  <Icon className={`h-6 w-6 mb-2 ${active ? "text-orange-500" : "text-black/60"}`} />
+                  <Icon
+                    className={`h-6 w-6 mb-2 ${
+                      active ? "text-orange-500" : "text-black/60"
+                    }`}
+                  />
                   <p className="text-black font-semibold">{method.name}</p>
                 </button>
-              )
+              );
             })}
           </div>
 
@@ -256,5 +298,5 @@ export default function CheckoutPage() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

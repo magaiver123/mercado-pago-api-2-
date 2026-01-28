@@ -12,41 +12,15 @@ const promotionalSlides = [
     title: "Mate sua sede",
     subtitle: "Refrigerantes gelados",
   },
+
   {
     id: 2,
-    src: "/energy-drinks-red-bull-monster-can-neon-glow-promo.jpg",
-    alt: "Energéticos em Destaque",
-    title: "Energia total",
-    subtitle: "Para você ir além",
+    src: "/refrescante.jpg",
+    alt: "Refrigerantes Gelados",
+    title: "Refrigerantes",
+    subtitle: "Bem Gelado!",
   },
-  {
-    id: 3,
-    src: "/brazilian-snacks-coxinha-empada-salgados-golden-fr.jpg",
-    alt: "Salgados Deliciosos",
-    title: "Salgados",
-    subtitle: "Fresquinhos para você",
-  },
-  {
-    id: 4,
-    src: "/ice-cold-juice-orange-natural-fresh-glass-promotio.jpg",
-    alt: "Sucos Naturais",
-    title: "100% Natural",
-    subtitle: "Sucos da fruta",
-  },
-  {
-    id: 5,
-    src: "/hot-dog-sandwich-snack-combo-meal-promotional-appe.jpg",
-    alt: "Combos Especiais",
-    title: "Combos",
-    subtitle: "O melhor preço",
-  },
-  {
-    id: 6,
-    src: "/ice-cream-sundae-milkshake-dessert-sweet-promotion.jpg",
-    alt: "Sobremesas Geladas",
-    title: "Sobremesas",
-    subtitle: "Docinho da tarde",
-  },
+
 ];
 
 export function KioskWelcomeScreen() {

@@ -5,7 +5,6 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
-import { createClient } from "@/lib/supabase/client";
 import { validateCPF, formatCPF } from "@/lib/cpf-validator";
 
 import { Button } from "@/components/ui/button";
@@ -57,34 +56,33 @@ export default function RegisterPage() {
     }
 
     try {
-      const supabase = createClient();
+      const response = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          cpf,
+          name,
+          phone,
+          email,
+          password,
+        }),
+      });
 
-      const { data: existingUsers } = await supabase
-        .from("users")
-        .select("id")
-        .eq("cpf", cpf)
-        .limit(1);
+      const data = await response.json();
 
-      if (existingUsers && existingUsers.length > 0) {
-        setError("CPF já cadastrado");
+      if (!response.ok) {
+        setError(data.error || "Erro ao cadastrar");
         setIsLoading(false);
         return;
       }
 
-      const { error: insertError } = await supabase.from("users").insert({
-        cpf,
-        name,
-        phone,
-        email,
-        password_hash: password,
-        status: "ativo",
-      });
-
-      if (insertError) throw insertError;
-
       router.push("/auth/login?registered=true");
     } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "Erro ao cadastrar");
+      setError(
+        error instanceof Error ? error.message : "Erro ao cadastrar"
+      );
     } finally {
       setIsLoading(false);
     }

@@ -1,5 +1,5 @@
-import { KioskWelcomeScreen } from "@/components/kiosk-welcome-screen"
+import { KioskWelcomeScreen } from "@/components/kiosk-welcome-screen";
 
 export default function TelaInicialPage() {
-  return <KioskWelcomeScreen />
+  return <KioskWelcomeScreen />;
 }

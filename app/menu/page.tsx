@@ -10,7 +10,6 @@ import { Cart } from "@/components/cart";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { getAuthUser, clearAuthUser } from "@/lib/auth-store";
-import { createClient } from "@/lib/supabase/client";
 import { useToast } from "@/components/ui/use-toast";
 
 /* =====================
@@ -28,11 +27,7 @@ type Product = {
   price: number;
   image_url?: string | null;
   category_id: string;
-  product_stock?:
-    | {
-        quantity: number;
-      }[]
-    | null;
+  product_stock?: { quantity: number }[] | null;
 };
 
 export default function Home() {
@@ -41,10 +36,8 @@ export default function Home() {
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
 
-  const { addItem, getTotal, getItemCount } = useCartStore();
+  const { addItem, getTotal, getItemCount, clearCart } = useCartStore();
   const router = useRouter();
-  const supabase = createClient();
-  const { clearCart } = useCartStore();
   const { toast } = useToast();
 
   /* =====================
@@ -62,16 +55,8 @@ export default function Home() {
   ====================== */
   useEffect(() => {
     async function loadCategories() {
-      const { data, error } = await supabase
-        .from("categories")
-        .select("id, name")
-        .eq("is_active", true)
-        .order("name");
-
-      if (error) {
-        console.error("Erro ao carregar categorias:", error);
-        return;
-      }
+      const response = await fetch("/api/menu/categories");
+      const data = await response.json();
 
       setCategories(data || []);
 
@@ -81,7 +66,7 @@ export default function Home() {
     }
 
     loadCategories();
-  }, [supabase]);
+  }, []);
 
   /* =====================
      LOAD PRODUCTS
@@ -90,32 +75,15 @@ export default function Home() {
     if (!selectedCategory) return;
 
     async function loadProducts() {
-      const { data, error } = await supabase
-        .from("products")
-        .select(
-          `
-          id,
-          name,
-          description,
-          price,
-          image_url,
-          category_id,
-          product_stock!inner ( quantity )
-        `
-        )
-        .eq("is_active", true)
-        .eq("category_id", selectedCategory);
-
-      if (error) {
-        console.error("Erro ao carregar produtos:", error);
-        return;
-      }
-
+      const response = await fetch(
+        `/api/menu/products?category_id=${selectedCategory}`
+      );
+      const data = await response.json();
       setProducts(data ?? []);
     }
 
     loadProducts();
-  }, [selectedCategory, supabase]);
+  }, [selectedCategory]);
 
   /* =====================
      HANDLERS
@@ -139,7 +107,6 @@ export default function Home() {
   ====================== */
   return (
     <div className="h-screen flex flex-col bg-white">
-      {/* Header */}
       <header className="bg-white border-b border-zinc-200 px-4 md:px-6 py-4 flex items-center justify-between">
         <div className="w-24 h-16 flex items-center justify-center">
           <Image
@@ -163,7 +130,6 @@ export default function Home() {
       </header>
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
         <aside className="hidden md:block w-60 bg-white border-r border-zinc-200 overflow-y-auto">
           <div className="p-6">
             <h2 className="font-bold text-2xl mb-6">MENU</h2>
@@ -186,27 +152,7 @@ export default function Home() {
           </div>
         </aside>
 
-        {/* Main */}
         <main className="flex-1 overflow-y-auto p-6 bg-white">
-          {/* Categorias Mobile */}
-          <div className="md:hidden mb-4">
-            <div className="flex gap-2 overflow-x-auto hide-scrollbar pb-2">
-              {categories.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => setSelectedCategory(category.id)}
-                  className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                    selectedCategory === category.id
-                      ? "bg-orange-500 text-white"
-                      : "bg-zinc-100 text-black"
-                  }`}
-                >
-                  {category.name}
-                </button>
-              ))}
-            </div>
-          </div>
-
           <h1 className="font-bold text-3xl mb-6">
             {categories.find((c) => c.id === selectedCategory)?.name}
           </h1>
@@ -219,7 +165,6 @@ export default function Home() {
                   : product.product_stock;
 
                 const stockQty = stockData?.quantity ?? 0;
-                const isOutOfStock = stockQty <= 0;
 
                 return (
                   <button
@@ -230,7 +175,7 @@ export default function Home() {
                         name: product.name,
                         price: product.price,
                         image_url: product.image_url,
-                        stock: stockQty, // 🔥 valor real do banco
+                        stock: stockQty,
                       });
 
                       if (!success) {
@@ -242,13 +187,11 @@ export default function Home() {
                         });
                       }
                     }}
-                    className={`border rounded-xl overflow-hidden transition-all text-left
-                      ${
-                        isOutOfStock
-                          ? "opacity-50 cursor-not-allowed"
-                          : "hover:ring-2 hover:ring-orange-500"
-                      }
-                    `}
+                    className={`border rounded-xl overflow-hidden transition-all text-left ${
+                      stockQty <= 0
+                        ? "opacity-50 cursor-not-allowed"
+                        : "hover:ring-2 hover:ring-orange-500"
+                    }`}
                   >
                     <div className="aspect-square relative bg-orange-100">
                       <Image
@@ -270,12 +213,6 @@ export default function Home() {
                         </p>
                       )}
 
-                      {isOutOfStock && (
-                        <span className="inline-block mb-2 text-xs font-semibold text-red-600 bg-red-100 px-2 py-1 rounded">
-                          Sem estoque
-                        </span>
-                      )}
-
                       <p className="text-orange-600 font-bold text-lg">
                         R$ {product.price.toFixed(2).replace(".", ",")}
                       </p>
@@ -290,7 +227,6 @@ export default function Home() {
         </main>
       </div>
 
-      {/* Footer Cart */}
       <footer
         className="bg-orange-500 hover:bg-orange-600 transition-colors px-6 py-5 cursor-pointer"
         onClick={() => itemCount > 0 && setIsCartOpen(true)}
