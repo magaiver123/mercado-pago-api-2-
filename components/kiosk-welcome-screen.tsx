@@ -39,14 +39,36 @@ export function KioskWelcomeScreen() {
       .eq("active", true)
       .order("order", { ascending: true })
 
-    if (data && data.length > 0) {
+    if (data) {
       setSlides(data)
       setCurrentSlide(0)
     }
   }
 
+  /* ================= INITIAL LOAD ================= */
+
   useEffect(() => {
     loadSlides()
+  }, [])
+
+  /* ================= REALTIME ================= */
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("kiosk-slides-realtime")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "kiosk_slides" },
+        payload => {
+          console.log("📡 REALTIME EVENT:", payload)
+          loadSlides()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
   }, [])
 
   /* ================= SLIDE LOOP ================= */
