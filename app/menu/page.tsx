@@ -107,6 +107,7 @@ export default function Home() {
   ====================== */
   return (
     <div className="h-screen flex flex-col bg-white">
+      {/* HEADER */}
       <header className="bg-white border-b border-zinc-200 px-4 md:px-6 py-4 flex items-center justify-between">
         <div className="w-24 h-16 flex items-center justify-center">
           <Image
@@ -129,7 +130,27 @@ export default function Home() {
         </Button>
       </header>
 
+      {/* MOBILE CATEGORY SLIDER */}
+      <div className="md:hidden border-b border-zinc-200 bg-white">
+        <div className="flex gap-2 overflow-x-auto px-4 py-3 scrollbar-hide">
+          {categories.map((category) => (
+            <button
+              key={category.id}
+              onClick={() => setSelectedCategory(category.id)}
+              className={`flex-shrink-0 px-4 py-2 rounded-full font-medium whitespace-nowrap transition-colors ${
+                selectedCategory === category.id
+                  ? "bg-orange-500 text-white"
+                  : "bg-zinc-100 text-zinc-700"
+              }`}
+            >
+              {category.name}
+            </button>
+          ))}
+        </div>
+      </div>
+
       <div className="flex flex-1 overflow-hidden">
+        {/* DESKTOP SIDEBAR */}
         <aside className="hidden md:block w-60 bg-white border-r border-zinc-200 overflow-y-auto">
           <div className="p-6">
             <h2 className="font-bold text-2xl mb-6">MENU</h2>
@@ -152,6 +173,7 @@ export default function Home() {
           </div>
         </aside>
 
+        {/* PRODUCTS */}
         <main className="flex-1 overflow-y-auto p-6 bg-white">
           <h1 className="font-bold text-3xl mb-6">
             {categories.find((c) => c.id === selectedCategory)?.name}
@@ -227,6 +249,7 @@ export default function Home() {
         </main>
       </div>
 
+      {/* FOOTER */}
       <footer
         className="bg-orange-500 hover:bg-orange-600 transition-colors px-6 py-5 cursor-pointer"
         onClick={() => itemCount > 0 && setIsCartOpen(true)}
