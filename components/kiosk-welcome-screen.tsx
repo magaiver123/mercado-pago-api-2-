@@ -1,80 +1,121 @@
-"use client";
+"use client"
 
-import { useState, useEffect, useCallback } from "react";
-import Image from "next/image";
-import { useRouter } from "next/navigation";
+import { useState, useEffect, useCallback } from "react"
+import Image from "next/image"
+import { useRouter } from "next/navigation"
+import { createClient } from "@supabase/supabase-js"
 
-const promotionalSlides = [
-  {
-    id: 1,
-    src: "/refreshing-coca-cola-pepsi-soda-drinks-cans-bottle.jpg",
-    alt: "Promoção de Refrigerantes",
-    title: "Mate sua sede",
-    subtitle: "Refrigerantes gelados",
-  },
+/* ================= SUPABASE ================= */
 
-  {
-    id: 2,
-    src: "/refrescante.jpg",
-    alt: "Refrigerantes Gelados",
-    title: "Refrigerantes",
-    subtitle: "Bem Gelado!",
-  },
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
 
-];
+/* ================= TIPOS ================= */
+
+type Slide = {
+  id: string
+  image_url: string
+  duration: number
+}
+
+/* ================= COMPONENT ================= */
 
 export function KioskWelcomeScreen() {
-  const router = useRouter();
+  const router = useRouter()
 
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [nextSlideIndex, setNextSlideIndex] = useState(1);
-  const [isAnimating, setIsAnimating] = useState(false);
-  const [isPulsing, setIsPulsing] = useState(true);
+  const [slides, setSlides] = useState<Slide[]>([])
+  const [currentSlide, setCurrentSlide] = useState(0)
+  const [isAnimating, setIsAnimating] = useState(false)
+  const [isPulsing, setIsPulsing] = useState(true)
 
-  const goToNextSlide = useCallback(() => {
-    if (isAnimating) return;
-    setIsAnimating(true);
-    setNextSlideIndex((currentSlide + 1) % promotionalSlides.length);
+  /* ================= LOAD SLIDES ================= */
 
-    setTimeout(() => {
-      setCurrentSlide((prev) => (prev + 1) % promotionalSlides.length);
-      setIsAnimating(false);
-    }, 800);
-  }, [currentSlide, isAnimating]);
+  async function loadSlides() {
+    const { data } = await supabase
+      .from("kiosk_slides")
+      .select("id, image_url, duration")
+      .eq("active", true)
+      .order("order", { ascending: true })
+
+    if (data && data.length > 0) {
+      setSlides(data)
+      setCurrentSlide(0)
+    }
+  }
 
   useEffect(() => {
-    const interval = setInterval(goToNextSlide, 5000);
-    return () => clearInterval(interval);
-  }, [goToNextSlide]);
+    loadSlides()
+  }, [])
+
+  /* ================= SLIDE LOOP ================= */
+
+  const goToNextSlide = useCallback(() => {
+    if (isAnimating || slides.length <= 1) return
+
+    setIsAnimating(true)
+
+    setTimeout(() => {
+      setCurrentSlide(prev => (prev + 1) % slides.length)
+      setIsAnimating(false)
+    }, 800)
+  }, [isAnimating, slides.length])
+
+  useEffect(() => {
+    if (!slides.length) return
+
+    const duration = slides[currentSlide]?.duration ?? 5
+    const timer = setTimeout(goToNextSlide, duration * 1000)
+
+    return () => clearTimeout(timer)
+  }, [currentSlide, slides, goToNextSlide])
+
+  /* ================= PULSE ================= */
 
   useEffect(() => {
     const pulseInterval = setInterval(() => {
-      setIsPulsing((prev) => !prev);
-    }, 2000);
-    return () => clearInterval(pulseInterval);
-  }, []);
+      setIsPulsing(prev => !prev)
+    }, 2000)
+
+    return () => clearInterval(pulseInterval)
+  }, [])
+
+  /* ================= ACTION ================= */
 
   const handleStartOrder = () => {
-    router.push("/auth/login");
-  };
+    router.push("/auth/login")
+  }
 
-  const currentSlideData = promotionalSlides[currentSlide];
-  const nextSlideData = promotionalSlides[nextSlideIndex];
+  if (!slides.length) return null
+
+  const currentSlideData = slides[currentSlide]
+
+  const nextSlideIndex =
+    slides.length > 1
+      ? (currentSlide + 1) % slides.length
+      : currentSlide
+
+  const nextSlideData = slides[nextSlideIndex]
+
+  if (!currentSlideData?.image_url || !nextSlideData?.image_url) return null
 
   return (
     <div
       className="relative w-screen h-screen overflow-hidden bg-black cursor-pointer"
       onClick={handleStartOrder}
     >
+      {/* NEXT SLIDE (BACKGROUND) */}
       <div className="absolute inset-0">
         <Image
-          src={nextSlideData.src || "/placeholder.svg"}
-          alt={nextSlideData.alt}
+          src={nextSlideData.image_url}
+          alt="Slide"
           fill
           className="object-cover"
         />
       </div>
 
+      {/* CURRENT SLIDE (ANIMATED) */}
       <div
         className={`absolute inset-0 transition-all duration-800 ease-out ${
           isAnimating ? "opacity-0 scale-110" : "opacity-100 scale-100"
@@ -82,8 +123,8 @@ export function KioskWelcomeScreen() {
         style={{ transitionDuration: "800ms" }}
       >
         <Image
-          src={currentSlideData.src || "/placeholder.svg"}
-          alt={currentSlideData.alt}
+          src={currentSlideData.image_url}
+          alt="Slide"
           fill
           className="object-cover"
           priority
@@ -92,142 +133,16 @@ export function KioskWelcomeScreen() {
 
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-black/30" />
 
-      <div className="absolute inset-0 shadow-[inset_0_0_100px_rgba(249,115,22,0.15)]" />
-
-      <div
-        className={`
-    absolute left-4 top-1/2 -translate-y-1/2
-    md:left-6 md:top-1/4 md:translate-y-0
-    transition-all duration-500
-    ${isAnimating ? "opacity-0 -translate-x-8" : "opacity-100 translate-x-0"}
-  `}
-      >
-        <span className="mb-2 inline-block rounded-full bg-orange-500/90 px-3 py-1 text-xs font-medium uppercase tracking-wider text-white">
-          Destaque
-        </span>
-
-        <h2 className="text-2xl md:text-3xl lg:text-4xl font-black uppercase text-white">
-          {currentSlideData.title}
-        </h2>
-
-        <p className="mt-1 text-sm md:text-base text-white/90">
-          {currentSlideData.subtitle}
-        </p>
-      </div>
-
-      <div className="hidden md:flex absolute right-4 top-1/2 flex -translate-y-1/2 flex-col gap-2">
-        {promotionalSlides.map((_, index) => (
-          <button
-            key={index}
-            onClick={(e) => {
-              e.stopPropagation();
-              setCurrentSlide(index);
-            }}
-            className={`group relative h-2.5 w-2.5 transition-all duration-300 ${
-              index === currentSlide ? "scale-125" : "hover:scale-110"
-            }`}
-            aria-label={`Ir para slide ${index + 1}`}
-          >
-            <span
-              className={`absolute inset-0 rounded-full transition-all duration-300 ${
-                index === currentSlide
-                  ? "bg-orange-500 shadow-[0_0_12px_rgba(249,115,22,0.8)]"
-                  : "bg-white/40 group-hover:bg-white/70"
-              }`}
-            />
-            {index === currentSlide && (
-              <span className="absolute inset-0 animate-ping rounded-full bg-orange-500/50" />
-            )}
-          </button>
-        ))}
-      </div>
-
-      <div className="absolute left-0 top-0 h-1 w-full bg-black/30">
-        <div
-          className="h-full bg-gradient-to-r from-orange-400 to-orange-600 transition-all ease-linear"
-          style={{
-            width: `${((currentSlide + 1) / promotionalSlides.length) * 100}%`,
-            transitionDuration: isAnimating ? "800ms" : "0ms",
-          }}
-        />
-      </div>
-
-      <div className="absolute bottom-6 md:bottom-8 left-1/2 -translate-x-1/2">
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2">
         <button
           onClick={handleStartOrder}
-          className={`group relative overflow-hidden rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-10 py-4 md:px-8 md:py-3 text-base font-bold text-white shadow-[0_8px_30px_rgba(249,115,22,0.4)] transition-all duration-300 hover:scale-105 hover:shadow-[0_12px_40px_rgba(249,115,22,0.6)] active:scale-95 ${
+          className={`rounded-xl bg-orange-600 px-10 py-4 text-white font-bold transition ${
             isPulsing ? "animate-pulse" : ""
           }`}
-          style={{ animationDuration: "2s" }}
         >
-          <span className="absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/25 to-transparent transition-transform duration-1000 group-hover:translate-x-full" />
-          <span className="absolute inset-0 rounded-xl border-2 border-white/20" />
-
-          <span className="relative flex items-center gap-2">
-            Começar pedido
-            <svg
-              className="h-4 w-4 transition-transform duration-300 group-hover:translate-x-1"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2.5}
-                d="M13 7l5 5m0 0l-5 5m5-5H6"
-              />
-            </svg>
-          </span>
+          Começar pedido
         </button>
       </div>
-
-      <div className="absolute left-4 top-4 flex items-center gap-2">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/10 backdrop-blur-md">
-          <svg
-            className="h-5 w-5 text-orange-500"
-            fill="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" />
-          </svg>
-        </div>
-        <div className="text-white">
-          <p className="text-[10px] font-medium uppercase tracking-widest text-white/60">
-            Pegue, pague, pronto
-          </p>
-          <p className="text-sm font-bold">MR SMART</p>
-        </div>
-      </div>
-
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        {[...Array(6)].map((_, i) => (
-          <div
-            key={i}
-            className="absolute h-1 w-1 rounded-full bg-orange-500/30"
-            style={{
-              left: `${15 + i * 15}%`,
-              top: `${20 + (i % 3) * 25}%`,
-              animation: `float ${3 + i * 0.5}s ease-in-out infinite`,
-              animationDelay: `${i * 0.3}s`,
-            }}
-          />
-        ))}
-      </div>
-
-      <style jsx>{`
-        @keyframes float {
-          0%,
-          100% {
-            transform: translateY(0px) scale(1);
-            opacity: 0.3;
-          }
-          50% {
-            transform: translateY(-20px) scale(1.5);
-            opacity: 0.6;
-          }
-        }
-      `}</style>
     </div>
-  );
+  )
 }
