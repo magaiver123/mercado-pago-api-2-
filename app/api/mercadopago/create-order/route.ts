@@ -3,7 +3,6 @@ import { createClient } from "@/lib/supabase/server"
 
 const MERCADOPAGO_ACCESS_TOKEN = process.env.MERCADOPAGO_ACCESS_TOKEN
 const MERCADOPAGO_TERMINAL_ID = process.env.MERCADOPAGO_TERMINAL_ID
-const TOTEM_API_KEY = process.env.TOTEM_API_KEY
 
 interface OrderItem {
   productId: string
@@ -51,20 +50,10 @@ function isValidOrderRequest(body: any): body is OrderRequest {
 
 export async function POST(request: Request) {
   try {
-    /* ===============================
-       1) VALIDAR SISTEMA (TOTEM)
-    =============================== */
-    const totemKey = request.headers.get("x-totem-key")
-
-    if (!TOTEM_API_KEY || !totemKey || totemKey !== TOTEM_API_KEY) {
-      return NextResponse.json(
-        { error: "Sistema não autorizado" },
-        { status: 401 },
-      )
-    }
+  
 
     /* ===============================
-       2) VALIDAR CONFIGURAÇÕES
+       1) VALIDAR CONFIGURAÇÕES
     =============================== */
     if (!MERCADOPAGO_ACCESS_TOKEN || !MERCADOPAGO_TERMINAL_ID) {
       return NextResponse.json(
@@ -74,7 +63,7 @@ export async function POST(request: Request) {
     }
 
     /* ===============================
-       3) VALIDAR PAYLOAD
+       2) VALIDAR PAYLOAD
     =============================== */
     const body = await request.json()
 
@@ -88,7 +77,7 @@ export async function POST(request: Request) {
     const { externalReference, description, items, paymentMethodId } = body
 
     /* ===============================
-       4) CALCULAR TOTAL NO BACKEND
+       3) CALCULAR TOTAL NO BACKEND
     =============================== */
     const supabase = createClient()
 
@@ -119,7 +108,7 @@ export async function POST(request: Request) {
     }
 
     /* ===============================
-       5) CRIAR PEDIDO NO MERCADO PAGO
+       4) CRIAR PEDIDO NO MERCADO PAGO
     =============================== */
     const mappedPaymentMethod = paymentMethodId === "pix" ? "qr" : paymentMethodId
 

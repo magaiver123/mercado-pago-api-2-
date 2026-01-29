@@ -82,7 +82,6 @@ export default function CheckoutPage() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-totem-key": process.env.NEXT_PUBLIC_TOTEM_API_KEY!,
         },
         body: JSON.stringify({
           externalReference: `ORDER-${Date.now()}`,
