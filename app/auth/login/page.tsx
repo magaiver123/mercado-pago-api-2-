@@ -102,7 +102,6 @@ export default function LoginPage() {
                     id="cpf"
                     type="text"
                     inputMode="numeric"
-                    pattern="[0-9]*"
                     placeholder="000.000.000-00"
                     required
                     value={formatCPF(cpf)}
