@@ -64,9 +64,7 @@ export default function LoginPage() {
 
       router.push("/menu");
     } catch (error: unknown) {
-      setError(
-        error instanceof Error ? error.message : "Erro ao fazer login"
-      );
+      setError(error instanceof Error ? error.message : "Erro ao fazer login");
     } finally {
       setIsLoading(false);
     }
@@ -103,6 +101,8 @@ export default function LoginPage() {
                   <Input
                     id="cpf"
                     type="text"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
                     placeholder="000.000.000-00"
                     required
                     value={formatCPF(cpf)}
@@ -112,9 +112,7 @@ export default function LoginPage() {
                 </div>
 
                 {error && (
-                  <p className="text-sm text-orange-600 text-center">
-                    {error}
-                  </p>
+                  <p className="text-sm text-orange-600 text-center">{error}</p>
                 )}
 
                 <Button
