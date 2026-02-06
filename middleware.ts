@@ -6,7 +6,7 @@ const USERPROFILE_API = ["/api/userprofile"];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
-
+  
   // Permitir tela de ativação do totem
   if (pathname === "/activate-totem") {
     return NextResponse.next();
