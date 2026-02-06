@@ -6,16 +6,18 @@ export async function POST(req: NextRequest) {
   const supabase = await createClient()
 
   try {
-    const { device_id, activation_code } = await req.json()
+    const { activation_code } = await req.json()
 
-    if (!device_id || !activation_code) {
+    if (!activation_code) {
       return NextResponse.json(
-        { error: 'Dados obrigatórios faltando' },
+        { error: 'Código de ativação obrigatório' },
         { status: 400 }
       )
     }
 
-    // 1️⃣ Buscar totem inativo
+    // 🔑 device_id provisório (até integrar Fully corretamente)
+    const device_id = req.headers.get('user-agent') || 'UNKNOWN_DEVICE'
+
     const { data: totem, error: findError } = await supabase
       .from('totems')
       .select('*')
@@ -25,13 +27,12 @@ export async function POST(req: NextRequest) {
 
     if (findError || !totem) {
       return NextResponse.json(
-        { error: 'Código inválido ou já usado' },
+        { error: 'Código inválido ou já utilizado' },
         { status: 401 }
       )
     }
 
-    // 2️⃣ Ativar o totem
-    const { error: updateError } = await supabase
+    await supabase
       .from('totems')
       .update({
         device_id,
@@ -41,23 +42,15 @@ export async function POST(req: NextRequest) {
       })
       .eq('id', totem.id)
 
-    if (updateError) throw updateError
-
-    // 3️⃣ Criar sessão do totem
     const sessionId = randomUUID()
-    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30) // 30 dias
+    const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30)
 
-    const { error: sessionError } = await supabase
-      .from('totem_sessions')
-      .insert({
-        id: sessionId,
-        totem_id: totem.id,
-        expires_at: expiresAt.toISOString()
-      })
+    await supabase.from('totem_sessions').insert({
+      id: sessionId,
+      totem_id: totem.id,
+      expires_at: expiresAt.toISOString()
+    })
 
-    if (sessionError) throw sessionError
-
-    // 4️⃣ Setar cookie httpOnly
     const response = NextResponse.json({ success: true })
 
     response.cookies.set('TOTEM_SESSION', sessionId, {
@@ -70,10 +63,10 @@ export async function POST(req: NextRequest) {
 
     return response
 
-  } catch (error) {
-    console.error('Erro ao ativar totem:', error)
+  } catch (err) {
+    console.error(err)
     return NextResponse.json(
-      { error: 'Erro interno' },
+      { error: 'Erro interno ao ativar totem' },
       { status: 500 }
     )
   }
