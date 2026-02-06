@@ -34,11 +34,13 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 
-  // 4️⃣ Se for TOTEM → validar sessão
+  // 4️⃣ Se NÃO for USERPROFILE (rotas do TOTEM)
   if (!isUserProfileRoute) {
+    // 🔴 ALTERAÇÃO PRINCIPAL AQUI
+    // Antes: redirecionava para /userprofile
+    // Agora: redireciona para /activate-totem
     if (!totemSession) {
-      // Não é totem, bloqueia acesso ao sistema do totem
-      return NextResponse.redirect(new URL("/userprofile", req.url));
+      return NextResponse.redirect(new URL("/activate-totem", req.url));
     }
 
     // Validar sessão no banco
@@ -51,11 +53,11 @@ export async function middleware(req: NextRequest) {
       .maybeSingle();
 
     if (!session) {
-      return NextResponse.redirect(new URL("/userprofile", req.url));
+      return NextResponse.redirect(new URL("/activate-totem", req.url));
     }
 
     if (new Date(session.expires_at) < new Date()) {
-      return NextResponse.redirect(new URL("/userprofile", req.url));
+      return NextResponse.redirect(new URL("/activate-totem", req.url));
     }
 
     // Sessão válida → libera
