@@ -1,62 +1,45 @@
-import type React from "react"
-import type { Metadata, Viewport } from "next"
-import { Roboto } from "next/font/google"
-import { Analytics } from "@vercel/analytics/next"
-import "./globals.css"
-import { IdleProvider } from "@/components/IdleProvider"
-import { Toaster } from "@/components/ui/toaster"
+import type React from "react";
+import type { Metadata, Viewport } from "next";
+import { Poppins } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
+import "./globals.css";
+import { IdleProvider } from "@/components/IdleProvider";
+import { Toaster } from "@/components/ui/toaster";
 
-
-const roboto = Roboto({
+const poppins = Poppins({
   subsets: ["latin"],
-  weight: ["300", "400", "500", "700"],
+  weight: ["300", "400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
-  title: "Alabama Comidaria - Sistema de Pedidos",
-  description: "Sistema de pedidos integrado com Mercado Pago Point",
-  generator: "v0.app",
+  title: "Mr Smart Autoatendimento",
+  description: "Sistema de autoatendimento integrado com Mercado Pago Point",
   icons: {
-    icon: [
-      {
-        url: "/icon-light-32x32.png",
-        media: "(prefers-color-scheme: light)",
-      },
-      {
-        url: "/icon-dark-32x32.png",
-        media: "(prefers-color-scheme: dark)",
-      },
-      {
-        url: "/icon.svg",
-        type: "image/svg+xml",
-      },
-    ],
-    apple: "/apple-icon.png",
+    icon: "/logo.svg",
+    apple: "/logo.svg",
   },
-}
+};
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-}
+};
 
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode
+  children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className={`${roboto.className} antialiased`}>
+    <html lang="pt-BR">
+      <body className={`${poppins.className} antialiased`}>
         <IdleProvider>
           {children}
         </IdleProvider>
 
-          <Toaster />
-
+        <Toaster />
         <Analytics />
       </body>
     </html>
-  )
+  );
 }
-

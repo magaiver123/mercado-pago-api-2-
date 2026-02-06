@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation"
 import { clearAuthUser } from "@/lib/auth-store"
 import { useCartStore } from "@/lib/cart-store"
 
-const IDLE_TIME_MS = 30_000 // 10 segundos (depois você ajusta)
+const IDLE_TIME_MS = 300_000 // 10 segundos (depois você ajusta)
 
 const EXCLUDED_ROUTES = [
   "/checkout",

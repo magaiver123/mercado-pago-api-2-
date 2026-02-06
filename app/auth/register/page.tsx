@@ -1,166 +1,63 @@
 "use client";
 
-import type React from "react";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { QRCodeCanvas } from "qrcode.react";
 
-import { validateCPF, formatCPF } from "@/lib/cpf-validator";
-
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 
 export default function RegisterPage() {
-  const [cpf, setCpf] = useState("");
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter();
-
-  const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, "");
-    if (value.length <= 11) setCpf(value);
-  };
-
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, "");
-    if (value.length <= 11) setPhone(value);
-  };
-
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-
-    if (!validateCPF(cpf)) {
-      setError("CPF inválido");
-      setIsLoading(false);
-      return;
-    }
-
-    if (phone.length < 10) {
-      setError("Telefone inválido");
-      setIsLoading(false);
-      return;
-    }
-
-    if (password.length < 6) {
-      setError("A senha deve ter no mínimo 6 dígitos");
-      setIsLoading(false);
-      return;
-    }
-
-    try {
-      const response = await fetch("/api/auth/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          cpf,
-          name,
-          phone,
-          email,
-          password,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || "Erro ao cadastrar");
-        setIsLoading(false);
-        return;
-      }
-
-      router.push("/auth/login?registered=true");
-    } catch (error: unknown) {
-      setError(
-        error instanceof Error ? error.message : "Erro ao cadastrar"
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const qrUrl = "http://localhost:3000/userprofile/cadastro";
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-zinc-100 px-4 sm:px-6">
       <div className="w-full max-w-md">
         <Card className="bg-white border-zinc-200">
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl text-black">Cadastro</CardTitle>
+            <CardTitle className="text-2xl text-black">
+              Crie sua conta
+            </CardTitle>
             <p className="text-zinc-600 text-sm mt-2">
-              Preencha seus dados para cadastrar
+              Faça seu cadastro pelo celular para continuar
             </p>
           </CardHeader>
 
           <CardContent>
-            <form onSubmit={handleRegister}>
-              <div className="flex flex-col gap-4">
-                <div className="grid gap-2">
-                  <Label htmlFor="cpf">CPF</Label>
-                  <Input
-                    id="cpf"
-                    value={formatCPF(cpf)}
-                    onChange={handleCPFChange}
-                  />
-                </div>
+            <div className="flex flex-col gap-6 items-center text-center">
+              {/* INSTRUÇÕES */}
+              <ol className="text-sm text-zinc-700 space-y-2">
+                <li>
+                  <strong>1.</strong> Escaneie o QR Code com seu smartphone
+                </li>
+                <li>
+                  <strong>2.</strong> Preencha suas informações no site
+                </li>
+                <li>
+                  <strong>3.</strong> Cadastro realizado! Faça login e boas
+                  compras
+                </li>
+              </ol>
 
-                <div className="grid gap-2">
-                  <Label>Nome Completo</Label>
-                  <Input value={name} onChange={(e) => setName(e.target.value)} />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label>Telefone</Label>
-                  <Input
-                    value={phone.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3")}
-                    onChange={handlePhoneChange}
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label>Email</Label>
-                  <Input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-
-                <div className="grid gap-2">
-                  <Label>Senha</Label>
-                  <Input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                  />
-                </div>
-
-                {error && (
-                  <p className="text-sm text-red-600 text-center">{error}</p>
-                )}
-
-                <Button
-                  type="submit"
-                  className="w-full bg-orange-500 text-white"
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Cadastrando..." : "Cadastrar"}
-                </Button>
-
-                <Link href="/auth/login">
-                  <Button variant="ghost" className="w-full">
-                    Já tem cadastro? Fazer login
-                  </Button>
-                </Link>
+              {/* QR CODE */}
+              <div className="p-4 bg-zinc-100 rounded-lg">
+                <QRCodeCanvas
+                  value={qrUrl}
+                  size={180}
+                  bgColor="#ffffff"
+                  fgColor="#f97316"
+                  level="M"
+                />
               </div>
-            </form>
+
+              <p className="text-xs text-zinc-500 break-all">{qrUrl}</p>
+
+              {/* AÇÃO OPCIONAL */}
+              <Link href="/auth/login">
+                <Button variant="ghost" className="w-full">
+                  Já tenho cadastro
+                </Button>
+              </Link>
+            </div>
           </CardContent>
         </Card>
       </div>

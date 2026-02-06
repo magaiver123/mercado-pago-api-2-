@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { validateCPF } from "@/lib/cpf-validator";
+import bcrypt from "bcryptjs";
 
 export async function POST(request: Request) {
   let body: any = null;
@@ -89,14 +90,19 @@ export async function POST(request: Request) {
     }
 
     /* ===============================
-       4) CRIAR USUÁRIO
+       4) GERAR HASH DA SENHA
+    =============================== */
+    const password_hash = await bcrypt.hash(password, 10);
+
+    /* ===============================
+       5) CRIAR USUÁRIO
     =============================== */
     const { error } = await (await supabase).from("users").insert({
       cpf,
       name,
       phone,
       email,
-      password_hash: password,
+      password_hash,
       status: "ativo",
       created_at: new Date().toISOString(),
     });

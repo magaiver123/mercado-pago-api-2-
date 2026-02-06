@@ -21,7 +21,7 @@ function ProcessingContent() {
 
   const [status, setStatus] = useState<string>("processing");
   const [cancelling, setCancelling] = useState(false);
-  const [elapsedTime, setElapsedTime] = useState(0);
+  const [remainingTime, setRemainingTime] = useState<number>(60);
 
   const { clearCart } = useCartStore();
 
@@ -72,14 +72,13 @@ function ProcessingContent() {
     const maxWaitTimeSeconds = 60;
 
     let intervalId: NodeJS.Timeout;
-    let timeoutId: NodeJS.Timeout;
     let timerId: NodeJS.Timeout;
 
     const checkOrderStatus = async () => {
       try {
         const { data, error } = await supabase
           .from("orders")
-          .select("status")
+          .select("status, created_at")
           .eq("mercadopago_order_id", orderId)
           .single();
 
@@ -87,38 +86,36 @@ function ProcessingContent() {
 
         setStatus(data.status);
 
+        const createdAt = new Date(data.created_at).getTime();
+        const now = Date.now();
+
+        const elapsedSeconds = Math.floor((now - createdAt) / 1000);
+        const remaining = Math.max(maxWaitTimeSeconds - elapsedSeconds, 0);
+
+        setRemainingTime(remaining);
+
+        if (remaining <= 0) {
+          router.push("/payment/expired");
+          return;
+        }
+
         if (data.status === "processed") {
-          clearInterval(intervalId);
-          clearTimeout(timeoutId);
-          clearInterval(timerId);
           router.push("/payment/success");
         }
 
         if (data.status === "failed" || data.status === "error") {
-          clearInterval(intervalId);
-          clearTimeout(timeoutId);
-          clearInterval(timerId);
           router.push("/payment/failed");
         }
 
         if (data.status === "canceled" || data.status === "cancelled") {
-          clearInterval(intervalId);
-          clearTimeout(timeoutId);
-          clearInterval(timerId);
           router.push("/payment/canceled");
         }
 
         if (data.status === "expired") {
-          clearInterval(intervalId);
-          clearTimeout(timeoutId);
-          clearInterval(timerId);
           router.push("/payment/expired");
         }
 
         if (data.status === "action_required") {
-          clearInterval(intervalId);
-          clearTimeout(timeoutId);
-          clearInterval(timerId);
           router.push("/payment/action_required");
         }
       } catch (err) {
@@ -126,22 +123,16 @@ function ProcessingContent() {
       }
     };
 
+    // Atualiza o contador visual a cada segundo
     timerId = setInterval(() => {
-      setElapsedTime((prev) => prev + 1);
+      setRemainingTime((prev) => Math.max(prev - 1, 0));
     }, 1000);
-
-    timeoutId = setTimeout(() => {
-      clearInterval(intervalId);
-      clearInterval(timerId);
-      router.push("/payment/expired");
-    }, maxWaitTimeSeconds * 1000);
 
     checkOrderStatus();
     intervalId = setInterval(checkOrderStatus, 3000);
 
     return () => {
       clearInterval(intervalId);
-      clearTimeout(timeoutId);
       clearInterval(timerId);
     };
   }, [orderId, router]);
@@ -165,7 +156,7 @@ function ProcessingContent() {
           <div className="bg-white rounded-lg p-4 space-y-1 border border-orange-500">
             <p className="text-xs text-black/70">Status: {status}</p>
             <p className="text-xs text-black/70">
-              Tempo decorrido: {elapsedTime}s / 60s
+              Tempo restante: {remainingTime}s / 60s
             </p>
           </div>
 

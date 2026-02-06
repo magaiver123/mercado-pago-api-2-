@@ -35,6 +35,7 @@ export default function Home() {
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [addedProductId, setAddedProductId] = useState<string | null>(null);
 
   const { addItem, getTotal, getItemCount, clearCart } = useCartStore();
   const router = useRouter();
@@ -207,12 +208,20 @@ export default function Home() {
                             "Você já adicionou a quantidade máxima disponível deste produto.",
                           variant: "warning",
                         });
+                        return;
                       }
+
+                      setAddedProductId(product.id);
+                      setTimeout(() => setAddedProductId(null), 400);
                     }}
-                    className={`border rounded-xl overflow-hidden transition-all text-left ${
+                    className={`relative border rounded-xl overflow-hidden transition-all text-left ${
                       stockQty <= 0
                         ? "opacity-50 cursor-not-allowed"
                         : "hover:ring-2 hover:ring-orange-500"
+                    } ${
+                      addedProductId === product.id
+                        ? "ring-2 ring-orange-400 scale-[0.98]"
+                        : ""
                     }`}
                   >
                     <div className="aspect-square relative bg-orange-100">
@@ -222,6 +231,14 @@ export default function Home() {
                         fill
                         className="object-cover"
                       />
+
+                      {addedProductId === product.id && (
+                        <div className="absolute inset-0 bg-orange-500/20 flex items-center justify-center">
+                          <div className="w-14 h-14 rounded-full bg-orange-500 text-white flex items-center justify-center text-2xl font-bold animate-in zoom-in">
+                            ✓
+                          </div>
+                        </div>
+                      )}
                     </div>
 
                     <div className="p-4">
