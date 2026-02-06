@@ -4,6 +4,12 @@ import { createClient } from "@/lib/supabase/server";
 const USERPROFILE_PATHS = ["/userprofile"];
 const USERPROFILE_API = ["/api/userprofile"];
 
+// ✅ Rotas públicas do totem (ativação / diagnóstico)
+const PUBLIC_TOTEM_ROUTES = [
+  "/activate-totem",
+  "/test-fully"
+];
+
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
@@ -12,8 +18,8 @@ export async function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Permitir tela de ativação do totem
-  if (pathname === "/activate-totem") {
+  // ✅ Permitir rotas públicas do totem
+  if (PUBLIC_TOTEM_ROUTES.some(route => pathname.startsWith(route))) {
     return NextResponse.next();
   }
 
@@ -41,9 +47,6 @@ export async function middleware(req: NextRequest) {
 
   // 4️⃣ Se NÃO for USERPROFILE (rotas do TOTEM)
   if (!isUserProfileRoute) {
-    // 🔴 ALTERAÇÃO PRINCIPAL AQUI
-    // Antes: redirecionava para /userprofile
-    // Agora: redireciona para /activate-totem
     if (!totemSession) {
       return NextResponse.redirect(new URL("/activate-totem", req.url));
     }
