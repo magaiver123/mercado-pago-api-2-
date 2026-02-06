@@ -7,7 +7,7 @@ const USERPROFILE_API = ["/api/userprofile"];
 // ✅ Rotas públicas do totem (ativação / diagnóstico)
 const PUBLIC_TOTEM_ROUTES = [
   "/activate-totem",
-  "/teste-fully"
+  "/test-fully"
 ];
 
 export async function middleware(req: NextRequest) {
