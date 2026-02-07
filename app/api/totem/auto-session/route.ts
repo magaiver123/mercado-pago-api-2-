@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { randomUUID } from "crypto";
 
-export async function GET(req: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
     const supabase = await createClient();
 
@@ -19,12 +19,12 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // 2️⃣ Extrair device_id do User-Agent (fallback seguro)
-    const deviceId = userAgent;
+    // 2️⃣ Receber device_id REAL enviado pelo frontend
+    const { device_id } = await req.json();
 
-    if (!deviceId) {
+    if (!device_id) {
       return NextResponse.json(
-        { error: "Device ID não encontrado" },
+        { error: "Device ID não informado" },
         { status: 400 }
       );
     }
@@ -33,7 +33,7 @@ export async function GET(req: NextRequest) {
     const { data: totem } = await supabase
       .from("totems")
       .select("id")
-      .eq("device_id", deviceId)
+      .eq("device_id", device_id)
       .eq("status", "active")
       .maybeSingle();
 
@@ -60,13 +60,13 @@ export async function GET(req: NextRequest) {
 
     if (sessionError) throw sessionError;
 
-    // 5️⃣ Setar cookie novamente
+    // 5️⃣ Setar cookie novamente (compatível com Android WebView)
     const response = NextResponse.json({ success: true });
 
     response.cookies.set("TOTEM_SESSION", sessionId, {
       httpOnly: true,
       secure: true,
-      sameSite: "strict",
+      sameSite: "lax",
       path: "/",
       expires: expiresAt,
     });

@@ -1,34 +1,66 @@
-"use client"
+"use client";
 
-import { useState, useEffect, useCallback } from "react"
-import Image from "next/image"
-import { useRouter } from "next/navigation"
-import { createClient } from "@supabase/supabase-js"
+import { useState, useEffect, useCallback } from "react";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
+import { createClient } from "@supabase/supabase-js";
 
 /* ================= SUPABASE ================= */
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+);
 
 /* ================= TIPOS ================= */
 
 type Slide = {
-  id: string
-  image_url: string
-  duration: number
-}
+  id: string;
+  image_url: string;
+  duration: number;
+};
 
 /* ================= COMPONENT ================= */
 
 export function KioskWelcomeScreen() {
-  const router = useRouter()
+  const router = useRouter();
 
-  const [slides, setSlides] = useState<Slide[]>([])
-  const [currentSlide, setCurrentSlide] = useState(0)
-  const [isAnimating, setIsAnimating] = useState(false)
-  const [isPulsing, setIsPulsing] = useState(true)
+  // ================= AUTO RECUPERAÇÃO DE SESSÃO DO TOTEM =================
+
+  useEffect(() => {
+    // @ts-ignore
+    if (typeof window === "undefined" || !(window as any).fully?.getDeviceId) {
+      return;
+    }
+
+    // @ts-ignore
+    const deviceId = (window as any).fully.getDeviceId();
+
+    if (!deviceId) return;
+
+    // tenta recriar a sessão automaticamente
+    fetch("/api/totem/auto-session", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ device_id: deviceId }),
+    })
+      .then((res) => {
+        if (res.ok) {
+          // sessão recriada → recarrega para o middleware liberar
+          window.location.reload();
+        }
+      })
+      .catch(() => {
+        // silêncio total, middleware decide depois
+      });
+  }, []);
+
+  const [slides, setSlides] = useState<Slide[]>([]);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [isPulsing, setIsPulsing] = useState(true);
 
   /* ================= LOAD SLIDES ================= */
 
@@ -37,19 +69,19 @@ export function KioskWelcomeScreen() {
       .from("kiosk_slides")
       .select("id, image_url, duration")
       .eq("active", true)
-      .order("order", { ascending: true })
+      .order("order", { ascending: true });
 
     if (data) {
-      setSlides(data)
-      setCurrentSlide(0)
+      setSlides(data);
+      setCurrentSlide(0);
     }
   }
 
   /* ================= INITIAL LOAD ================= */
 
   useEffect(() => {
-    loadSlides()
-  }, [])
+    loadSlides();
+  }, []);
 
   /* ================= REALTIME ================= */
 
@@ -59,68 +91,66 @@ export function KioskWelcomeScreen() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "kiosk_slides" },
-        payload => {
-          console.log("📡 REALTIME EVENT:", payload)
-          loadSlides()
+        (payload) => {
+          console.log("📡 REALTIME EVENT:", payload);
+          loadSlides();
         }
       )
-      .subscribe()
+      .subscribe();
 
     return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [])
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   /* ================= SLIDE LOOP ================= */
 
   const goToNextSlide = useCallback(() => {
-    if (isAnimating || slides.length <= 1) return
+    if (isAnimating || slides.length <= 1) return;
 
-    setIsAnimating(true)
+    setIsAnimating(true);
 
     setTimeout(() => {
-      setCurrentSlide(prev => (prev + 1) % slides.length)
-      setIsAnimating(false)
-    }, 800)
-  }, [isAnimating, slides.length])
+      setCurrentSlide((prev) => (prev + 1) % slides.length);
+      setIsAnimating(false);
+    }, 800);
+  }, [isAnimating, slides.length]);
 
   useEffect(() => {
-    if (!slides.length) return
+    if (!slides.length) return;
 
-    const duration = slides[currentSlide]?.duration ?? 5
-    const timer = setTimeout(goToNextSlide, duration * 1000)
+    const duration = slides[currentSlide]?.duration ?? 5;
+    const timer = setTimeout(goToNextSlide, duration * 1000);
 
-    return () => clearTimeout(timer)
-  }, [currentSlide, slides, goToNextSlide])
+    return () => clearTimeout(timer);
+  }, [currentSlide, slides, goToNextSlide]);
 
   /* ================= PULSE ================= */
 
   useEffect(() => {
     const pulseInterval = setInterval(() => {
-      setIsPulsing(prev => !prev)
-    }, 2000)
+      setIsPulsing((prev) => !prev);
+    }, 2000);
 
-    return () => clearInterval(pulseInterval)
-  }, [])
+    return () => clearInterval(pulseInterval);
+  }, []);
 
   /* ================= ACTION ================= */
 
   const handleStartOrder = () => {
-    router.push("/auth/login")
-  }
+    router.push("/auth/login");
+  };
 
-  if (!slides.length) return null
+  if (!slides.length) return null;
 
-  const currentSlideData = slides[currentSlide]
+  const currentSlideData = slides[currentSlide];
 
   const nextSlideIndex =
-    slides.length > 1
-      ? (currentSlide + 1) % slides.length
-      : currentSlide
+    slides.length > 1 ? (currentSlide + 1) % slides.length : currentSlide;
 
-  const nextSlideData = slides[nextSlideIndex]
+  const nextSlideData = slides[nextSlideIndex];
 
-  if (!currentSlideData?.image_url || !nextSlideData?.image_url) return null
+  if (!currentSlideData?.image_url || !nextSlideData?.image_url) return null;
 
   return (
     <div
@@ -166,5 +196,5 @@ export function KioskWelcomeScreen() {
         </button>
       </div>
     </div>
-  )
+  );
 }
