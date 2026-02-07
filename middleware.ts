@@ -47,11 +47,33 @@ export async function middleware(req: NextRequest) {
 
   // 4️⃣ Se NÃO for USERPROFILE (rotas do TOTEM)
   if (!isUserProfileRoute) {
+
+    // 🔁 NOVO PASSO — tentar auto-recuperar sessão pelo device_id
     if (!totemSession) {
+      try {
+        const autoSessionRes = await fetch(
+          new URL("/api/totem/auto-session", req.url),
+          {
+            headers: {
+              // repassa headers do Fully (user-agent etc)
+              "user-agent": req.headers.get("user-agent") || ""
+            }
+          }
+        );
+
+        if (autoSessionRes.ok) {
+          // backend já setou o cookie
+          return NextResponse.next();
+        }
+      } catch (err) {
+        console.error("Erro ao tentar auto-session do totem:", err);
+      }
+
+      // ❌ Se não conseguiu recuperar → ativação
       return NextResponse.redirect(new URL("/activate-totem", req.url));
     }
 
-    // Validar sessão no banco
+    // Validar sessão existente no banco
     const supabase = await createClient();
 
     const { data: session } = await supabase
