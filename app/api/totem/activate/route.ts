@@ -6,17 +6,14 @@ export async function POST(req: NextRequest) {
   const supabase = await createClient()
 
   try {
-    const { activation_code } = await req.json()
+    const { activation_code, device_id } = await req.json()
 
-    if (!activation_code) {
+    if (!activation_code || !device_id) {
       return NextResponse.json(
-        { error: 'Código de ativação obrigatório' },
+        { error: 'Dispositivo inválido ou código ausente' },
         { status: 400 }
       )
     }
-
-    // 🔑 device_id provisório (até integrar Fully corretamente)
-    const device_id = req.headers.get('user-agent') || 'UNKNOWN_DEVICE'
 
     const { data: totem, error: findError } = await supabase
       .from('totems')
