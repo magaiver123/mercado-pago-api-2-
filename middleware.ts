@@ -5,10 +5,7 @@ const USERPROFILE_PATHS = ["/userprofile"];
 const USERPROFILE_API = ["/api/userprofile"];
 
 // ✅ Rotas públicas do totem (ativação / diagnóstico)
-const PUBLIC_TOTEM_ROUTES = [
-  "/activate-totem",
-  "/test-fully"
-];
+const PUBLIC_TOTEM_ROUTES = ["/activate-totem", "/test-fully"];
 
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
@@ -19,7 +16,7 @@ export async function middleware(req: NextRequest) {
   }
 
   // ✅ Permitir rotas públicas do totem
-  if (PUBLIC_TOTEM_ROUTES.some(route => pathname.startsWith(route))) {
+  if (PUBLIC_TOTEM_ROUTES.some((route) => pathname.startsWith(route))) {
     return NextResponse.next();
   }
 
@@ -47,50 +44,65 @@ export async function middleware(req: NextRequest) {
 
   // 4️⃣ Se NÃO for USERPROFILE (rotas do TOTEM)
   if (!isUserProfileRoute) {
-
-    // 🔁 NOVO PASSO — tentar auto-recuperar sessão pelo device_id
+    // 🔁 Tentar auto-recuperar sessão se não houver cookie
     if (!totemSession) {
       try {
         const autoSessionRes = await fetch(
           new URL("/api/totem/auto-session", req.url),
           {
             headers: {
-              // repassa headers do Fully (user-agent etc)
-              "user-agent": req.headers.get("user-agent") || ""
-            }
+              "user-agent": req.headers.get("user-agent") || "",
+            },
           }
         );
 
         if (autoSessionRes.ok) {
-          // backend já setou o cookie
           return NextResponse.next();
         }
       } catch (err) {
         console.error("Erro ao tentar auto-session do totem:", err);
       }
 
-      // ❌ Se não conseguiu recuperar → ativação
       return NextResponse.redirect(new URL("/activate-totem", req.url));
     }
 
-    // Validar sessão existente no banco
+    // 🔎 Validar sessão + status do totem
     const supabase = await createClient();
 
     const { data: session } = await supabase
       .from("totem_sessions")
-      .select("id, expires_at")
+      .select(
+        `
+        id,
+        expires_at,
+        totems (
+          id,
+          status
+        )
+      `
+      )
       .eq("id", totemSession)
       .maybeSingle();
 
-    if (!session) {
+    // Sessão inexistente
+    if (!session || !session.totems) {
       return NextResponse.redirect(new URL("/activate-totem", req.url));
     }
 
+    // 🔴 Totem desativado → bloqueia IMEDIATAMENTE
+
+    const totem = session.totems[0];
+
+    if (!totem || totem.status !== "active") {
+      return NextResponse.redirect(new URL("/activate-totem", req.url));
+    }
+
+    // Sessão expirada
     if (new Date(session.expires_at) < new Date()) {
       return NextResponse.redirect(new URL("/activate-totem", req.url));
     }
 
-    // Sessão válida → libera
+    // ✅ Sessão válida + totem ativo
     return NextResponse.next();
   }
 
