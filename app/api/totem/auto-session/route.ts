@@ -44,12 +44,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 🔴 NOVO PASSO — remover sessões antigas desse totem
-    await supabase
-      .from("totem_sessions")
-      .delete()
-      .eq("totem_id", totem.id);
-
     // 4️⃣ Criar nova sessão
     const sessionId = randomUUID();
     const expiresAt = new Date(
