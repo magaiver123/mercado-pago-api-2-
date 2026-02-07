@@ -27,34 +27,30 @@ export function KioskWelcomeScreen() {
 
   // ================= AUTO RECUPERAÇÃO DE SESSÃO DO TOTEM =================
 
+  // ================= AUTO RECUPERAÇÃO DE SESSÃO DO TOTEM =================
+
   useEffect(() => {
+    // evita rodar mais de uma vez
+    if (typeof window === "undefined") return;
+    if ((window as any).__TOTEM_AUTO_SESSION_TRIED__) return;
+    (window as any).__TOTEM_AUTO_SESSION_TRIED__ = true;
+
     // @ts-ignore
-    if (typeof window === "undefined" || !(window as any).fully?.getDeviceId) {
-      return;
-    }
+    if (!(window as any).fully?.getDeviceId) return;
 
     // @ts-ignore
     const deviceId = (window as any).fully.getDeviceId();
-
     if (!deviceId) return;
 
-    // tenta recriar a sessão automaticamente
     fetch("/api/totem/auto-session", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ device_id: deviceId }),
-    })
-      .then((res) => {
-        if (res.ok) {
-          // sessão recriada → recarrega para o middleware liberar
-          window.location.reload();
-        }
-      })
-      .catch(() => {
-        // silêncio total, middleware decide depois
-      });
+    }).catch(() => {
+      // silêncio total, middleware decide depois
+    });
   }, []);
 
   const [slides, setSlides] = useState<Slide[]>([]);
