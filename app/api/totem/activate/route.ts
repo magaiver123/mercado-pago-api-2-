@@ -6,9 +6,23 @@ export async function POST(req: NextRequest) {
   const supabase = await createClient()
 
   try {
-    const { activation_code, device_id } = await req.json()
+    const body = await req.json()
+
+    console.log("🔑 RAW BODY:", body)
+    console.log("🔑 RAW activation_code:", body?.activation_code)
+    console.log("🔑 RAW device_id:", body?.device_id)
+    console.log("🔑 activation_code TYPE:", typeof body?.activation_code)
+    console.log("🔑 activation_code LENGTH:", body?.activation_code?.length)
+    console.log("🔑 activation_code JSON:", JSON.stringify(body?.activation_code))
+
+    const activation_code = body?.activation_code?.trim()
+    const device_id = body?.device_id?.trim()
+
+    console.log("🧹 CLEAN activation_code:", activation_code)
+    console.log("🧹 CLEAN activation_code LENGTH:", activation_code?.length)
 
     if (!activation_code || !device_id) {
+      console.log("❌ FALHA: código ou device_id ausente após trim")
       return NextResponse.json(
         { error: 'Dispositivo inválido ou código ausente' },
         { status: 400 }
@@ -22,7 +36,11 @@ export async function POST(req: NextRequest) {
       .eq('status', 'inactive')
       .single()
 
+    console.log("🔎 QUERY RESULT:", totem)
+    console.log("❌ QUERY ERROR:", findError)
+
     if (findError || !totem) {
+      console.log("❌ TOTEM NÃO ENCONTRADO PARA O CÓDIGO:", activation_code)
       return NextResponse.json(
         { error: 'Código inválido ou já utilizado' },
         { status: 401 }
@@ -58,10 +76,16 @@ export async function POST(req: NextRequest) {
       expires: expiresAt
     })
 
+    console.log("✅ TOTEM ATIVADO COM SUCESSO:", {
+      totem_id: totem.id,
+      device_id,
+      sessionId
+    })
+
     return response
 
   } catch (err) {
-    console.error(err)
+    console.error("🔥 ERRO GERAL NA ATIVAÇÃO:", err)
     return NextResponse.json(
       { error: 'Erro interno ao ativar totem' },
       { status: 500 }
