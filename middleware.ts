@@ -56,26 +56,8 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/userprofile", req.url));
   }
 
-  // 6️⃣ Sem cookie → tentar auto-session
+  // 6️⃣ Sem cookie → vai para ativação
   if (!totemSession) {
-    try {
-      const autoSessionRes = await fetch(
-        new URL("/api/totem/auto-session", req.url),
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (autoSessionRes.ok) {
-        return NextResponse.next();
-      }
-    } catch (err) {
-      console.error("Erro ao tentar auto-session do totem:", err);
-    }
-
     return NextResponse.redirect(new URL("/activate-totem", req.url));
   }
 
