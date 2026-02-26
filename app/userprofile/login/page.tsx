@@ -8,6 +8,7 @@ import { ShoppingCart, Mail, Lock, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { setUserprofileAuthUser } from "@/lib/userprofile-auth-store";
 
 type Mode = "login" | "forgot-email" | "forgot-code" | "forgot-reset";
 
@@ -68,6 +69,14 @@ export default function LoginPage() {
         setError(data.error || "Erro ao fazer login");
         return;
       }
+
+      setUserprofileAuthUser({
+        id: data.id,
+        name: data.name ?? null,
+        cpf: data.cpf ?? null,
+        phone: data.phone ?? null,
+        email: data.email,
+      });
 
       router.push("/userprofile/perfil");
     } catch {
@@ -209,7 +218,7 @@ export default function LoginPage() {
       <header className="bg-card border-b border-border">
         <div className="container mx-auto px-4 py-4 flex items-center gap-4">
           <Link
-            href="/"
+            href="/userprofile"
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />
@@ -366,3 +375,4 @@ export default function LoginPage() {
     </main>
   );
 }
+

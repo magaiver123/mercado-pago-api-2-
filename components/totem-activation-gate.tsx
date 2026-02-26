@@ -5,35 +5,44 @@ import { usePathname, useRouter } from "next/navigation";
 import { getFullyDeviceId } from "@/lib/totem-device";
 
 const ACTIVATION_PATH = "/totem/activation";
+const USERPROFILE_PREFIX = "/userprofile";
 
 type GateState = {
   isLoading: boolean;
   allowed: boolean;
+  hasDevice: boolean;
 };
 
 export function TotemActivationGate({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const isUserprofileRoute = pathname.startsWith(USERPROFILE_PREFIX);
 
   const [state, setState] = useState<GateState>({
     isLoading: true,
     allowed: false,
+    hasDevice: false,
   });
 
   useEffect(() => {
     let isCancelled = false;
 
     async function validateTotem() {
+      if (isUserprofileRoute) {
+        if (!isCancelled) {
+          setState({ isLoading: false, allowed: true, hasDevice: true });
+        }
+        return;
+      }
+
       const deviceId = getFullyDeviceId();
 
       if (!deviceId) {
         if (!isCancelled) {
-          setState({ isLoading: false, allowed: false });
+          setState({ isLoading: false, allowed: false, hasDevice: false });
         }
 
-        if (pathname !== ACTIVATION_PATH) {
-          router.replace(ACTIVATION_PATH);
-        }
+        router.replace(USERPROFILE_PREFIX);
         return;
       }
 
@@ -48,7 +57,7 @@ export function TotemActivationGate({ children }: { children: ReactNode }) {
 
         if (!response.ok) {
           if (!isCancelled) {
-            setState({ isLoading: false, allowed: false });
+            setState({ isLoading: false, allowed: false, hasDevice: true });
           }
 
           if (pathname !== ACTIVATION_PATH) {
@@ -60,7 +69,7 @@ export function TotemActivationGate({ children }: { children: ReactNode }) {
         const allowed = data?.allowed === true;
 
         if (!isCancelled) {
-          setState({ isLoading: false, allowed });
+          setState({ isLoading: false, allowed, hasDevice: true });
         }
 
         if (allowed && pathname === ACTIVATION_PATH) {
@@ -73,11 +82,7 @@ export function TotemActivationGate({ children }: { children: ReactNode }) {
         }
       } catch {
         if (!isCancelled) {
-          setState({ isLoading: false, allowed: false });
-        }
-
-        if (pathname !== ACTIVATION_PATH) {
-          router.replace(ACTIVATION_PATH);
+          setState({ isLoading: false, allowed: false, hasDevice: true });
         }
       }
     }
@@ -87,17 +92,18 @@ export function TotemActivationGate({ children }: { children: ReactNode }) {
     return () => {
       isCancelled = true;
     };
-  }, [pathname, router]);
+  }, [isUserprofileRoute, pathname, router]);
+
+  if (isUserprofileRoute) {
+    return <>{children}</>;
+  }
 
   if (state.isLoading) {
-    return (
-      <div className="min-h-screen w-full bg-zinc-100 flex items-center justify-center p-6">
-        <div className="text-center">
-          <p className="text-black text-lg font-semibold">Validando totem...</p>
-          <p className="text-zinc-600 text-sm mt-2">Aguarde alguns segundos.</p>
-        </div>
-      </div>
-    );
+    return null;
+  }
+
+  if (!state.hasDevice) {
+    return null;
   }
 
   if (!state.allowed && pathname !== ACTIVATION_PATH) {

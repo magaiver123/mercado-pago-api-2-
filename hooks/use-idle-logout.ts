@@ -22,6 +22,10 @@ export function useIdleLogout() {
   const timerRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
+    if (pathname.startsWith("/userprofile")) {
+      return
+    }
+
     // ⛔ não roda nas rotas excluídas
     if (EXCLUDED_ROUTES.some((route) => pathname.startsWith(route))) {
       return

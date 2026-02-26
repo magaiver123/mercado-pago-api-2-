@@ -90,7 +90,7 @@ export default function CadastroPage() {
       {/* Header */}
       <header className="bg-card border-b border-border">
         <div className="container mx-auto px-4 py-4 flex items-center gap-4">
-          <Link href="/" className="text-muted-foreground hover:text-foreground transition-colors">
+          <Link href="/userprofile" className="text-muted-foreground hover:text-foreground transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div className="flex items-center gap-2">
@@ -207,3 +207,4 @@ export default function CadastroPage() {
     </main>
   )
 }
+
