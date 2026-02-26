@@ -5,6 +5,7 @@ import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { IdleProvider } from "@/components/IdleProvider";
 import { Toaster } from "@/components/ui/toaster";
+import { TotemActivationGate } from "@/components/totem-activation-gate";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -33,9 +34,9 @@ export default function RootLayout({
   return (
     <html lang="pt-BR">
       <body className={`${poppins.className} antialiased`}>
-        <IdleProvider>
-          {children}
-        </IdleProvider>
+        <TotemActivationGate>
+          <IdleProvider>{children}</IdleProvider>
+        </TotemActivationGate>
 
         <Toaster />
         <Analytics />

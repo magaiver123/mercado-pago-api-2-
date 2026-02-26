@@ -8,6 +8,7 @@ import { useCartStore } from "@/lib/cart-store"
 const IDLE_TIME_MS = 300_000 // 10 segundos (depois você ajusta)
 
 const EXCLUDED_ROUTES = [
+  "/totem/activation",
   "/checkout",
   "/payment/processing",
   "/payment/success",
