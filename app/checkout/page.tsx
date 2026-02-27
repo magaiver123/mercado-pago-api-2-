@@ -15,7 +15,6 @@ import {
 import { useCartStore } from "@/lib/cart-store";
 import Image from "next/image";
 import { getAuthUser } from "@/lib/auth-store";
-import { createClient } from "@/lib/supabase/client";
 
 type PaymentMethod = "credit_card" | "debit_card" | "pix";
 
@@ -28,7 +27,7 @@ export default function CheckoutPage() {
   const [error, setError] = useState<string | null>(null);
   const [showConflict, setShowConflict] = useState(false);
   const router = useRouter();
-  const { items, getTotal, clearCart } = useCartStore();
+  const { items, getTotal } = useCartStore();
 
   const total = getTotal();
 
@@ -107,15 +106,19 @@ export default function CheckoutPage() {
         throw new Error(data.error || "Erro ao criar pedido");
       }
 
-      const supabase = createClient();
-      await supabase.from("orders").insert({
-        user_id: user.id,
-        mercadopago_order_id: data.orderId,
-        total_amount: total,
-        payment_method: selectedMethod,
-        status: "pending",
-        items,
-      });
+      await fetch("/api/orders/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          mercadopagoOrderId: data.orderId,
+          totalAmount: total,
+          paymentMethod: selectedMethod,
+          items,
+        }),
+      }).catch(() => null);
 
       router.push(`/payment/processing?orderId=${data.orderId}`);
     } catch (err) {

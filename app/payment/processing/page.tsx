@@ -12,7 +12,6 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/lib/cart-store";
-import { createClient } from "@/lib/supabase/client";
 
 function ProcessingContent() {
   const router = useRouter();
@@ -22,6 +21,7 @@ function ProcessingContent() {
   const [status, setStatus] = useState<string>("processing");
   const [cancelling, setCancelling] = useState(false);
   const [remainingTime, setRemainingTime] = useState<number>(60);
+  const [createdAt, setCreatedAt] = useState<string | null>(null);
 
   const { clearCart } = useCartStore();
 
@@ -68,7 +68,6 @@ function ProcessingContent() {
       return;
     }
 
-    const supabase = createClient();
     const maxWaitTimeSeconds = 60;
 
     let intervalId: NodeJS.Timeout;
@@ -76,20 +75,31 @@ function ProcessingContent() {
 
     const checkOrderStatus = async () => {
       try {
-        const { data, error } = await supabase
-          .from("orders")
-          .select("status, created_at")
-          .eq("mercadopago_order_id", orderId)
-          .single();
+        const response = await fetch(
+          `/api/mercadopago/order-status?orderId=${orderId}`,
+          {
+            cache: "no-store",
+          }
+        );
 
-        if (error || !data) return;
+        if (!response.ok) return;
+
+        const data = await response.json().catch(() => null);
+        if (!data || typeof data.status !== "string") return;
 
         setStatus(data.status);
 
-        const createdAt = new Date(data.created_at).getTime();
-        const now = Date.now();
+        const nextCreatedAt =
+          typeof data.createdAt === "string" ? data.createdAt : createdAt;
+        if (!createdAt && typeof data.createdAt === "string") {
+          setCreatedAt(data.createdAt);
+        }
 
-        const elapsedSeconds = Math.floor((now - createdAt) / 1000);
+        if (!nextCreatedAt) return;
+
+        const createdAtTs = new Date(nextCreatedAt).getTime();
+        const now = Date.now();
+        const elapsedSeconds = Math.floor((now - createdAtTs) / 1000);
         const remaining = Math.max(maxWaitTimeSeconds - elapsedSeconds, 0);
 
         setRemainingTime(remaining);
@@ -119,7 +129,7 @@ function ProcessingContent() {
           router.push("/payment/action_required");
         }
       } catch (err) {
-        console.error("[processing] Error checking order in DB:", err);
+        console.error("[processing] Error checking order:", err);
       }
     };
 
@@ -135,7 +145,7 @@ function ProcessingContent() {
       clearInterval(intervalId);
       clearInterval(timerId);
     };
-  }, [orderId, router]);
+  }, [orderId, router, createdAt]);
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-white p-4">
