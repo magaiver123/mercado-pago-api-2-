@@ -1,4 +1,0 @@
-import { getMenuProductsRoute } from "@/api/routes/menu-routes"
-
-export const dynamic = "force-dynamic"
-export const GET = getMenuProductsRoute
