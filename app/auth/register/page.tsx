@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 export default function RegisterPage() {
-  const qrUrl = "http://localhost:3000/userprofile/cadastro";
+  const qrUrl = "https://mercado-pago-api-2-biqx.vercel.app/userprofile";
 
   return (
     <div className="flex min-h-screen w-full items-center justify-center bg-zinc-100 px-4 sm:px-6">
