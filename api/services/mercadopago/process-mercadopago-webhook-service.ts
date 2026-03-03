@@ -1,16 +1,10 @@
 import { getRepositoryFactory } from "@/api/repositories/repository-factory"
-
-const statusMap: Record<string, string> = {
-  "order.processed": "processed",
-  "order.canceled": "canceled",
-  "order.failed": "failed",
-  "order.expired": "expired",
-  "order.refunded": "refunded",
-  "order.action_required": "action_required",
-}
+import { logger } from "@/api/utils/logger"
+import { mapWebhookActionToStatus } from "@/lib/mercadopago-point-status"
 
 interface WebhookBody {
   action?: string
+  mercadopagoOrderId?: string
   data?: {
     id?: string
   }
@@ -18,14 +12,14 @@ interface WebhookBody {
 
 export async function processMercadoPagoWebhookService(body: WebhookBody) {
   const action = body?.action
-  const mercadopagoOrderId = body?.data?.id
+  const mercadopagoOrderId = body?.mercadopagoOrderId ?? body?.data?.id
 
   if (!action || !mercadopagoOrderId) {
     return { ok: true }
   }
 
   const repositories = getRepositoryFactory()
-  const newStatus = statusMap[action] ?? null
+  const newStatus = mapWebhookActionToStatus(action)
 
   if (!newStatus) {
     return { ok: true }
@@ -34,6 +28,11 @@ export async function processMercadoPagoWebhookService(body: WebhookBody) {
   if (newStatus === "processed") {
     const order = await repositories.order.findForStockProcessing(mercadopagoOrderId)
     if (!order || order.stock_processed) {
+      if (!order) {
+        logger.warn("Webhook recebido para pedido nao encontrado localmente", { mercadopagoOrderId, action })
+      } else {
+        await repositories.order.updateStatusByMercadopagoOrderId(mercadopagoOrderId, newStatus)
+      }
       return { ok: true }
     }
 
@@ -42,7 +41,7 @@ export async function processMercadoPagoWebhookService(body: WebhookBody) {
     for (const item of items) {
       if (typeof item !== "object" || item === null) continue
 
-      const productId = (item as { id?: unknown }).id
+      const productId = (item as { id?: unknown; productId?: unknown }).id ?? (item as { productId?: unknown }).productId
       const quantity = (item as { quantity?: unknown }).quantity
 
       if (typeof productId !== "string" || typeof quantity !== "number") continue
@@ -71,4 +70,3 @@ export async function processMercadoPagoWebhookService(body: WebhookBody) {
   await repositories.order.updateStatusByMercadopagoOrderId(mercadopagoOrderId, newStatus)
   return { ok: true }
 }
-

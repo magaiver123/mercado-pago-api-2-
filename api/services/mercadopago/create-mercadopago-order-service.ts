@@ -1,17 +1,24 @@
 import { AppError } from "@/api/utils/app-error"
-import { getMercadoPagoEnv } from "@/api/config/env"
 import { getRepositoryFactory } from "@/api/repositories/repository-factory"
+import { isValidUUID } from "@/api/utils/validators"
+import { getMercadoPagoPointEnv } from "@/api/config/env"
+import { mercadoPagoApiRequest } from "@/api/services/mercadopago/mercadopago-api"
+import { logger } from "@/api/utils/logger"
+import { normalizePointOrderStatus } from "@/lib/mercadopago-point-status"
 
 interface OrderItem {
   productId: string
   quantity: number
 }
 
+type AllowedPaymentMethodId = "pix" | "credit_card" | "debit_card"
+
 interface CreateOrderInput {
+  userId: string
   externalReference: string
   description: string
   items: OrderItem[]
-  paymentMethodId?: string
+  paymentMethodId: AllowedPaymentMethodId
 }
 
 function isValidOrderRequest(body: unknown): body is CreateOrderInput {
@@ -19,7 +26,9 @@ function isValidOrderRequest(body: unknown): body is CreateOrderInput {
 
   const value = body as Partial<CreateOrderInput>
 
+  if (typeof value.userId !== "string" || !isValidUUID(value.userId)) return false
   if (typeof value.externalReference !== "string" || value.externalReference.trim() === "") return false
+  if (!/^[a-zA-Z0-9_-]{1,64}$/.test(value.externalReference)) return false
   if (typeof value.description !== "string" || value.description.trim() === "") return false
   if (!Array.isArray(value.items) || value.items.length === 0) return false
 
@@ -29,7 +38,8 @@ function isValidOrderRequest(body: unknown): body is CreateOrderInput {
     if (typeof item.quantity !== "number" || item.quantity <= 0) return false
   }
 
-  if (value.paymentMethodId && typeof value.paymentMethodId !== "string") return false
+  const allowedMethods: AllowedPaymentMethodId[] = ["pix", "credit_card", "debit_card"]
+  if (!value.paymentMethodId || !allowedMethods.includes(value.paymentMethodId as AllowedPaymentMethodId)) return false
 
   return true
 }
@@ -39,9 +49,14 @@ export async function createMercadoPagoOrderService(body: unknown) {
     throw new AppError("Invalid request payload", 400)
   }
 
-  const { accessToken, terminalId } = getMercadoPagoEnv()
-  const { externalReference, description, items, paymentMethodId } = body
+  const { terminalId } = getMercadoPagoPointEnv()
+  const { userId, externalReference, description, items, paymentMethodId } = body
   const repositories = getRepositoryFactory()
+
+  const user = await repositories.user.findActiveById(userId)
+  if (!user) {
+    throw new AppError("Usuario nao encontrado", 404)
+  }
 
   let totalAmount = 0
   for (const item of items) {
@@ -78,32 +93,62 @@ export async function createMercadoPagoOrderService(body: unknown) {
     },
   }
 
-  const idempotencyKey = `order-${externalReference}`
-  const response = await fetch("https://api.mercadopago.com/v1/orders", {
+  const idempotencyKey = `order-${externalReference}-${userId}`
+  const createResponse = await mercadoPagoApiRequest<{
+    id: string
+    status: string
+    external_reference: string
+  }>({
+    path: "/v1/orders",
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${accessToken}`,
-      "X-Idempotency-Key": idempotencyKey,
-    },
-    body: JSON.stringify(orderPayload),
+    idempotencyKey,
+    body: orderPayload,
   })
 
-  const data = await response.json().catch(() => null)
+  const createErrorPayload = createResponse.raw as { errors?: Array<{ code?: string }> } | null
 
-  if (!response.ok) {
-    if (data?.errors?.[0]?.code === "already_queued_order_on_terminal") {
+  if (!createResponse.ok) {
+    if (createErrorPayload?.errors?.[0]?.code === "already_queued_order_on_terminal") {
       throw new AppError("Ja existe um pedido pendente no terminal. Cancele manualmente no terminal e tente novamente.", 409)
     }
 
-    throw new AppError(data?.message || "Erro ao criar pedido no Mercado Pago", response.status)
+    throw new AppError(createResponse.message || "Erro ao criar pedido no Mercado Pago", createResponse.status)
+  }
+
+  const createdOrder = createResponse.data
+  if (!createdOrder?.id) {
+    throw new AppError("Resposta invalida ao criar pedido no Mercado Pago", 502)
+  }
+
+  try {
+    await repositories.order.registerOrder({
+      userId,
+      mercadopagoOrderId: createdOrder.id,
+      totalAmount,
+      paymentMethod: paymentMethodId,
+      status: normalizePointOrderStatus(createdOrder.status),
+      items: items.map((item) => ({
+        id: item.productId,
+        quantity: item.quantity,
+      })),
+    })
+  } catch (error) {
+    logger.error("Falha ao registrar pedido local apos criacao no Mercado Pago", { error, orderId: createdOrder.id })
+
+    await mercadoPagoApiRequest({
+      path: `/v1/orders/${createdOrder.id}/cancel`,
+      method: "POST",
+      idempotencyKey: `rollback-cancel-${createdOrder.id}`,
+    }).catch(() => null)
+
+    throw new AppError("Nao foi possivel concluir o pedido no sistema. Tente novamente.", 500)
   }
 
   return {
-    orderId: data.id,
-    status: data.status,
-    externalReference: data.external_reference,
+    orderId: createdOrder.id,
+    status: normalizePointOrderStatus(createdOrder.status),
+    externalReference: createdOrder.external_reference,
     totalAmount: totalAmount.toFixed(2),
+    paymentMethod: paymentMethodId,
   }
 }
-

@@ -1,14 +1,16 @@
 export type OrderStatus =
   | "pending"
   | "processing"
+  | "created"
+  | "at_terminal"
   | "processed"
   | "failed"
   | "error"
   | "canceled"
-  | "cancelled"
   | "expired"
   | "action_required"
   | "refunded"
+  | "unknown"
 
 export interface Category {
   id: string
@@ -78,4 +80,3 @@ export interface KioskSlide {
   image_url: string
   duration: number
 }
-

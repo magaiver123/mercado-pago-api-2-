@@ -5,6 +5,7 @@ type EnvKey =
   | "SUPABASE_SERVICE_ROLE_KEY"
   | "MERCADOPAGO_ACCESS_TOKEN"
   | "MERCADOPAGO_TERMINAL_ID"
+  | "MERCADOPAGO_WEBHOOK_SECRET"
   | "RESEND_API_KEY"
   | "EMAIL_FROM"
 
@@ -29,10 +30,22 @@ export function getDatabaseEnv() {
   }
 }
 
-export function getMercadoPagoEnv() {
+export function getMercadoPagoApiEnv() {
+  return {
+    accessToken: requireEnv("MERCADOPAGO_ACCESS_TOKEN"),
+  }
+}
+
+export function getMercadoPagoPointEnv() {
   return {
     accessToken: requireEnv("MERCADOPAGO_ACCESS_TOKEN"),
     terminalId: requireEnv("MERCADOPAGO_TERMINAL_ID"),
+  }
+}
+
+export function getMercadoPagoWebhookEnv() {
+  return {
+    webhookSecret: requireEnv("MERCADOPAGO_WEBHOOK_SECRET"),
   }
 }
 
@@ -42,4 +55,3 @@ export function getEmailEnv() {
     emailFrom: requireEnv("EMAIL_FROM"),
   }
 }
-

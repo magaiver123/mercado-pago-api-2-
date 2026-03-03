@@ -83,6 +83,7 @@ export default function CheckoutPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          userId: user.id,
           externalReference: `ORDER-${Date.now()}`,
           description: items
             .map((item) => `${item.quantity}x ${item.name}`)
@@ -105,20 +106,6 @@ export default function CheckoutPage() {
         }
         throw new Error(data.error || "Erro ao criar pedido");
       }
-
-      await fetch("/api/orders/register", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          userId: user.id,
-          mercadopagoOrderId: data.orderId,
-          totalAmount: total,
-          paymentMethod: selectedMethod,
-          items,
-        }),
-      }).catch(() => null);
 
       router.push(`/payment/processing?orderId=${data.orderId}`);
     } catch (err) {

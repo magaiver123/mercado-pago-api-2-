@@ -1,48 +1,34 @@
 import { AppError } from "@/api/utils/app-error"
-import { getMercadoPagoEnv } from "@/api/config/env"
+import { getRepositoryFactory } from "@/api/repositories/repository-factory"
+import { mercadoPagoApiRequest } from "@/api/services/mercadopago/mercadopago-api"
+import { normalizePointOrderStatus } from "@/lib/mercadopago-point-status"
 
 export async function cancelMercadoPagoOrderService(orderId: string | null) {
   if (!orderId) {
     throw new AppError("Order ID e obrigatorio", 400)
   }
 
-  const { accessToken } = getMercadoPagoEnv()
-
-  const response = await fetch(`https://api.mercadopago.com/v1/orders/${orderId}`, {
-    method: "DELETE",
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-      "Content-Type": "application/json",
-    },
+  const cancelResponse = await mercadoPagoApiRequest<{
+    id?: string
+    status?: string
+  }>({
+    path: `/v1/orders/${orderId}/cancel`,
+    method: "POST",
+    idempotencyKey: `cancel-${orderId}-${Date.now()}`,
   })
 
-  if (!response.ok) {
-    const contentType = response.headers.get("content-type")
-    let details: unknown = null
-
-    if (contentType && contentType.includes("application/json")) {
-      details = await response.json().catch(() => null)
-    } else {
-      details = { message: await response.text().catch(() => "") }
-    }
-
-    if (response.status === 500) {
-      return {
-        ok: false as const,
-        status: response.status,
-        body: {
-          error: "O pedido nao pode ser cancelado no momento. Ele pode ja estar sendo processado no terminal.",
-          details,
-        },
-      }
-    }
-
+  if (!cancelResponse.ok) {
     return {
       ok: false as const,
-      status: response.status,
-      body: { error: "Erro ao cancelar pedido", details },
+      status: cancelResponse.status,
+      body: {
+        error: cancelResponse.message || "Erro ao cancelar pedido",
+        details: cancelResponse.raw,
+      },
     }
   }
+
+  await getRepositoryFactory().order.updateStatusByMercadopagoOrderId(orderId, normalizePointOrderStatus(cancelResponse.data?.status ?? "canceled"))
 
   return {
     ok: true as const,
@@ -50,7 +36,7 @@ export async function cancelMercadoPagoOrderService(orderId: string | null) {
     body: {
       success: true,
       message: "Pedido cancelado com sucesso",
+      status: normalizePointOrderStatus(cancelResponse.data?.status ?? "canceled"),
     },
   }
 }
-

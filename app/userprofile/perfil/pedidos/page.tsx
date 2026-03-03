@@ -9,6 +9,7 @@ import {
   getUserprofileAuthUser,
   type UserprofileUser,
 } from "@/lib/userprofile-auth-store";
+import { normalizePointOrderStatus } from "@/lib/mercadopago-point-status";
 
 type Order = {
   id: string;
@@ -20,16 +21,17 @@ type Order = {
 };
 
 function getStatusPresentation(status: string) {
-  const key = status.toLowerCase();
+  const key = normalizePointOrderStatus(status);
 
   switch (key) {
     case "processed":
       return { label: "Concluido", className: "bg-green-100 text-green-700" };
+    case "created":
+    case "at_terminal":
     case "pending":
     case "processing":
       return { label: "Pendente", className: "bg-yellow-100 text-yellow-700" };
     case "canceled":
-    case "cancelled":
       return { label: "Cancelado", className: "bg-red-100 text-red-700" };
     case "failed":
     case "error":
