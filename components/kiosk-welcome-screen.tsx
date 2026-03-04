@@ -19,10 +19,18 @@ export function KioskWelcomeScreen() {
   const [isPulsing, setIsPulsing] = useState(true)
 
   async function loadSlides() {
-    const response = await fetch("/api/kiosk/slides", { cache: "no-store" })
+    const deviceId = localStorage.getItem("kiosk_device_id")
+
+    if (!deviceId) return
+
+    const response = await fetch(`/api/kiosk/slides?device_id=${deviceId}`, {
+      cache: "no-store",
+    })
+
     if (!response.ok) return
 
     const data = await response.json().catch(() => null)
+
     if (!Array.isArray(data)) return
 
     setSlides(data)
@@ -36,9 +44,7 @@ export function KioskWelcomeScreen() {
       loadSlides()
     }, 5000)
 
-    return () => {
-      clearInterval(pollingId)
-    }
+    return () => clearInterval(pollingId)
   }, [])
 
   const goToNextSlide = useCallback(() => {
@@ -76,13 +82,17 @@ export function KioskWelcomeScreen() {
   if (!slides.length) return null
 
   const currentSlideData = slides[currentSlide]
-  const nextSlideIndex = slides.length > 1 ? (currentSlide + 1) % slides.length : currentSlide
+  const nextSlideIndex =
+    slides.length > 1 ? (currentSlide + 1) % slides.length : currentSlide
   const nextSlideData = slides[nextSlideIndex]
 
   if (!currentSlideData?.image_url || !nextSlideData?.image_url) return null
 
   return (
-    <div className="relative w-screen h-screen overflow-hidden bg-black cursor-pointer" onClick={handleStartOrder}>
+    <div
+      className="relative w-screen h-screen overflow-hidden bg-black cursor-pointer"
+      onClick={handleStartOrder}
+    >
       <div className="absolute inset-0">
         <Image src={nextSlideData.image_url} alt="Slide" fill className="object-cover" />
       </div>
@@ -91,9 +101,14 @@ export function KioskWelcomeScreen() {
         className={`absolute inset-0 transition-all duration-800 ease-out ${
           isAnimating ? "opacity-0 scale-110" : "opacity-100 scale-100"
         }`}
-        style={{ transitionDuration: "800ms" }}
       >
-        <Image src={currentSlideData.image_url} alt="Slide" fill className="object-cover" priority />
+        <Image
+          src={currentSlideData.image_url}
+          alt="Slide"
+          fill
+          className="object-cover"
+          priority
+        />
       </div>
 
       <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-black/30" />
@@ -101,12 +116,13 @@ export function KioskWelcomeScreen() {
       <div className="absolute bottom-6 left-1/2 -translate-x-1/2">
         <button
           onClick={handleStartOrder}
-          className={`rounded-xl bg-orange-600 px-10 py-4 text-white font-bold transition ${isPulsing ? "animate-pulse" : ""}`}
+          className={`rounded-xl bg-orange-600 px-10 py-4 text-white font-bold transition ${
+            isPulsing ? "animate-pulse" : ""
+          }`}
         >
-          Comecar pedido
+          Começar pedido
         </button>
       </div>
     </div>
   )
 }
-
