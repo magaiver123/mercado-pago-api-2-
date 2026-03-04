@@ -36,6 +36,11 @@ export async function processMercadoPagoWebhookService(body: WebhookBody) {
       return { ok: true }
     }
 
+    if (!order.store_id) {
+      logger.warn("Webhook sem store_id no pedido", { mercadopagoOrderId, action })
+      return { ok: true }
+    }
+
     const items = Array.isArray(order.items) ? order.items : []
 
     for (const item of items) {
@@ -47,15 +52,16 @@ export async function processMercadoPagoWebhookService(body: WebhookBody) {
       if (typeof productId !== "string" || typeof quantity !== "number") continue
       if (quantity <= 0) continue
 
-      const currentStock = await repositories.stock.getCurrentStock(productId)
+      const currentStock = await repositories.stock.getCurrentStock(order.store_id, productId)
       if (typeof currentStock !== "number") continue
 
       const newQuantity = currentStock - quantity
       if (newQuantity < 0) continue
 
       const now = new Date().toISOString()
-      await repositories.stock.updateStock(productId, newQuantity, now)
+      await repositories.stock.updateStock(order.store_id, productId, newQuantity, now)
       await repositories.stock.createMovement({
+        storeId: order.store_id,
         productId,
         quantity,
         reason: `Venda - Pedido ${mercadopagoOrderId}`,

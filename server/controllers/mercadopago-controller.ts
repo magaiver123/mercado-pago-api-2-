@@ -6,8 +6,11 @@ import { processMercadoPagoWebhookService } from "@/api/services/mercadopago/pro
 import { getOrderStatusService } from "@/api/services/orders/get-order-status-service"
 import { getMercadoPagoWebhookEnv } from "@/api/config/env"
 import { validateMercadoPagoWebhookSignatureService } from "@/api/services/mercadopago/validate-mercadopago-webhook-signature-service"
+import { requireStoreContextFromRequest } from "@/api/utils/store-context"
 
 export async function createMercadoPagoOrderController(request: Request) {
+  const storeContext = requireStoreContextFromRequest(request)
+
   let body: any = null
   try {
     body = await request.json()
@@ -15,7 +18,7 @@ export async function createMercadoPagoOrderController(request: Request) {
     return NextResponse.json({ error: "Invalid request payload" }, { status: 400 })
   }
 
-  const data = await createMercadoPagoOrderService(body)
+  const data = await createMercadoPagoOrderService(body, storeContext.storeId)
   return NextResponse.json(data)
 }
 

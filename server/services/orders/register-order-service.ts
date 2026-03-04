@@ -3,6 +3,7 @@ import { isValidUUID } from "@/api/utils/validators"
 import { getRepositoryFactory } from "@/api/repositories/repository-factory"
 
 interface RegisterOrderInput {
+  storeId: string
   userId: string
   mercadopagoOrderId: string
   totalAmount: number
@@ -12,6 +13,8 @@ interface RegisterOrderInput {
 
 export async function registerOrderService(input: RegisterOrderInput) {
   if (
+    !input.storeId ||
+    !isValidUUID(input.storeId) ||
     !input.userId ||
     !isValidUUID(input.userId) ||
     !input.mercadopagoOrderId ||
@@ -24,6 +27,7 @@ export async function registerOrderService(input: RegisterOrderInput) {
   }
 
   await getRepositoryFactory().order.registerOrder({
+    storeId: input.storeId,
     userId: input.userId,
     mercadopagoOrderId: input.mercadopagoOrderId,
     totalAmount: input.totalAmount,
@@ -34,4 +38,3 @@ export async function registerOrderService(input: RegisterOrderInput) {
 
   return { success: true }
 }
-

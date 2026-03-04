@@ -3,6 +3,7 @@ import { AppError } from "@/api/utils/app-error"
 type EnvKey =
   | "NEXT_PUBLIC_SUPABASE_URL"
   | "SUPABASE_SERVICE_ROLE_KEY"
+  | "STORE_CONTEXT_SECRET"
   | "MERCADOPAGO_ACCESS_TOKEN"
   | "MERCADOPAGO_TERMINAL_ID"
   | "MERCADOPAGO_WEBHOOK_SECRET"
@@ -53,5 +54,11 @@ export function getEmailEnv() {
   return {
     resendApiKey: requireEnv("RESEND_API_KEY"),
     emailFrom: requireEnv("EMAIL_FROM"),
+  }
+}
+
+export function getStoreContextEnv() {
+  return {
+    secret: readEnv("STORE_CONTEXT_SECRET") ?? requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
   }
 }

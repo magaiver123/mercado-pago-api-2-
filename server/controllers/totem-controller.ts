@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server"
 import { activateTotemService } from "@/api/services/totem/activate-totem-service"
 import { validateTotemStatusService } from "@/api/services/totem/validate-totem-status-service"
+import {
+  clearStoreContextCookie,
+  setStoreContextCookie,
+} from "@/api/utils/store-context"
 
 export async function activateTotemController(request: Request) {
   let body: any = null
@@ -27,6 +31,16 @@ export async function totemStatusController(request: Request) {
   }
 
   const data = await validateTotemStatusService(body?.deviceId)
-  return NextResponse.json(data)
-}
+  const response = NextResponse.json(data)
 
+  if (data.allowed === true && data.storeId && typeof body?.deviceId === "string") {
+    setStoreContextCookie(response, {
+      storeId: data.storeId,
+      deviceId: body.deviceId,
+    })
+  } else {
+    clearStoreContextCookie(response)
+  }
+
+  return response
+}

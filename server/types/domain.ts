@@ -58,6 +58,7 @@ export interface PasswordResetRecord {
 export interface OrderRecord {
   id: string
   order_number: number | null
+  store_id: string
   user_id: string
   mercadopago_order_id: string
   total_amount: number
@@ -70,6 +71,7 @@ export interface OrderRecord {
 
 export interface TotemRecord {
   id: string
+  store_id: string
   status: string
   activation_code: string | null
   device_id: string | null

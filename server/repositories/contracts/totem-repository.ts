@@ -8,9 +8,8 @@ export interface ActivateTotemInput {
 }
 
 export interface TotemRepository {
-  findByDeviceId(deviceId: string): Promise<Pick<TotemRecord, "id" | "status"> | null>
+  findByDeviceId(deviceId: string): Promise<Pick<TotemRecord, "id" | "status" | "store_id"> | null>
   findByActivationCode(activationCode: string): Promise<Pick<TotemRecord, "id" | "status" | "device_id"> | null>
   activate(input: ActivateTotemInput): Promise<"ok" | "conflict" | "not_updated">
   updateLastSeenActive(totemId: string, now: string): Promise<boolean>
 }
-

@@ -44,9 +44,12 @@ function isValidOrderRequest(body: unknown): body is CreateOrderInput {
   return true
 }
 
-export async function createMercadoPagoOrderService(body: unknown) {
+export async function createMercadoPagoOrderService(body: unknown, storeId: string) {
   if (!isValidOrderRequest(body)) {
     throw new AppError("Invalid request payload", 400)
+  }
+  if (!isValidUUID(storeId)) {
+    throw new AppError("Store context is invalid", 400)
   }
 
   const { terminalId } = getMercadoPagoPointEnv()
@@ -59,11 +62,21 @@ export async function createMercadoPagoOrderService(body: unknown) {
   }
 
   let totalAmount = 0
+  const orderItems: Array<{ id: string; name: string; quantity: number; price: number }> = []
+
   for (const item of items) {
-    const product = await repositories.menu.getActiveProductById(item.productId)
+    const product = await repositories.menu.getActiveProductById(storeId, item.productId)
     if (!product || !product.is_active) {
       throw new AppError("Produto invalido ou inativo", 400)
     }
+
+    orderItems.push({
+      id: product.id,
+      name: product.name,
+      quantity: item.quantity,
+      price: product.price,
+    })
+
     totalAmount += product.price * item.quantity
   }
 
@@ -122,15 +135,13 @@ export async function createMercadoPagoOrderService(body: unknown) {
 
   try {
     await repositories.order.registerOrder({
+      storeId,
       userId,
       mercadopagoOrderId: createdOrder.id,
       totalAmount,
       paymentMethod: paymentMethodId,
       status: normalizePointOrderStatus(createdOrder.status),
-      items: items.map((item) => ({
-        id: item.productId,
-        quantity: item.quantity,
-      })),
+      items: orderItems,
     })
   } catch (error) {
     logger.error("Falha ao registrar pedido local apos criacao no Mercado Pago", { error, orderId: createdOrder.id })

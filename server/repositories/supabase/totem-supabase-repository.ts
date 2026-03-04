@@ -4,10 +4,10 @@ import { ActivateTotemInput, TotemRepository } from "@/api/repositories/contract
 import { TotemRecord } from "@/api/types/domain"
 
 export class TotemSupabaseRepository extends BaseSupabaseRepository implements TotemRepository {
-  async findByDeviceId(deviceId: string): Promise<Pick<TotemRecord, "id" | "status"> | null> {
-    const { data, error } = await this.db.from("totems").select("id, status").eq("device_id", deviceId).maybeSingle()
+  async findByDeviceId(deviceId: string): Promise<Pick<TotemRecord, "id" | "status" | "store_id"> | null> {
+    const { data, error } = await this.db.from("totems").select("id, status, store_id").eq("device_id", deviceId).maybeSingle()
     if (error) throw new AppError("Erro ao validar dispositivo", 500)
-    return (data as Pick<TotemRecord, "id" | "status"> | null) ?? null
+    return (data as Pick<TotemRecord, "id" | "status" | "store_id"> | null) ?? null
   }
 
   async findByActivationCode(activationCode: string): Promise<Pick<TotemRecord, "id" | "status" | "device_id"> | null> {
@@ -65,4 +65,3 @@ export class TotemSupabaseRepository extends BaseSupabaseRepository implements T
     return !error
   }
 }
-

@@ -6,6 +6,7 @@ import { OrderRepository, RegisterOrderInput } from "@/api/repositories/contract
 export class OrderSupabaseRepository extends BaseSupabaseRepository implements OrderRepository {
   async registerOrder(input: RegisterOrderInput): Promise<void> {
     await this.db.from("orders").insert({
+      store_id: input.storeId,
       user_id: input.userId,
       mercadopago_order_id: input.mercadopagoOrderId,
       total_amount: input.totalAmount,
@@ -35,15 +36,15 @@ export class OrderSupabaseRepository extends BaseSupabaseRepository implements O
       [])
   }
 
-  async findForStockProcessing(mercadopagoOrderId: string): Promise<Pick<OrderRecord, "id" | "items" | "stock_processed"> | null> {
+  async findForStockProcessing(mercadopagoOrderId: string): Promise<Pick<OrderRecord, "id" | "store_id" | "items" | "stock_processed"> | null> {
     const { data, error } = await this.db
       .from("orders")
-      .select("id, items, stock_processed")
+      .select("id, store_id, items, stock_processed")
       .eq("mercadopago_order_id", mercadopagoOrderId)
       .single()
 
     if (error || !data) return null
-    return data as Pick<OrderRecord, "id" | "items" | "stock_processed">
+    return data as Pick<OrderRecord, "id" | "store_id" | "items" | "stock_processed">
   }
 
   async updateStatusByMercadopagoOrderId(mercadopagoOrderId: string, status: string): Promise<void> {
@@ -60,4 +61,3 @@ export class OrderSupabaseRepository extends BaseSupabaseRepository implements O
       .eq("id", orderId)
   }
 }
-

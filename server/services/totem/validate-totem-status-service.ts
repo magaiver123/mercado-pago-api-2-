@@ -19,6 +19,10 @@ export async function validateTotemStatusService(deviceIdValue: unknown) {
     return { allowed: false, reason: "inactive" as const }
   }
 
+  if (!totem.store_id) {
+    return { allowed: false, reason: "missing_store" as const }
+  }
+
   const now = new Date().toISOString()
   const updated = await repositories.totem.updateLastSeenActive(totem.id, now)
 
@@ -26,6 +30,5 @@ export async function validateTotemStatusService(deviceIdValue: unknown) {
     throw new AppError("Erro ao atualizar ultimo acesso do totem", 500)
   }
 
-  return { allowed: true, reason: "active" as const }
+  return { allowed: true, reason: "active" as const, storeId: totem.store_id }
 }
-

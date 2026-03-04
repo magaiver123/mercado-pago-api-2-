@@ -1,6 +1,5 @@
 import { KioskSlide } from "@/api/types/domain"
 
 export interface KioskSlideRepository {
-  listActiveSlides(): Promise<KioskSlide[]>
+  listActiveSlides(storeId: string): Promise<KioskSlide[]>
 }
-

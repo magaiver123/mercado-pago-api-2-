@@ -4,10 +4,11 @@ import { BaseSupabaseRepository } from "@/api/repositories/supabase/base-supabas
 import { KioskSlideRepository } from "@/api/repositories/contracts/kiosk-slide-repository"
 
 export class KioskSlideSupabaseRepository extends BaseSupabaseRepository implements KioskSlideRepository {
-  async listActiveSlides(): Promise<KioskSlide[]> {
+  async listActiveSlides(storeId: string): Promise<KioskSlide[]> {
     const { data, error } = await this.db
       .from("kiosk_slides")
       .select("id, image_url, duration")
+      .eq("store_id", storeId)
       .eq("active", true)
       .order("order", { ascending: true })
 
@@ -15,4 +16,3 @@ export class KioskSlideSupabaseRepository extends BaseSupabaseRepository impleme
     return (data as KioskSlide[] | null) ?? []
   }
 }
-
