@@ -103,8 +103,8 @@ export default function LoginPage() {
               <Image
                 src="/logo.svg"
                 alt="Logo Mr Smart"
-                width={120}
-                height={120}
+                width={250}
+                height={250}
                 className="h-[4.4rem] w-[4.4rem] object-contain"
                 priority
               />
