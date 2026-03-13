@@ -105,7 +105,7 @@ export default function LoginPage() {
                 alt="Logo Mr Smart"
                 width={250}
                 height={250}
-                className="h-[4.4rem] w-[4.4rem] object-contain"
+                className="h-[7rem] w-[7rem] object-contain"
                 priority
               />
             </div>
