@@ -139,7 +139,7 @@ export function KioskWelcomeScreen() {
 
           <div className="flex w-full flex-col items-center gap-3">
             <p className="text-xs font-semibold uppercase tracking-[0.32em] text-zinc-400">
-              Formas de pagamento aceitas
+              FORMAS DE PAGAMENTO ACEITAS
             </p>
 
             <div className="w-full max-w-[58rem] rounded-[1.5rem] border border-zinc-200/90 bg-zinc-50 px-3 py-2 shadow-[0_10px_28px_rgba(15,23,42,0.06)]">
