@@ -168,9 +168,9 @@ export function KioskWelcomeScreen() {
               FORMAS DE PAGAMENTO ACEITAS
             </p>
 
-            <div className="w-full max-w-[48rem] rounded-full border border-zinc-200/80 bg-zinc-50/80 px-5 py-3 shadow-[0_4px_12px_rgba(15,23,42,0.05)]">
+            <div className="w-full max-w-[48rem]">
               <Image
-                src="/payment-methods-strip.svg"
+                src="/payment-methods-captura.png"
                 alt="Visa, Mastercard, Hipercard, Hiper, American Express, Diners Club, Cabal, Elo, Pluxee, Alelo, Pix, QR Code, Apple Pay, Google Pay e Samsung Pay"
                 width={1680}
                 height={120}
