@@ -103,8 +103,8 @@ export default function LoginPage() {
               <Image
                 src="/logo.svg"
                 alt="Logo Mr Smart"
-                width={88}
-                height={88}
+                width={120}
+                height={120}
                 className="h-[4.4rem] w-[4.4rem] object-contain"
                 priority
               />
@@ -117,7 +117,7 @@ export default function LoginPage() {
         <form onSubmit={handleLogin} className="flex w-full flex-1 flex-col items-center justify-center">
           <div className="w-full max-w-md text-center">
             <h1 className="text-[2.05rem] font-bold leading-[1.05] tracking-[-0.02em] text-zinc-900 sm:text-[2.35rem]">
-              Que bom ter voce por aqui
+              Que bom ter você por aqui
             </h1>
             <p className="mt-3 text-base font-medium text-zinc-700 sm:text-lg">
               Informe seu CPF para iniciar sua compra
@@ -130,7 +130,7 @@ export default function LoginPage() {
               type="text"
               inputMode="numeric"
               autoComplete="off"
-              placeholder="DIGITA SEU CPF"
+              placeholder="DIGITE SEU CPF"
               required
               value={formattedCpf}
               onChange={handleCPFChange}
