@@ -92,19 +92,19 @@ export function KioskWelcomeScreen() {
       className="relative flex h-screen w-screen cursor-pointer select-none flex-col overflow-hidden bg-white text-zinc-950"
       onClick={handleStartOrder}
     >
-      <section className="relative min-h-0 flex-[7.9] overflow-hidden bg-zinc-950">
+      <section className="relative min-h-0 flex-1 overflow-hidden bg-white px-6 pt-8">
         <div className="absolute inset-0">
           <Image
             src={nextSlideData.image_url}
             alt="Slide promocional"
             fill
-            className="object-cover object-center"
+            className="object-contain object-center"
           />
         </div>
 
         <div
           className={`absolute inset-0 transition-all duration-800 ease-out ${
-            isAnimating ? "scale-105 opacity-0" : "scale-100 opacity-100"
+            isAnimating ? "scale-[1.02] opacity-0" : "scale-100 opacity-100"
           }`}
           style={{ transitionDuration: "800ms" }}
         >
@@ -112,37 +112,32 @@ export function KioskWelcomeScreen() {
             src={currentSlideData.image_url}
             alt="Slide promocional"
             fill
-            className="object-cover object-center"
+            className="object-contain object-center"
             priority
           />
         </div>
 
-        <div className="absolute inset-0 bg-gradient-to-b from-black/22 via-transparent to-black/22" />
-        <div className="absolute inset-x-0 bottom-0 h-24 bg-gradient-to-t from-black/28 via-black/10 to-transparent" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-white via-white/74 to-transparent" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white via-white/94 to-transparent" />
       </section>
 
-      <section className="relative -mt-12 flex flex-[2.1] items-center justify-center overflow-hidden bg-transparent px-8 pb-7 pt-4">
-        <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-transparent via-white/88 to-white" />
-        <div className="absolute inset-x-0 bottom-0 top-10 rounded-t-[2.5rem] bg-white shadow-[0_-14px_40px_rgba(15,23,42,0.08)]" />
-        <div className="relative z-10 flex w-full max-w-5xl flex-col items-center gap-4">
+      <section className="relative flex-none bg-white px-8 pb-10 pt-3">
+        <div className="pointer-events-none absolute inset-x-0 -top-14 h-14 bg-gradient-to-b from-transparent to-white" />
+        <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center gap-4">
           <button
             onClick={handleButtonClick}
-            className={`min-w-[21rem] rounded-[1.75rem] bg-orange-500 px-12 py-5 text-xl font-extrabold tracking-[0.01em] text-white shadow-[0_16px_35px_rgba(249,115,22,0.35)] transition-all duration-300 hover:bg-orange-600 ${
-              isPulsing ? "scale-[1.02] shadow-[0_18px_42px_rgba(249,115,22,0.42)]" : "scale-100"
+            className={`w-full max-w-[26rem] rounded-[1.65rem] bg-orange-500 px-10 py-5 text-[1.9rem] font-bold tracking-[0.01em] text-white shadow-[0_12px_24px_rgba(249,115,22,0.22)] transition-all duration-300 hover:bg-orange-500 ${
+              isPulsing ? "scale-[1.01] shadow-[0_16px_28px_rgba(249,115,22,0.26)]" : "scale-100"
             }`}
           >
             Iniciar compra
           </button>
 
-          <div className="h-px w-full max-w-sm bg-gradient-to-r from-transparent via-orange-200 to-transparent" />
-
-          <div className="flex w-full flex-col items-center gap-3">
-            <p className="text-xs font-semibold uppercase tracking-[0.32em] text-zinc-400">
+          <div className="flex w-full flex-col items-center gap-2.5">
+            <p className="text-[0.78rem] font-medium uppercase tracking-[0.42em] text-zinc-400">
               FORMAS DE PAGAMENTO ACEITAS
             </p>
 
-            <div className="w-full max-w-[58rem] rounded-[1.5rem] border border-zinc-200/90 bg-zinc-50 px-3 py-2 shadow-[0_10px_28px_rgba(15,23,42,0.06)]">
+            <div className="w-full max-w-[48rem] rounded-full border border-zinc-200/80 bg-zinc-50/80 px-5 py-3 shadow-[0_4px_12px_rgba(15,23,42,0.05)]">
               <Image
                 src="/payment-methods-strip.svg"
                 alt="Visa, Mastercard, Hipercard, Hiper, American Express, Diners Club, Cabal, Elo, Pluxee, Alelo, Pix, QR Code, Apple Pay, Google Pay e Samsung Pay"
