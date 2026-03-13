@@ -1,0 +1,91 @@
+<svg width="1280" height="144" viewBox="0 0 1280 144" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <filter id="shadow" x="-10%" y="-20%" width="120%" height="160%" filterUnits="objectBoundingBox">
+      <feDropShadow dx="0" dy="6" stdDeviation="6" flood-color="#0f172a" flood-opacity="0.08"/>
+    </filter>
+  </defs>
+  <g transform="translate(20 20)" filter="url(#shadow)">
+    <rect x="0" y="0" width="94" height="68" rx="14" fill="white"/>
+    <rect x="1" y="1" width="92" height="66" rx="13" stroke="#D7DEE8"/>
+    <text x="47" y="43" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#143C8B">VISA</text>
+  </g>
+  <g transform="translate(124 20)" filter="url(#shadow)">
+    <rect x="0" y="0" width="94" height="68" rx="14" fill="white"/>
+    <rect x="1" y="1" width="92" height="66" rx="13" stroke="#D7DEE8"/>
+    <circle cx="40" cy="34" r="16" fill="#EB001B"/>
+    <circle cx="54" cy="34" r="16" fill="#F79E1B" fill-opacity="0.92"/>
+  </g>
+  <g transform="translate(228 20)" filter="url(#shadow)">
+    <rect x="0" y="0" width="94" height="68" rx="14" fill="white"/>
+    <rect x="1" y="1" width="92" height="66" rx="13" stroke="#D7DEE8"/>
+    <rect x="15" y="17" width="64" height="34" rx="8" fill="#C62828"/>
+    <text x="47" y="39" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="white">Hipercard</text>
+  </g>
+  <g transform="translate(332 20)" filter="url(#shadow)">
+    <rect x="0" y="0" width="94" height="68" rx="14" fill="white"/>
+    <rect x="1" y="1" width="92" height="66" rx="13" stroke="#D7DEE8"/>
+    <path d="M18 18H61C66.5228 18 71 22.4772 71 28V50H28C22.4772 50 18 45.5228 18 40V18Z" fill="#F58220"/>
+    <text x="45" y="40" text-anchor="middle" font-family="Arial, sans-serif" font-size="22" font-weight="700" fill="white">H</text>
+  </g>
+  <g transform="translate(436 20)" filter="url(#shadow)">
+    <rect x="0" y="0" width="126" height="68" rx="14" fill="white"/>
+    <rect x="1" y="1" width="124" height="66" rx="13" stroke="#D7DEE8"/>
+    <text x="63" y="28" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#1A5FB4">AMERICAN</text>
+    <text x="63" y="46" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#1A5FB4">EXPRESS</text>
+  </g>
+  <g transform="translate(572 20)" filter="url(#shadow)">
+    <rect x="0" y="0" width="110" height="68" rx="14" fill="white"/>
+    <rect x="1" y="1" width="108" height="66" rx="13" stroke="#D7DEE8"/>
+    <text x="55" y="26" text-anchor="middle" font-family="Georgia, serif" font-size="13" font-weight="700" fill="#52657A">Diners Club</text>
+    <text x="55" y="44" text-anchor="middle" font-family="Georgia, serif" font-size="12" font-weight="700" fill="#52657A">International</text>
+  </g>
+  <g transform="translate(692 20)" filter="url(#shadow)">
+    <rect x="0" y="0" width="92" height="68" rx="14" fill="white"/>
+    <rect x="1" y="1" width="90" height="66" rx="13" stroke="#D7DEE8"/>
+    <rect x="14" y="19" width="64" height="30" rx="8" fill="#0F6CBD"/>
+    <text x="46" y="39" text-anchor="middle" font-family="Arial, sans-serif" font-size="16" font-weight="700" fill="white">CABAL</text>
+  </g>
+  <g transform="translate(794 20)" filter="url(#shadow)">
+    <rect x="0" y="0" width="92" height="68" rx="14" fill="white"/>
+    <rect x="1" y="1" width="90" height="66" rx="13" stroke="#D7DEE8"/>
+    <text x="46" y="41" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#2F2A2B">Elo</text>
+  </g>
+  <g transform="translate(896 20)" filter="url(#shadow)">
+    <rect x="0" y="0" width="92" height="68" rx="14" fill="white"/>
+    <rect x="1" y="1" width="90" height="66" rx="13" stroke="#D7DEE8"/>
+    <text x="46" y="28" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#4B5563">pluxee</text>
+    <text x="46" y="44" text-anchor="middle" font-family="Arial, sans-serif" font-size="9" font-weight="700" fill="#94A3B8">beneficios e incentivos</text>
+  </g>
+  <g transform="translate(998 20)" filter="url(#shadow)">
+    <rect x="0" y="0" width="92" height="68" rx="14" fill="white"/>
+    <rect x="1" y="1" width="90" height="66" rx="13" stroke="#D7DEE8"/>
+    <rect x="14" y="17" width="64" height="34" rx="17" fill="#0D8B4E"/>
+    <text x="46" y="39" text-anchor="middle" font-family="Arial, sans-serif" font-size="19" font-weight="700" fill="white">alelo</text>
+  </g>
+  <g transform="translate(1100 20)" filter="url(#shadow)">
+    <rect x="0" y="0" width="78" height="68" rx="14" fill="white"/>
+    <rect x="1" y="1" width="76" height="66" rx="13" stroke="#D7DEE8"/>
+    <text x="39" y="41" text-anchor="middle" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#4BB8A7">pix</text>
+  </g>
+  <g transform="translate(1188 20)" filter="url(#shadow)">
+    <rect x="0" y="0" width="72" height="68" rx="14" fill="white"/>
+    <rect x="1" y="1" width="70" height="66" rx="13" stroke="#D7DEE8"/>
+    <rect x="21" y="17" width="30" height="30" rx="6" stroke="#1F2937" stroke-width="4"/>
+    <path d="M27 24H31M41 24H45M27 40H31M41 40H45" stroke="#1F2937" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(20 98)" filter="url(#shadow)">
+    <rect x="0" y="0" width="104" height="26" rx="13" fill="white"/>
+    <rect x="1" y="1" width="102" height="24" rx="12" stroke="#D7DEE8"/>
+    <text x="52" y="17" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#111827">Apple Pay</text>
+  </g>
+  <g transform="translate(136 98)" filter="url(#shadow)">
+    <rect x="0" y="0" width="114" height="26" rx="13" fill="white"/>
+    <rect x="1" y="1" width="112" height="24" rx="12" stroke="#D7DEE8"/>
+    <text x="57" y="17" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#374151">Google Pay</text>
+  </g>
+  <g transform="translate(262 98)" filter="url(#shadow)">
+    <rect x="0" y="0" width="130" height="26" rx="13" fill="white"/>
+    <rect x="1" y="1" width="128" height="24" rx="12" stroke="#D7DEE8"/>
+    <text x="65" y="17" text-anchor="middle" font-family="Arial, sans-serif" font-size="14" font-weight="700" fill="#111827">Samsung Pay</text>
+  </g>
+</svg>
