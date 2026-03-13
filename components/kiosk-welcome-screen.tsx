@@ -1,7 +1,7 @@
 "use client"
 
 import type { MouseEvent } from "react"
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
 
@@ -12,12 +12,15 @@ type Slide = {
 }
 
 export function KioskWelcomeScreen() {
+  const SLIDE_TRANSITION_MS = 650
   const router = useRouter()
 
   const [slides, setSlides] = useState<Slide[]>([])
   const [currentSlide, setCurrentSlide] = useState(0)
+  const [incomingSlide, setIncomingSlide] = useState<number | null>(null)
   const [isAnimating, setIsAnimating] = useState(false)
   const [isPulsing, setIsPulsing] = useState(true)
+  const transitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   async function loadSlides() {
     const response = await fetch("/api/kiosk/slides", { cache: "no-store" })
@@ -43,15 +46,28 @@ export function KioskWelcomeScreen() {
   }, [])
 
   const goToNextSlide = useCallback(() => {
-    if (isAnimating || slides.length <= 1) return
+    if (isAnimating || incomingSlide !== null || slides.length <= 1) return
 
-    setIsAnimating(true)
+    const nextSlide = (currentSlide + 1) % slides.length
+
+    setIncomingSlide(nextSlide)
+    setIsAnimating(false)
 
     setTimeout(() => {
-      setCurrentSlide((prev) => (prev + 1) % slides.length)
+      setIsAnimating(true)
+    }, 16)
+
+    if (transitionTimerRef.current) {
+      clearTimeout(transitionTimerRef.current)
+    }
+
+    transitionTimerRef.current = setTimeout(() => {
+      setCurrentSlide(nextSlide)
+      setIncomingSlide(null)
       setIsAnimating(false)
-    }, 800)
-  }, [isAnimating, slides.length])
+      transitionTimerRef.current = null
+    }, SLIDE_TRANSITION_MS)
+  }, [currentSlide, incomingSlide, isAnimating, slides.length, SLIDE_TRANSITION_MS])
 
   useEffect(() => {
     if (!slides.length) return
@@ -70,6 +86,14 @@ export function KioskWelcomeScreen() {
     return () => clearInterval(pulseInterval)
   }, [])
 
+  useEffect(() => {
+    return () => {
+      if (transitionTimerRef.current) {
+        clearTimeout(transitionTimerRef.current)
+      }
+    }
+  }, [])
+
   const handleStartOrder = () => {
     router.push("/auth/login")
   }
@@ -82,40 +106,47 @@ export function KioskWelcomeScreen() {
   if (!slides.length) return null
 
   const currentSlideData = slides[currentSlide]
-  const nextSlideIndex = slides.length > 1 ? (currentSlide + 1) % slides.length : currentSlide
-  const nextSlideData = slides[nextSlideIndex]
+  const incomingSlideData = incomingSlide !== null ? slides[incomingSlide] : null
 
-  if (!currentSlideData?.image_url || !nextSlideData?.image_url) return null
+  if (!currentSlideData?.image_url) return null
 
   return (
     <div
       className="relative flex h-screen w-screen cursor-pointer select-none flex-col overflow-hidden bg-white text-zinc-950"
       onClick={handleStartOrder}
     >
-      <section className="relative min-h-0 flex-1 overflow-hidden bg-white px-6 pt-8">
-        <div className="absolute inset-0">
-          <Image
-            src={nextSlideData.image_url}
-            alt="Slide promocional"
-            fill
-            className="object-contain object-center"
-          />
-        </div>
-
+      <section className="relative min-h-0 flex-1 overflow-hidden bg-white">
         <div
-          className={`absolute inset-0 transition-all duration-800 ease-out ${
-            isAnimating ? "scale-[1.02] opacity-0" : "scale-100 opacity-100"
+          className={`absolute inset-0 transition-transform ease-out ${
+            isAnimating ? "-translate-x-full" : "translate-x-0"
           }`}
-          style={{ transitionDuration: "800ms" }}
+          style={{ transitionDuration: `${SLIDE_TRANSITION_MS}ms` }}
         >
           <Image
             src={currentSlideData.image_url}
             alt="Slide promocional"
             fill
-            className="object-contain object-center"
+            className="object-cover object-center"
             priority
           />
         </div>
+
+        {incomingSlideData?.image_url && (
+          <div
+            className={`absolute inset-0 transition-transform ease-out ${
+              isAnimating ? "translate-x-0" : "translate-x-full"
+            }`}
+            style={{ transitionDuration: `${SLIDE_TRANSITION_MS}ms` }}
+          >
+            <Image
+              src={incomingSlideData.image_url}
+              alt="Slide promocional"
+              fill
+              className="object-cover object-center"
+              priority
+            />
+          </div>
+        )}
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-white via-white/94 to-transparent" />
       </section>
