@@ -145,16 +145,16 @@ export default function MenuPage() {
           </div>
         </section>
 
-        <section className="bg-[#f3f1ee] px-5 pb-3 pt-5 sm:px-6 sm:pt-6">
+        <section className="bg-[#f3f1ee] px-5 pb-0 pt-3 sm:px-6 sm:pt-4">
           <div className="grid grid-cols-[1fr_auto] items-start gap-4">
-            <div className="pt-4 sm:pt-6">
+            <div>
               <h2 className="text-[2.05rem] font-bold leading-none tracking-[-0.03em] text-[#3b2417] sm:text-[2.65rem]">
                 Oi, {customerName}
                 <span className="text-orange-500">!</span>
               </h2>
             </div>
 
-            <div className="flex flex-col items-end pt-6 sm:pt-8">
+            <div className="flex flex-col items-end">
               <button
                 type="button"
                 onClick={handleRewardsClick}
@@ -182,8 +182,8 @@ export default function MenuPage() {
 
       <div className="min-h-0 flex-1 overflow-hidden">
         <div className="flex h-full min-h-0">
-          <aside className="w-[11.8rem] flex-none border-r border-[#e3d5c6] bg-[#f2ebe1] px-2.5 py-3 sm:w-[12.8rem] sm:px-3">
-            <nav className="space-y-1.5">
+          <aside className="w-[11.8rem] flex-none border-r border-[#e3d5c6] bg-[#f2ebe1] px-2.5 py-1.5 sm:w-[12.8rem] sm:px-3">
+            <nav className="space-y-1">
               {categories.map((category) => (
                 <button
                   key={category.id}
@@ -201,8 +201,8 @@ export default function MenuPage() {
           </aside>
 
           <main className="min-h-0 flex-1 overflow-hidden bg-[#f7f4ef]">
-            <div className="h-full overflow-y-auto px-4 pb-36 pt-2 sm:px-6">
-              <div className="sticky top-0 z-10 border-b border-[#e7ddcf] bg-[#f7f4ef] py-3">
+            <div className="h-full overflow-y-auto px-4 pb-36 pt-0 sm:px-6">
+              <div className="sticky top-0 z-10 border-b border-[#e7ddcf] bg-[#f7f4ef] py-2">
                 <h3 className="text-[2rem] font-bold leading-none tracking-[-0.03em] text-[#3b2417]">
                   {selectedCategoryLabel ?? "Produtos"}
                 </h3>
