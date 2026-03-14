@@ -3,7 +3,6 @@
 export const dynamic = "force-dynamic";
 
 import { useEffect, useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Check, ShoppingBag, TicketPercent } from "lucide-react";
 import { useCartStore } from "@/lib/cart-store";
 import { Cart } from "@/components/cart";
@@ -148,21 +147,18 @@ export default function MenuPage() {
 
         <section className="bg-[#f3f1ee] px-5 pb-3 pt-5 sm:px-6 sm:pt-6">
           <div className="grid grid-cols-[1fr_auto] items-start gap-4">
-            <div className="pt-1">
+            <div className="pt-4 sm:pt-6">
               <h2 className="text-[2.05rem] font-bold leading-none tracking-[-0.03em] text-[#3b2417] sm:text-[2.65rem]">
                 Oi, {customerName}
                 <span className="text-orange-500">!</span>
               </h2>
-              <p className="mt-1 text-sm font-medium text-zinc-600 sm:text-base">
-                Escolha sua categoria e adicione seus produtos
-              </p>
             </div>
 
-            <div className="flex flex-col items-end gap-2.5">
+            <div className="flex flex-col items-end pt-6 sm:pt-8">
               <button
                 type="button"
                 onClick={handleRewardsClick}
-                className="group flex w-[14.5rem] items-center gap-2 rounded-2xl border border-orange-200 bg-orange-50 px-3 py-2 text-left transition hover:bg-orange-100 sm:w-[17rem]"
+                className="group flex w-[16rem] items-center gap-2.5 rounded-2xl border border-orange-200 bg-orange-50 px-3.5 py-3 text-left transition hover:bg-orange-100 sm:w-[19rem]"
               >
                 <div className="rounded-full bg-orange-500 p-2 text-white">
                   <TicketPercent className="h-4 w-4" />
@@ -179,14 +175,6 @@ export default function MenuPage() {
                   Em breve
                 </span>
               </button>
-
-              <Button
-                variant="outline"
-                onClick={handleCancel}
-                className="h-10 rounded-full border-2 border-orange-500 px-5 text-sm font-semibold text-orange-600 hover:bg-orange-500 hover:text-white sm:h-11 sm:px-6"
-              >
-                Cancelar
-              </Button>
             </div>
           </div>
         </section>
@@ -268,12 +256,12 @@ export default function MenuPage() {
                             : ""
                         }`}
                       >
-                        <div className="relative aspect-[5/4] border-b border-[#f2e5d6] bg-gradient-to-b from-zinc-50 to-white p-3">
+                        <div className="relative aspect-[5/4] overflow-hidden border-b border-[#f2e5d6] bg-zinc-100">
                           <Image
                             src={product.image_url || "/placeholder.svg"}
                             alt={product.name}
                             fill
-                            className={`object-contain p-2.5 ${
+                            className={`object-cover object-bottom ${
                               isOutOfStock ? "grayscale" : ""
                             }`}
                           />
