@@ -27,6 +27,18 @@ type Product = {
 };
 
 export default function MenuPage() {
+  // Layout fine-tuning: adjust these values manually to calibrate proportions on your totem.
+  const layoutTune = {
+    bannerHeightPx: 160,
+    topBlockPaddingTopPx: 8,
+    topBlockPaddingBottomPx: 14,
+    greetingOffsetTopPx: 14,
+    rewardsOffsetTopPx: 6,
+    menuStartOffsetPx: -8,
+    categoriesStartPaddingTopPx: 2,
+    productsStartPaddingTopPx: 0,
+  } as const;
+
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -116,7 +128,10 @@ export default function MenuPage() {
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[#f3f1ee]">
       <header className="flex-none">
-        <section className="relative h-32 overflow-hidden sm:h-40">
+        <section
+          className="relative overflow-hidden"
+          style={{ height: layoutTune.bannerHeightPx }}
+        >
           <Image
             src="/hot-dog-sandwich-snack-combo-meal-promotional-appe.jpg"
             alt="Banner promocional"
@@ -145,16 +160,25 @@ export default function MenuPage() {
           </div>
         </section>
 
-        <section className="bg-[#f3f1ee] px-5 pb-0 pt-3 sm:px-6 sm:pt-4">
+        <section
+          className="bg-[#f3f1ee] px-5 sm:px-6"
+          style={{
+            paddingTop: layoutTune.topBlockPaddingTopPx,
+            paddingBottom: layoutTune.topBlockPaddingBottomPx,
+          }}
+        >
           <div className="grid grid-cols-[1fr_auto] items-start gap-4">
-            <div>
+            <div style={{ paddingTop: layoutTune.greetingOffsetTopPx }}>
               <h2 className="text-[2.05rem] font-bold leading-none tracking-[-0.03em] text-[#3b2417] sm:text-[2.65rem]">
                 Oi, {customerName}
                 <span className="text-orange-500">!</span>
               </h2>
             </div>
 
-            <div className="flex flex-col items-end">
+            <div
+              className="flex flex-col items-end"
+              style={{ paddingTop: layoutTune.rewardsOffsetTopPx }}
+            >
               <button
                 type="button"
                 onClick={handleRewardsClick}
@@ -180,9 +204,15 @@ export default function MenuPage() {
         </section>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-hidden">
+      <div
+        className="min-h-0 flex-1 overflow-hidden"
+        style={{ marginTop: layoutTune.menuStartOffsetPx }}
+      >
         <div className="flex h-full min-h-0">
-          <aside className="w-[11.8rem] flex-none border-r border-[#e3d5c6] bg-[#f2ebe1] px-2.5 py-1.5 sm:w-[12.8rem] sm:px-3">
+          <aside
+            className="w-[11.8rem] flex-none border-r border-[#e3d5c6] bg-[#f2ebe1] px-2.5 sm:w-[12.8rem] sm:px-3"
+            style={{ paddingTop: layoutTune.categoriesStartPaddingTopPx }}
+          >
             <nav className="space-y-1">
               {categories.map((category) => (
                 <button
@@ -201,7 +231,10 @@ export default function MenuPage() {
           </aside>
 
           <main className="min-h-0 flex-1 overflow-hidden bg-[#f7f4ef]">
-            <div className="h-full overflow-y-auto px-4 pb-36 pt-0 sm:px-6">
+            <div
+              className="h-full overflow-y-auto px-4 pb-36 sm:px-6"
+              style={{ paddingTop: layoutTune.productsStartPaddingTopPx }}
+            >
               <div className="sticky top-0 z-10 border-b border-[#e7ddcf] bg-[#f7f4ef] py-2">
                 <h3 className="text-[2rem] font-bold leading-none tracking-[-0.03em] text-[#3b2417]">
                   {selectedCategoryLabel ?? "Produtos"}
