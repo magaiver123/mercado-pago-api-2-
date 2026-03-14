@@ -5,10 +5,10 @@ export const dynamic = "force-dynamic";
 import { useEffect, useMemo, useState } from "react";
 import { Check, ShoppingBag, TicketPercent } from "lucide-react";
 import { useCartStore } from "@/lib/cart-store";
-import { Cart } from "@/components/cart";
+import { Cart, type CartSuggestion } from "@/components/cart";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { getAuthUser, clearAuthUser } from "@/lib/auth-store";
+import { clearAuthUser, getAuthUser } from "@/lib/auth-store";
 import { useToast } from "@/components/ui/use-toast";
 
 type Category = {
@@ -26,6 +26,21 @@ type Product = {
   product_stock?: { quantity: number }[] | null;
 };
 
+type AddableProduct = {
+  id: string;
+  name: string;
+  price: number;
+  image_url?: string | null;
+  stock: number;
+};
+
+function getProductStock(product: Pick<Product, "product_stock">): number {
+  const stockData = Array.isArray(product.product_stock)
+    ? product.product_stock[0]
+    : product.product_stock;
+  return stockData?.quantity ?? 0;
+}
+
 export default function MenuPage() {
   // Layout fine-tuning: adjust these values manually to calibrate proportions on your totem.
   const layoutTune = {
@@ -42,13 +57,14 @@ export default function MenuPage() {
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState("Cliente");
   const [loadingProducts, setLoadingProducts] = useState(false);
 
-  const { addItem, getTotal, getItemCount, clearCart } = useCartStore();
+  const { items, addItem, getTotal, getItemCount, clearCart } = useCartStore();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -56,6 +72,39 @@ export default function MenuPage() {
     () => categories.find((category) => category.id === selectedCategory)?.name,
     [categories, selectedCategory]
   );
+
+  const suggestedProducts = useMemo<CartSuggestion[]>(() => {
+    if (catalogProducts.length === 0) return [];
+
+    const catalogById = new Map(catalogProducts.map((product) => [product.id, product]));
+    const bagItemIds = new Set(items.map((item) => item.id));
+    const bagCategoryIds = new Set(
+      items
+        .map((item) => catalogById.get(item.id)?.category_id)
+        .filter((categoryId): categoryId is string => Boolean(categoryId))
+    );
+
+    const availableProducts = catalogProducts
+      .filter((product) => !bagItemIds.has(product.id))
+      .filter((product) => getProductStock(product) > 0);
+
+    const productsFromNewCategories = availableProducts.filter(
+      (product) => !bagCategoryIds.has(product.category_id)
+    );
+    const productsFromExistingCategories = availableProducts.filter((product) =>
+      bagCategoryIds.has(product.category_id)
+    );
+
+    return [...productsFromNewCategories, ...productsFromExistingCategories]
+      .slice(0, 4)
+      .map((product) => ({
+        id: product.id,
+        name: product.name,
+        price: product.price,
+        image_url: product.image_url,
+        stock: getProductStock(product),
+      }));
+  }, [catalogProducts, items]);
 
   useEffect(() => {
     const user = getAuthUser();
@@ -70,13 +119,17 @@ export default function MenuPage() {
 
   useEffect(() => {
     async function loadCategories() {
-      const response = await fetch("/api/menu/categories");
-      const data = await response.json();
-      const categoryList = Array.isArray(data) ? data : [];
-      setCategories(categoryList);
+      try {
+        const response = await fetch("/api/menu/categories");
+        const data = await response.json();
+        const categoryList = Array.isArray(data) ? data : [];
+        setCategories(categoryList);
 
-      if (categoryList.length > 0) {
-        setSelectedCategory((current) => current ?? categoryList[0].id);
+        if (categoryList.length > 0) {
+          setSelectedCategory((current) => current ?? categoryList[0].id);
+        }
+      } catch {
+        setCategories([]);
       }
     }
 
@@ -89,14 +142,19 @@ export default function MenuPage() {
 
     async function loadProducts() {
       setLoadingProducts(true);
-      const response = await fetch(
-        `/api/menu/products?category_id=${selectedCategory}`
-      );
-      const data = await response.json();
-
-      if (!active) return;
-      setProducts(Array.isArray(data) ? data : []);
-      setLoadingProducts(false);
+      try {
+        const response = await fetch(
+          `/api/menu/products?category_id=${selectedCategory}`
+        );
+        const data = await response.json();
+        if (!active) return;
+        setProducts(Array.isArray(data) ? data : []);
+      } catch {
+        if (!active) return;
+        setProducts([]);
+      } finally {
+        if (active) setLoadingProducts(false);
+      }
     }
 
     loadProducts();
@@ -104,6 +162,45 @@ export default function MenuPage() {
       active = false;
     };
   }, [selectedCategory]);
+
+  useEffect(() => {
+    if (categories.length === 0) {
+      setCatalogProducts([]);
+      return;
+    }
+
+    let active = true;
+
+    async function loadCatalogProducts() {
+      const catalogResult = await Promise.all(
+        categories.map(async (category) => {
+          try {
+            const response = await fetch(
+              `/api/menu/products?category_id=${category.id}`
+            );
+            const data = await response.json();
+            return Array.isArray(data) ? (data as Product[]) : [];
+          } catch {
+            return [];
+          }
+        })
+      );
+
+      if (!active) return;
+
+      const uniqueProducts = new Map<string, Product>();
+      catalogResult.flat().forEach((product) => {
+        uniqueProducts.set(product.id, product);
+      });
+
+      setCatalogProducts(Array.from(uniqueProducts.values()));
+    }
+
+    loadCatalogProducts();
+    return () => {
+      active = false;
+    };
+  }, [categories]);
 
   const itemCount = getItemCount();
   const total = getTotal();
@@ -113,7 +210,7 @@ export default function MenuPage() {
     router.push("/checkout");
   };
 
-  const handleCancel = () => {
+  const handleRestartOrder = () => {
     clearCart();
     clearAuthUser();
     router.push("/");
@@ -123,6 +220,33 @@ export default function MenuPage() {
     toast({
       title: "Em breve",
       description: "Resgate de recompensas ainda nao esta disponivel.",
+    });
+  };
+
+  const handleAddToSacola = (product: AddableProduct) => {
+    const success = addItem(product);
+
+    if (!success) {
+      toast({
+        title: "Estoque insuficiente",
+        description:
+          "Voce ja adicionou a quantidade maxima disponivel deste produto.",
+        variant: "warning",
+      });
+      return;
+    }
+
+    setAddedProductId(product.id);
+    setTimeout(() => setAddedProductId(null), 420);
+  };
+
+  const handleAddSuggestion = (product: CartSuggestion) => {
+    handleAddToSacola({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      image_url: product.image_url,
+      stock: product.stock,
     });
   };
 
@@ -193,7 +317,7 @@ export default function MenuPage() {
                     Cupons e recompensas
                   </p>
                   <p className="truncate text-xs font-semibold text-zinc-900 sm:text-sm">
-                    Inserir código
+                    Inserir codigo
                   </p>
                 </div>
                 <span className="rounded-full bg-orange-500 px-2.5 py-1 text-[0.62rem] font-semibold text-white transition group-hover:bg-orange-600">
@@ -249,37 +373,22 @@ export default function MenuPage() {
               ) : products.length > 0 ? (
                 <div className="grid grid-cols-2 gap-3 pt-4 sm:gap-4 lg:grid-cols-3">
                   {products.map((product) => {
-                    const stockData = Array.isArray(product.product_stock)
-                      ? product.product_stock[0]
-                      : product.product_stock;
-                    const stockQty = stockData?.quantity ?? 0;
+                    const stockQty = getProductStock(product);
                     const isOutOfStock = stockQty <= 0;
 
                     return (
                       <button
                         key={product.id}
-                        onClick={() => {
-                          const success = addItem({
+                        disabled={isOutOfStock}
+                        onClick={() =>
+                          handleAddToSacola({
                             id: product.id,
                             name: product.name,
                             price: product.price,
                             image_url: product.image_url,
                             stock: stockQty,
-                          });
-
-                          if (!success) {
-                            toast({
-                              title: "Estoque insuficiente",
-                              description:
-                                "Voce ja adicionou a quantidade maxima disponivel deste produto.",
-                              variant: "warning",
-                            });
-                            return;
-                          }
-
-                          setAddedProductId(product.id);
-                          setTimeout(() => setAddedProductId(null), 420);
-                        }}
+                          })
+                        }
                         className={`relative overflow-hidden rounded-[1.35rem] border border-[#e8d6c1] bg-white text-left transition ${
                           isOutOfStock
                             ? "cursor-not-allowed"
@@ -377,17 +486,9 @@ export default function MenuPage() {
             </p>
             <p className="text-sm font-medium text-zinc-600">
               {itemCount === 0
-                ? "Seu carrinho está vazio"
+                ? "Sua sacola esta vazia"
                 : `${itemCount} item(ns) adicionados`}
             </p>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleCancel}
-            className="text-sm font-semibold text-[#bb4f1a] underline underline-offset-4 transition hover:text-[#9d3f12]"
-          >
-            Recomecar pedido
           </button>
         </div>
       </footer>
@@ -397,6 +498,9 @@ export default function MenuPage() {
           isOpen={isCartOpen}
           onClose={() => setIsCartOpen(false)}
           onCheckout={handleCheckout}
+          onRestartOrder={handleRestartOrder}
+          suggestions={suggestedProducts}
+          onAddSuggestion={handleAddSuggestion}
         />
       )}
     </div>

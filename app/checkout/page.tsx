@@ -44,7 +44,7 @@ export default function CheckoutPage() {
         <Card className="w-full max-w-md border border-orange-500">
           <CardContent className="pt-6 text-center space-y-4">
             <ShoppingBag className="h-16 w-16 text-orange-400 mx-auto" />
-            <h2 className="text-black text-xl font-semibold">Carrinho Vazio</h2>
+            <h2 className="text-black text-xl font-semibold">Sacola vazia</h2>
             <p className="text-black/70">
               Adicione produtos antes de finalizar o pedido
             </p>
