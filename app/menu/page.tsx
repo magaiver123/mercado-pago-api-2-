@@ -53,6 +53,11 @@ export default function MenuPage() {
     categoriesStartPaddingTopPx: 2,
     productsStartPaddingTopPx: 0,
     bagInfoOffsetYPx: -6,
+    sidebarInsetTopPx: 10,
+    sidebarInsetBottomPx: 12,
+    dividerInsetYPx: 14,
+    footerInsetXPx: 10,
+    footerRadiusPx: 24,
   } as const;
 
   const [categories, setCategories] = useState<Category[]>([]);
@@ -250,27 +255,43 @@ export default function MenuPage() {
         className="min-h-0 flex-1 overflow-hidden"
         style={{ marginTop: layoutTune.menuStartOffsetPx }}
       >
-        <div className="flex h-full min-h-0">
+        <div className="grid h-full min-h-0 grid-cols-[11.8rem_0.55rem_1fr] sm:grid-cols-[12.8rem_0.7rem_1fr]">
           <aside
-            className="w-[11.8rem] flex-none border-r border-[#e3d5c6] bg-[#f2ebe1] px-2.5 sm:w-[12.8rem] sm:px-3"
-            style={{ paddingTop: layoutTune.categoriesStartPaddingTopPx }}
+            className="min-h-0 bg-[#f3f1ee] px-2.5 sm:px-3"
+            style={{
+              paddingTop:
+                layoutTune.sidebarInsetTopPx + layoutTune.categoriesStartPaddingTopPx,
+              paddingBottom: layoutTune.sidebarInsetBottomPx,
+            }}
           >
-            <nav className="space-y-1">
-              {categories.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => setSelectedCategory(category.id)}
-                  className={`w-full rounded-xl border px-3 py-3 text-left text-[0.92rem] font-semibold transition ${
-                    selectedCategory === category.id
-                      ? "border-[#5a2511] bg-[#5a2511] text-white shadow-[0_10px_22px_rgba(90,37,17,0.24)]"
-                      : "border-[#e4d6c7] bg-white text-[#4a2a1d] hover:border-orange-300 hover:text-orange-700"
-                  }`}
-                >
-                  {category.name}
-                </button>
-              ))}
-            </nav>
+            <div className="h-full rounded-[1.4rem] bg-[#e8dccb] px-2.5 py-2.5 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] sm:px-3">
+              <nav className="hide-scrollbar h-full space-y-1 overflow-y-auto">
+                {categories.map((category) => (
+                  <button
+                    key={category.id}
+                    onClick={() => setSelectedCategory(category.id)}
+                    className={`w-full rounded-xl border px-3 py-3 text-left text-[0.92rem] font-semibold transition ${
+                      selectedCategory === category.id
+                        ? "border-[#5a2511] bg-[#5a2511] text-white shadow-[0_10px_22px_rgba(90,37,17,0.24)]"
+                        : "border-[#e4d6c7] bg-white text-[#4a2a1d] hover:border-orange-300 hover:text-orange-700"
+                    }`}
+                  >
+                    {category.name}
+                  </button>
+                ))}
+              </nav>
+            </div>
           </aside>
+
+          <div
+            className="flex items-stretch justify-center"
+            style={{
+              paddingTop: layoutTune.dividerInsetYPx,
+              paddingBottom: layoutTune.dividerInsetYPx,
+            }}
+          >
+            <div className="w-[3px] rounded-full bg-[#d8c5ae]" />
+          </div>
 
           <main className="min-h-0 flex-1 overflow-hidden bg-[#f7f4ef]">
             <div
@@ -381,32 +402,44 @@ export default function MenuPage() {
         </div>
       </div>
 
-      <footer className="relative flex-none border-t border-[#e4d6c7] bg-[#efe6d8] px-5 pb-4 pt-7 sm:px-6">
-        <button
-          type="button"
-          onClick={() => setIsCartOpen(true)}
-          className="absolute -top-6 right-5 flex items-center gap-2 rounded-full bg-orange-500 px-4 py-2.5 text-lg font-bold text-white shadow-[0_14px_28px_rgba(249,115,22,0.35)] transition hover:bg-orange-600 sm:right-6"
+      <footer className="relative flex-none bg-[#f3f1ee] pb-1 pt-2">
+        <div
+          className="relative border border-[#dfd1c0] bg-[#efe6d8] px-5 pb-4 pt-7 shadow-[inset_0_1px_0_rgba(255,255,255,0.48)] sm:px-6"
+          style={{
+            marginLeft: layoutTune.footerInsetXPx,
+            marginRight: layoutTune.footerInsetXPx,
+            borderTopLeftRadius: layoutTune.footerRadiusPx,
+            borderTopRightRadius: layoutTune.footerRadiusPx,
+          }}
         >
-          <ShoppingBag className="h-4 w-4" />
-          <span>R$ {total.toFixed(2).replace(".", ",")}</span>
-        </button>
-
-        <div className="flex items-center justify-between gap-4">
           <button
             type="button"
             onClick={() => setIsCartOpen(true)}
-            className="text-left"
-            style={{ transform: `translateY(${layoutTune.bagInfoOffsetYPx}px)` }}
+            className="absolute -top-6 right-5 flex items-center gap-2 rounded-full bg-orange-500 px-4 py-2.5 text-lg font-bold text-white shadow-[0_14px_28px_rgba(249,115,22,0.35)] transition hover:bg-orange-600 sm:right-6"
           >
-            <p className="text-3xl font-bold tracking-[-0.02em] text-[#4a2a1d]">
-              Sua sacola
-            </p>
-            <p className="text-sm font-medium text-zinc-600">
-              {itemCount === 0
-                ? "Sua sacola esta vazia"
-                : `${itemCount} item(ns) adicionados`}
-            </p>
+            <ShoppingBag className="h-4 w-4" />
+            <span>R$ {total.toFixed(2).replace(".", ",")}</span>
           </button>
+
+          <div className="grid items-center gap-4 grid-cols-[11.8rem_1fr] sm:grid-cols-[12.8rem_1fr]">
+            <button
+              type="button"
+              onClick={() => setIsCartOpen(true)}
+              className="text-left"
+              style={{ transform: `translateY(${layoutTune.bagInfoOffsetYPx}px)` }}
+            >
+              <p className="text-3xl font-bold tracking-[-0.02em] text-[#4a2a1d]">
+                Sua sacola
+              </p>
+              <p className="text-sm font-medium text-zinc-600">
+                {itemCount === 0
+                  ? "Sua sacola esta vazia"
+                  : `${itemCount} item(ns) adicionados`}
+              </p>
+            </button>
+
+            <div className="h-full min-h-14 border-l border-[#dac8b0]" />
+          </div>
         </div>
       </footer>
 
