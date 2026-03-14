@@ -415,9 +415,9 @@ export default function MenuPage() {
           <button
             type="button"
             onClick={() => setIsCartOpen(true)}
-            className="absolute -top-6 right-5 flex items-center gap-2 rounded-full bg-orange-500 px-4 py-2.5 text-lg font-bold text-white shadow-[0_14px_28px_rgba(249,115,22,0.35)] transition hover:bg-orange-600 sm:right-6"
+            className="absolute -top-6 right-8 flex items-center gap-2.5 rounded-full bg-orange-500 px-5 py-3 text-xl font-bold text-white shadow-[0_14px_28px_rgba(249,115,22,0.35)] transition hover:bg-orange-600 sm:right-10"
           >
-            <ShoppingBag className="h-4 w-4" />
+            <ShoppingBag className="h-5 w-5" />
             <span>R$ {total.toFixed(2).replace(".", ",")}</span>
           </button>
 
