@@ -193,7 +193,7 @@ export default function MenuPage() {
                     Cupons e recompensas
                   </p>
                   <p className="truncate text-xs font-semibold text-zinc-900 sm:text-sm">
-                    Inserir codigo
+                    Inserir código
                   </p>
                 </div>
                 <span className="rounded-full bg-orange-500 px-2.5 py-1 text-[0.62rem] font-semibold text-white transition group-hover:bg-orange-600">
@@ -377,7 +377,7 @@ export default function MenuPage() {
             </p>
             <p className="text-sm font-medium text-zinc-600">
               {itemCount === 0
-                ? "Seu carrinho esta vazio"
+                ? "Seu carrinho está vazio"
                 : `${itemCount} item(ns) adicionados`}
             </p>
           </button>
