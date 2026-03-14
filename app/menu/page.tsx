@@ -37,6 +37,7 @@ export default function MenuPage() {
     menuStartOffsetPx: -8,
     categoriesStartPaddingTopPx: 2,
     productsStartPaddingTopPx: 0,
+    bagInfoOffsetYPx: -6,
   } as const;
 
   const [categories, setCategories] = useState<Category[]>([]);
@@ -365,7 +366,12 @@ export default function MenuPage() {
         </button>
 
         <div className="flex items-center justify-between gap-4">
-          <button type="button" onClick={() => setIsCartOpen(true)} className="text-left">
+          <button
+            type="button"
+            onClick={() => setIsCartOpen(true)}
+            className="text-left"
+            style={{ transform: `translateY(${layoutTune.bagInfoOffsetYPx}px)` }}
+          >
             <p className="text-3xl font-bold tracking-[-0.02em] text-[#4a2a1d]">
               Sua sacola
             </p>
