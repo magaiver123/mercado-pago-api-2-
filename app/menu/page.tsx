@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 import { useEffect, useMemo, useState } from "react";
 import { Check, ShoppingBag, TicketPercent } from "lucide-react";
 import { useCartStore } from "@/lib/cart-store";
-import { Cart, type CartSuggestion } from "@/components/cart";
+import { Cart } from "@/components/cart";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { clearAuthUser, getAuthUser } from "@/lib/auth-store";
@@ -57,14 +57,13 @@ export default function MenuPage() {
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-  const [catalogProducts, setCatalogProducts] = useState<Product[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState("Cliente");
   const [loadingProducts, setLoadingProducts] = useState(false);
 
-  const { items, addItem, getTotal, getItemCount, clearCart } = useCartStore();
+  const { addItem, getTotal, getItemCount, clearCart } = useCartStore();
   const router = useRouter();
   const { toast } = useToast();
 
@@ -72,39 +71,6 @@ export default function MenuPage() {
     () => categories.find((category) => category.id === selectedCategory)?.name,
     [categories, selectedCategory]
   );
-
-  const suggestedProducts = useMemo<CartSuggestion[]>(() => {
-    if (catalogProducts.length === 0) return [];
-
-    const catalogById = new Map(catalogProducts.map((product) => [product.id, product]));
-    const bagItemIds = new Set(items.map((item) => item.id));
-    const bagCategoryIds = new Set(
-      items
-        .map((item) => catalogById.get(item.id)?.category_id)
-        .filter((categoryId): categoryId is string => Boolean(categoryId))
-    );
-
-    const availableProducts = catalogProducts
-      .filter((product) => !bagItemIds.has(product.id))
-      .filter((product) => getProductStock(product) > 0);
-
-    const productsFromNewCategories = availableProducts.filter(
-      (product) => !bagCategoryIds.has(product.category_id)
-    );
-    const productsFromExistingCategories = availableProducts.filter((product) =>
-      bagCategoryIds.has(product.category_id)
-    );
-
-    return [...productsFromNewCategories, ...productsFromExistingCategories]
-      .slice(0, 4)
-      .map((product) => ({
-        id: product.id,
-        name: product.name,
-        price: product.price,
-        image_url: product.image_url,
-        stock: getProductStock(product),
-      }));
-  }, [catalogProducts, items]);
 
   useEffect(() => {
     const user = getAuthUser();
@@ -163,45 +129,6 @@ export default function MenuPage() {
     };
   }, [selectedCategory]);
 
-  useEffect(() => {
-    if (categories.length === 0) {
-      setCatalogProducts([]);
-      return;
-    }
-
-    let active = true;
-
-    async function loadCatalogProducts() {
-      const catalogResult = await Promise.all(
-        categories.map(async (category) => {
-          try {
-            const response = await fetch(
-              `/api/menu/products?category_id=${category.id}`
-            );
-            const data = await response.json();
-            return Array.isArray(data) ? (data as Product[]) : [];
-          } catch {
-            return [];
-          }
-        })
-      );
-
-      if (!active) return;
-
-      const uniqueProducts = new Map<string, Product>();
-      catalogResult.flat().forEach((product) => {
-        uniqueProducts.set(product.id, product);
-      });
-
-      setCatalogProducts(Array.from(uniqueProducts.values()));
-    }
-
-    loadCatalogProducts();
-    return () => {
-      active = false;
-    };
-  }, [categories]);
-
   const itemCount = getItemCount();
   const total = getTotal();
 
@@ -238,16 +165,6 @@ export default function MenuPage() {
 
     setAddedProductId(product.id);
     setTimeout(() => setAddedProductId(null), 420);
-  };
-
-  const handleAddSuggestion = (product: CartSuggestion) => {
-    handleAddToSacola({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      image_url: product.image_url,
-      stock: product.stock,
-    });
   };
 
   return (
@@ -499,8 +416,6 @@ export default function MenuPage() {
           onClose={() => setIsCartOpen(false)}
           onCheckout={handleCheckout}
           onRestartOrder={handleRestartOrder}
-          suggestions={suggestedProducts}
-          onAddSuggestion={handleAddSuggestion}
         />
       )}
     </div>

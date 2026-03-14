@@ -14,21 +14,11 @@ import { useCartStore } from "@/lib/cart-store";
 import Image from "next/image";
 import { toast } from "@/components/ui/use-toast";
 
-export type CartSuggestion = {
-  id: string;
-  name: string;
-  price: number;
-  image_url?: string | null;
-  stock: number;
-};
-
 interface CartProps {
   isOpen: boolean;
   onClose: () => void;
   onCheckout: () => void;
   onRestartOrder: () => void;
-  suggestions: CartSuggestion[];
-  onAddSuggestion: (product: CartSuggestion) => void;
 }
 
 export function Cart({
@@ -36,8 +26,6 @@ export function Cart({
   onClose,
   onCheckout,
   onRestartOrder,
-  suggestions,
-  onAddSuggestion,
 }: CartProps) {
   const { items, updateQuantity, removeItem, getTotal, clearCart } =
     useCartStore();
@@ -197,48 +185,6 @@ export function Cart({
                   </div>
                 </section>
 
-                <section className="mt-4 rounded-2xl bg-[#31180d] p-4 text-white shadow-[0_18px_30px_rgba(0,0,0,0.25)]">
-                  <h3 className="text-[1.95rem] font-bold leading-none tracking-[-0.03em]">
-                    Combina com seu pedido!
-                  </h3>
-
-                  {suggestions.length === 0 ? (
-                    <p className="mt-4 text-sm font-medium text-orange-100/90">
-                      Continue explorando o menu para ver mais sugestoes aqui.
-                    </p>
-                  ) : (
-                    <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
-                      {suggestions.map((product) => (
-                        <article
-                          key={product.id}
-                          className="relative rounded-xl bg-[#f7efe2] p-2 text-[#3f2618]"
-                        >
-                          <button
-                            onClick={() => onAddSuggestion(product)}
-                            className="absolute right-2 top-2 rounded-full bg-orange-500 p-1.5 text-white transition hover:bg-orange-600"
-                            aria-label={`Adicionar ${product.name} na sacola`}
-                          >
-                            <Plus className="h-3.5 w-3.5" />
-                          </button>
-                          <div className="relative mx-auto h-16 w-16 overflow-hidden rounded-md">
-                            <Image
-                              src={product.image_url || "/placeholder.svg"}
-                              alt={product.name}
-                              fill
-                              className="object-cover"
-                            />
-                          </div>
-                          <p className="mt-2 line-clamp-2 text-center text-xs font-semibold leading-tight">
-                            {product.name}
-                          </p>
-                          <p className="mt-1 text-center text-sm font-extrabold text-orange-700">
-                            R$ {product.price.toFixed(2).replace(".", ",")}
-                          </p>
-                        </article>
-                      ))}
-                    </div>
-                  )}
-                </section>
               </div>
 
               <footer className="border-t border-[#dcc9b2] bg-[#efe2d1] px-4 py-4 sm:px-6">
