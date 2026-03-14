@@ -32,7 +32,7 @@ export default function MenuPage() {
     bannerHeightPx: 160,
     topBlockPaddingTopPx: 8,
     topBlockPaddingBottomPx: 14,
-    greetingOffsetTopPx: 15,
+    greetingOffsetTopPx: 17,
     rewardsOffsetTopPx: 6,
     menuStartOffsetPx: -8,
     categoriesStartPaddingTopPx: 2,
