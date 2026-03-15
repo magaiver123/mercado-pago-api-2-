@@ -4,6 +4,7 @@ type EnvKey =
   | "NEXT_PUBLIC_SUPABASE_URL"
   | "SUPABASE_SERVICE_ROLE_KEY"
   | "STORE_CONTEXT_SECRET"
+  | "ADMIN_BYPASS_ENABLED"
   | "MERCADOPAGO_ACCESS_TOKEN"
   | "MERCADOPAGO_TERMINAL_ID"
   | "MERCADOPAGO_WEBHOOK_SECRET"
@@ -60,5 +61,11 @@ export function getEmailEnv() {
 export function getStoreContextEnv() {
   return {
     secret: readEnv("STORE_CONTEXT_SECRET") ?? requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
+  }
+}
+
+export function getAdminBypassEnv() {
+  return {
+    enabled: readEnv("ADMIN_BYPASS_ENABLED") === "true",
   }
 }

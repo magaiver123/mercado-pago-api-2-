@@ -6,6 +6,12 @@ import { emailLoginService } from "@/api/services/auth/email-login-service"
 import { forgotPasswordService } from "@/api/services/auth/forgot-password-service"
 import { verifyResetCodeService } from "@/api/services/auth/verify-reset-code-service"
 import { resetPasswordService } from "@/api/services/auth/reset-password-service"
+import {
+  clearAdminBypassCookie,
+  clearAdminSessionCookie,
+  setAdminSessionCookie,
+} from "@/api/utils/admin-bypass-context"
+import { clearStoreContextCookie } from "@/api/utils/store-context"
 
 export async function loginByCpfController(request: Request) {
   let body: any = null
@@ -51,7 +57,17 @@ export async function loginByEmailController(request: Request) {
     password: body?.password,
   })
 
-  return NextResponse.json(data)
+  const response = NextResponse.json(data)
+
+  if (data.role === "admin") {
+    setAdminSessionCookie(response, { userId: data.id })
+  } else {
+    clearAdminSessionCookie(response)
+    clearAdminBypassCookie(response)
+    clearStoreContextCookie(response)
+  }
+
+  return response
 }
 
 export async function forgotPasswordController(request: Request) {
@@ -103,4 +119,3 @@ export async function resetPasswordController(request: Request) {
     return NextResponse.json({ error: "Erro interno" }, { status: 500 })
   }
 }
-

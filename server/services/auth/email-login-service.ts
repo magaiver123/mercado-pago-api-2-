@@ -36,6 +36,6 @@ export async function emailLoginService(input: EmailLoginInput) {
     email: user.email,
     phone: user.phone,
     cpf: user.cpf,
+    role: user.role,
   }
 }
-

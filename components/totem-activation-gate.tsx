@@ -38,11 +38,35 @@ export function TotemActivationGate({ children }: { children: ReactNode }) {
       const deviceId = getFullyDeviceId();
 
       if (!deviceId) {
-        if (!isCancelled) {
-          setState({ isLoading: false, allowed: false, hasDevice: false });
+        try {
+          const response = await fetch("/api/totem/admin-bypass/status", {
+            method: "GET",
+            cache: "no-store",
+          });
+
+          const data = await response.json().catch(() => null);
+          const allowed = data?.allowed === true;
+
+          if (!isCancelled) {
+            setState({ isLoading: false, allowed, hasDevice: allowed });
+          }
+
+          if (allowed && pathname === ACTIVATION_PATH) {
+            router.replace("/");
+            return;
+          }
+
+          if (!allowed) {
+            router.replace(USERPROFILE_PREFIX);
+          }
+        } catch {
+          if (!isCancelled) {
+            setState({ isLoading: false, allowed: false, hasDevice: false });
+          }
+
+          router.replace(USERPROFILE_PREFIX);
         }
 
-        router.replace(USERPROFILE_PREFIX);
         return;
       }
 

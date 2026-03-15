@@ -4,7 +4,13 @@ import { getKioskSlidesRoute } from "@/api/routes/kiosk-routes"
 import { getMenuCategoriesRoute, getMenuProductsRoute } from "@/api/routes/menu-routes"
 import { createMercadoPagoOrderRoute, cancelMercadoPagoOrderRoute, getMercadoPagoOrderStatusRoute, mercadopagoWebhookRoute, refundMercadoPagoOrderRoute } from "@/api/routes/mercadopago-routes"
 import { registerOrderRoute, listUserOrdersRoute } from "@/api/routes/order-routes"
-import { activateTotemRoute, totemStatusRoute } from "@/api/routes/totem-routes"
+import {
+  activateAdminBypassRoute,
+  activateTotemRoute,
+  adminBypassStatusRoute,
+  deactivateAdminBypassRoute,
+  totemStatusRoute,
+} from "@/api/routes/totem-routes"
 import { getUserProfileRoute, updateUserProfileRoute } from "@/api/routes/userprofile-routes"
 
 export const dynamic = "force-dynamic"
@@ -26,6 +32,9 @@ const routeTable: Record<string, Handler> = {
   "POST /api/orders/register": registerOrderRoute,
   "POST /api/totem/activate": activateTotemRoute,
   "POST /api/totem/status": totemStatusRoute,
+  "POST /api/totem/admin-bypass/activate": activateAdminBypassRoute,
+  "GET /api/totem/admin-bypass/status": adminBypassStatusRoute,
+  "POST /api/totem/admin-bypass/deactivate": deactivateAdminBypassRoute,
   "POST /api/userprofile/auth/forgot-password": forgotPasswordRoute,
   "POST /api/userprofile/auth/login": loginByEmailRoute,
   "POST /api/userprofile/auth/reset-password": resetPasswordRoute,
@@ -72,4 +81,3 @@ export async function PUT(request: Request) {
 export async function DELETE(request: Request) {
   return dispatch(request)
 }
-

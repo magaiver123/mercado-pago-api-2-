@@ -4,6 +4,7 @@ export interface UserprofileUser {
   cpf: string | null
   phone: string | null
   email: string
+  role?: string | null
 }
 
 const USERPROFILE_AUTH_STORAGE_KEY = "userprofile_auth_user"

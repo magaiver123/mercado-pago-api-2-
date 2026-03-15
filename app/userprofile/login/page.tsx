@@ -76,6 +76,7 @@ export default function LoginPage() {
         cpf: data.cpf ?? null,
         phone: data.phone ?? null,
         email: data.email,
+        role: data.role ?? null,
       });
 
       router.push("/userprofile/perfil");
