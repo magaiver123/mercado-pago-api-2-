@@ -19,7 +19,9 @@ function normalizeStoreSlug(value: unknown): string | null {
   const sanitized = sanitizeString(value)
   if (!sanitized) return null
 
-  const normalized = sanitized.toLowerCase()
+  // Accept placeholders copied from docs/URLs like "<minha-loja>"
+  const withoutPlaceholderWrapper = sanitized.replace(/^<(.+)>$/, "$1").trim()
+  const normalized = withoutPlaceholderWrapper.toLowerCase()
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(normalized)) {
     return null
   }
@@ -101,7 +103,7 @@ export async function activateAdminBypassService(
 
   const storeSlug = normalizeStoreSlug(input.storeSlug)
   if (!storeSlug) {
-    throw new AppError("storeSlug invalido", 400)
+    throw new AppError("storeSlug invalido. Use o slug sem < >, por exemplo: nino-imoveis", 400)
   }
 
   const store = await resolveActiveStoreBySlug(storeSlug)
