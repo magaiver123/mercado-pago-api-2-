@@ -69,7 +69,7 @@ export function getPaymentRouteByStatus(status: unknown): string | null {
 
   switch (normalized) {
     case "processed":
-      return "/payment/success"
+      return "/payment/receipt"
     case "failed":
     case "error":
       return "/payment/failed"

@@ -15,6 +15,7 @@ import {
 import { useCartStore } from "@/lib/cart-store";
 import Image from "next/image";
 import { getAuthUser } from "@/lib/auth-store";
+import { getDefaultStoreInfo, saveReceiptToSession } from "@/lib/receipt-types";
 
 type PaymentMethod = "credit_card" | "debit_card" | "pix";
 
@@ -106,6 +107,26 @@ export default function CheckoutPage() {
         }
         throw new Error(data.error || "Erro ao criar pedido");
       }
+
+      const { storeName, storeAddress } = getDefaultStoreInfo();
+      const createdAtIso = new Date().toISOString();
+
+      saveReceiptToSession({
+        orderId: String(data.orderId),
+        orderNumber: data.orderNumber ?? null,
+        createdAt: createdAtIso,
+        customerName: user.name,
+        items: items.map((item) => ({
+          name: item.name,
+          quantity: item.quantity,
+          unitPrice: item.price,
+        })),
+        paymentMethod: getMethodName(selectedMethod),
+        subtotal: total,
+        total,
+        storeName,
+        storeAddress,
+      });
 
       router.push(`/payment/processing?orderId=${data.orderId}`);
     } catch (err) {

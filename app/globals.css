@@ -151,3 +151,21 @@ textarea {
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  * {
+    visibility: hidden !important;
+  }
+
+  #printable-receipt,
+  #printable-receipt * {
+    visibility: visible !important;
+  }
+
+  #printable-receipt {
+    position: absolute;
+    inset: 0;
+    margin: 0 auto;
+    background: #ffffff;
+  }
+}
