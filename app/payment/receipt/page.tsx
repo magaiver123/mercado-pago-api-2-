@@ -100,24 +100,24 @@ export default function ReceiptPage() {
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-[#f3f1ee] p-6">
-      <div className="w-full max-w-3xl space-y-10">
+    <main className="flex h-[100svh] w-full items-center justify-center overflow-hidden bg-[#f3f1ee] px-4 py-5">
+      <div className="flex h-full w-full max-w-3xl flex-col">
         <div className="flex justify-center">
           <Image
             src="/logo.svg"
             alt="Logo"
             width={180}
             height={60}
-            className="h-16 w-auto"
+            className="h-12 w-auto sm:h-16"
           />
         </div>
 
-        <div className="space-y-3 text-center">
-          <h1 className="text-4xl font-bold text-black">
+        <div className="mt-5 space-y-2 text-center">
+          <h1 className="text-3xl font-bold text-black sm:text-4xl">
             Pronto
             {receipt?.customerName ? `, ${receipt.customerName}` : ","}
           </h1>
-          <p className="text-xl font-bold text-black">
+          <p className="text-lg font-bold text-black sm:text-xl">
             Aqui está o seu comprovante
           </p>
           {receipt?.orderId && (
@@ -125,17 +125,17 @@ export default function ReceiptPage() {
               Nº do pedido: {receipt.orderId}
             </p>
           )}
-          <p className="mt-3 text-base font-medium text-black/80">
+          <p className="pt-1 text-sm font-medium text-black/80 sm:text-base">
             Abra a geladeira e retire os itens do seu pedido
           </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="mt-5 grid flex-1 gap-4 md:grid-cols-2 md:gap-6">
           <button
             onClick={handleViewReceipt}
-            className="flex aspect-square flex-col items-center justify-center gap-4 rounded-2xl border-2 border-orange-500 bg-white p-6 text-center shadow-sm transition hover:border-orange-600 hover:shadow-md"
+            className="flex h-[min(28vh,220px)] flex-col items-center justify-center gap-3 rounded-2xl border-2 border-orange-500 bg-white p-5 text-center shadow-sm transition hover:border-orange-600 hover:shadow-md md:aspect-square md:h-auto md:gap-4 md:p-6"
           >
-            <div className="relative h-20 w-20">
+            <div className="relative h-14 w-14 md:h-20 md:w-20">
               <Image
                 src="/receipt/10.svg"
                 alt="Ver Nota"
@@ -143,14 +143,16 @@ export default function ReceiptPage() {
                 className="object-contain"
               />
             </div>
-            <h2 className="text-2xl font-semibold text-black">Ver Nota</h2>
+            <h2 className="text-xl font-semibold text-black md:text-2xl">
+              Ver Nota
+            </h2>
           </button>
 
           <button
             onClick={handlePrint}
-            className="flex aspect-square flex-col items-center justify-center gap-4 rounded-2xl border-2 border-orange-500 bg-orange-500 p-6 text-center text-white shadow-sm transition hover:bg-orange-600 hover:shadow-md"
+            className="flex h-[min(28vh,220px)] flex-col items-center justify-center gap-3 rounded-2xl border-2 border-orange-500 bg-orange-500 p-5 text-center text-white shadow-sm transition hover:bg-orange-600 hover:shadow-md md:aspect-square md:h-auto md:gap-4 md:p-6"
           >
-            <div className="relative h-20 w-20">
+            <div className="relative h-14 w-14 md:h-20 md:w-20">
               <Image
                 src="/receipt/11.svg"
                 alt="Imprimir Nota"
@@ -158,7 +160,9 @@ export default function ReceiptPage() {
                 className="object-contain"
               />
             </div>
-            <h2 className="text-2xl font-semibold">Imprimir Nota</h2>
+            <h2 className="text-xl font-semibold md:text-2xl">
+              Imprimir Nota
+            </h2>
             <div className="text-xs text-white/90">
               {isPrinting ? "Enviando para impressão..." : "Toque para imprimir"}
             </div>
@@ -172,7 +176,7 @@ export default function ReceiptPage() {
         )}
 
         {!hasInteracted && (
-          <p className="text-center text-xs text-black/60">
+          <p className="mt-3 text-center text-xs text-black/60">
             Se você não tocar na tela, retornaremos automaticamente ao início
             em 3 minutos.
           </p>
@@ -198,10 +202,10 @@ export default function ReceiptPage() {
         </DialogContent>
       </Dialog>
 
-      <div className="fixed inset-x-0 bottom-0 flex justify-center bg-gradient-to-t from-[#f3f1ee] via-[#f3f1ee]/95 to-transparent pb-8 pt-4">
+      <div className="sticky bottom-0 left-0 right-0 mt-4 flex justify-center bg-gradient-to-t from-[#f3f1ee] via-[#f3f1ee]/95 to-transparent pb-5 pt-3">
         <Button
           size="lg"
-          className="h-14 min-w-[260px] rounded-full bg-orange-500 text-lg font-semibold text-white shadow-md hover:bg-orange-600"
+          className="h-12 min-w-[240px] rounded-full bg-orange-500 text-base font-semibold text-white shadow-md hover:bg-orange-600 sm:h-14 sm:min-w-[260px] sm:text-lg"
           onClick={finishFlow}
         >
           Finalizar pedido
