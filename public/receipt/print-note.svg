@@ -1,0 +1,18 @@
+<svg width="160" height="160" viewBox="0 0 160 160" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="printNoteGradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#FF8A1A" />
+      <stop offset="100%" stop-color="#FF5500" />
+    </linearGradient>
+  </defs>
+  <rect x="12" y="12" width="136" height="136" rx="24" fill="#FFF3E5" />
+  <rect x="34" y="46" width="92" height="68" rx="16" fill="url(#printNoteGradient)" />
+  <rect x="46" y="38" width="68" height="20" rx="8" fill="#FFFFFF" />
+  <rect x="52" y="50" width="40" height="4" rx="2" fill="#FFE1C4" />
+  <rect x="40" y="92" width="80" height="24" rx="8" fill="#FFFFFF" />
+  <rect x="52" y="100" width="32" height="6" rx="3" fill="#FFD2A3" />
+  <rect x="52" y="112" width="20" height="4" rx="2" fill="#FFE1C4" />
+  <circle cx="112" cy="104" r="10" fill="#FF8A1A" />
+  <path d="M109 104H115M112 101V107" stroke="#FFFFFF" stroke-width="2" stroke-linecap="round" />
+</svg>
+

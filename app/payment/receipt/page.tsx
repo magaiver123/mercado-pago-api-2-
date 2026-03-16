@@ -48,7 +48,7 @@ export default function ReceiptPage() {
 
     timeoutRef.current = setTimeout(() => {
       finishFlow()
-    }, 30000)
+    }, 180000)
 
     return () => {
       if (timeoutRef.current) {
@@ -66,10 +66,6 @@ export default function ReceiptPage() {
 
   const cancelAutoTimeout = () => {
     setHasInteracted(true)
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current)
-      timeoutRef.current = null
-    }
   }
 
   const handleViewReceipt = () => {
@@ -91,7 +87,6 @@ export default function ReceiptPage() {
     } finally {
       setTimeout(() => {
         setIsPrinting(false)
-        finishFlow()
       }, 4000)
     }
   }
@@ -117,49 +112,55 @@ export default function ReceiptPage() {
           />
         </div>
 
-        <div className="space-y-2 text-center">
+        <div className="space-y-3 text-center">
           <h1 className="text-4xl font-bold text-black">
             Pronto
             {receipt?.customerName ? `, ${receipt.customerName}` : ","}
           </h1>
-          <p className="text-xl text-black/80">
+          <p className="text-xl font-bold text-black">
             Aqui está o seu comprovante
+          </p>
+          {receipt?.orderId && (
+            <p className="text-sm font-semibold text-orange-500">
+              Nº do pedido: {receipt.orderId}
+            </p>
+          )}
+          <p className="mt-3 text-base font-medium text-black/80">
+            Abra a geladeira e retire os itens do seu pedido
           </p>
         </div>
 
         <div className="grid gap-6 md:grid-cols-2">
           <button
             onClick={handleViewReceipt}
-            className="flex h-48 flex-col justify-between rounded-2xl border-2 border-orange-500 bg-white p-6 text-left shadow-sm transition hover:border-orange-600 hover:shadow-md"
+            className="flex aspect-square flex-col items-center justify-center gap-4 rounded-2xl border-2 border-orange-500 bg-white p-6 text-center shadow-sm transition hover:border-orange-600 hover:shadow-md"
           >
-            <div>
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-orange-100">
-                <span className="text-2xl text-orange-500">🧾</span>
-              </div>
-              <h2 className="text-2xl font-semibold text-black">Ver Nota</h2>
-              <p className="mt-2 text-sm text-black/70">
-                Visualize os detalhes da sua compra em formato de comprovante.
-              </p>
+            <div className="relative h-20 w-20">
+              <Image
+                src="/receipt/10.svg"
+                alt="Ver Nota"
+                fill
+                className="object-contain"
+              />
             </div>
+            <h2 className="text-2xl font-semibold text-black">Ver Nota</h2>
           </button>
 
           <button
             onClick={handlePrint}
-            className="flex h-48 flex-col justify-between rounded-2xl border-2 border-orange-500 bg-orange-500 p-6 text-left text-white shadow-sm transition hover:bg-orange-600 hover:shadow-md"
+            className="flex aspect-square flex-col items-center justify-center gap-4 rounded-2xl border-2 border-orange-500 bg-orange-500 p-6 text-center text-white shadow-sm transition hover:bg-orange-600 hover:shadow-md"
           >
-            <div>
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-white/15">
-                <span className="text-2xl">🖨️</span>
-              </div>
-              <h2 className="text-2xl font-semibold">Imprimir Nota</h2>
-              <p className="mt-2 text-sm text-white/90">
-                Envie o comprovante para a impressora conectada ao totem.
-              </p>
+            <div className="relative h-20 w-20">
+              <Image
+                src="/receipt/11.svg"
+                alt="Imprimir Nota"
+                fill
+                className="object-contain"
+              />
             </div>
-            <div className="text-xs text-white/80">
-              {isPrinting
-                ? "Enviando para impressão..."
-                : "A tela será encerrada após a impressão."}
+            <h2 className="text-2xl font-semibold">Imprimir Nota</h2>
+            <div className="text-xs text-white/90">
+              {isPrinting ? "Enviando para impressão..." : "Toque para imprimir"}
             </div>
           </button>
         </div>
@@ -173,7 +174,7 @@ export default function ReceiptPage() {
         {!hasInteracted && (
           <p className="text-center text-xs text-black/60">
             Se você não tocar na tela, retornaremos automaticamente ao início
-            em alguns segundos.
+            em 3 minutos.
           </p>
         )}
       </div>
@@ -196,6 +197,16 @@ export default function ReceiptPage() {
           </div>
         </DialogContent>
       </Dialog>
+
+      <div className="fixed inset-x-0 bottom-0 flex justify-center bg-gradient-to-t from-[#f3f1ee] via-[#f3f1ee]/95 to-transparent pb-8 pt-4">
+        <Button
+          size="lg"
+          className="h-14 min-w-[260px] rounded-full bg-orange-500 text-lg font-semibold text-white shadow-md hover:bg-orange-600"
+          onClick={finishFlow}
+        >
+          Finalizar pedido
+        </Button>
+      </div>
     </main>
   )
 }
