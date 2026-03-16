@@ -108,7 +108,14 @@ export default function CheckoutPage() {
         throw new Error(data.error || "Erro ao criar pedido");
       }
 
-      const { storeName, storeAddress } = getDefaultStoreInfo();
+      const {
+        storeName,
+        storeAddress,
+        storeLegalName,
+        storeTaxId,
+        storePhone,
+        storeLogoPath,
+      } = getDefaultStoreInfo();
       const createdAtIso = new Date().toISOString();
 
       saveReceiptToSession({
@@ -126,6 +133,10 @@ export default function CheckoutPage() {
         total,
         storeName,
         storeAddress,
+        storeLegalName,
+        storeTaxId,
+        storePhone,
+        storeLogoPath,
       });
 
       router.push(`/payment/processing?orderId=${data.orderId}`);

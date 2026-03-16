@@ -1,8 +1,28 @@
+import Image from "next/image"
 import { ReceiptData } from "@/lib/receipt-types"
 
 interface ReceiptPreviewProps {
   receipt: ReceiptData
   className?: string
+}
+
+function formatCurrency(value: number) {
+  return `R$ ${value.toFixed(2).replace(".", ",")}`
+}
+
+function formatDate(value: string) {
+  const asDate = new Date(value)
+  if (Number.isNaN(asDate.getTime())) {
+    return "Data nao informada"
+  }
+
+  return asDate.toLocaleString("pt-BR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
 }
 
 export function ReceiptPreview({ receipt, className }: ReceiptPreviewProps) {
@@ -11,111 +31,134 @@ export function ReceiptPreview({ receipt, className }: ReceiptPreviewProps) {
     0,
   )
 
+  const subtotal =
+    typeof receipt.subtotal === "number" && receipt.subtotal > 0
+      ? receipt.subtotal
+      : itemsTotal
+
   const discounts = receipt.discounts ?? 0
+  const orderNumber =
+    receipt.orderNumber != null ? receipt.orderNumber : receipt.orderId
+  const logoPath =
+    receipt.storeLogoPath && receipt.storeLogoPath.startsWith("/")
+      ? receipt.storeLogoPath
+      : "/logo.svg"
+
+  const storeLegalName = receipt.storeLegalName || receipt.storeName
+  const storeAddress = receipt.storeAddress || "Endereco da loja nao informado"
+  const storeTaxId = receipt.storeTaxId || "CNPJ nao informado"
+  const storePhone = receipt.storePhone || "Telefone nao informado"
 
   return (
     <div
-      className={`mx-auto w-full max-w-sm rounded-lg border border-gray-300 bg-white p-6 text-black shadow-sm ${
+      className={`mx-auto w-full max-w-[360px] rounded-xl border border-black/15 bg-white p-4 font-mono text-[11px] text-black shadow-[0_12px_32px_rgba(0,0,0,0.08)] ${
         className ?? ""
       }`}
     >
-      <div className="mb-4 text-center">
-        <div className="text-lg font-bold">{receipt.storeName}</div>
-        {receipt.storeAddress && (
-          <div className="text-xs text-black/70">{receipt.storeAddress}</div>
-        )}
+      <div className="mb-3 flex flex-col items-center text-center">
+        <Image
+          src={logoPath}
+          alt="Logo da loja"
+          width={120}
+          height={42}
+          className="h-9 w-auto"
+        />
+        <div className="mt-2 text-[13px] font-bold uppercase tracking-wide">
+          {storeLegalName}
+        </div>
+        <div className="text-[10px] text-black/75">{storeTaxId}</div>
+        <div className="text-[10px] text-black/75">{storeAddress}</div>
+        <div className="text-[10px] text-black/75">{storePhone}</div>
       </div>
 
-      <div className="mb-4 border-y border-dashed border-gray-300 py-2 text-xs">
-        <div className="flex justify-between">
-          <span>Nº do pedido</span>
-          <span>
-            {receipt.orderNumber != null ? receipt.orderNumber : receipt.orderId}
-          </span>
+      <div className="mb-3 border-y border-dashed border-black/25 py-2 text-[10px]">
+        <div className="flex items-center justify-between gap-2">
+          <span>Pedido</span>
+          <span className="font-semibold">{orderNumber}</span>
         </div>
-        <div className="flex justify-between">
+        <div className="flex items-center justify-between gap-2">
           <span>Data</span>
-          <span>
-            {new Date(receipt.createdAt).toLocaleString("pt-BR", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "2-digit",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+          <span>{formatDate(receipt.createdAt)}</span>
+        </div>
+        <div className="flex items-center justify-between gap-2">
+          <span>Cliente</span>
+          <span className="max-w-[65%] truncate text-right">
+            {receipt.customerName || "Consumidor nao informado"}
           </span>
         </div>
-        {receipt.customerName && (
-          <div className="mt-1 flex justify-between">
-            <span>Cliente</span>
-            <span className="max-w-[60%] truncate text-right">
-              {receipt.customerName}
-            </span>
-          </div>
-        )}
+        <div className="flex items-center justify-between gap-2">
+          <span>Documento</span>
+          <span className="max-w-[65%] truncate text-right">
+            {receipt.customerDocument || "Nao informado"}
+          </span>
+        </div>
       </div>
 
-      <div className="mb-4">
-        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-black/70">
-          Itens
+      <div className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-black/70">
+        Itens do pedido
+      </div>
+      <div className="mb-2 border-b border-dashed border-black/25 pb-2 text-[10px]">
+        <div className="grid grid-cols-12 gap-2 font-bold text-black/80">
+          <span className="col-span-5">Item</span>
+          <span className="col-span-2 text-right">Qtd</span>
+          <span className="col-span-2 text-right">Un</span>
+          <span className="col-span-3 text-right">Total</span>
         </div>
-        <div className="space-y-1 text-xs">
+
+        <div className="mt-1 space-y-1">
           {receipt.items.map((item, index) => (
-            <div key={`${item.name}-${index}`} className="flex justify-between">
-              <div className="max-w-[65%]">
-                <div className="truncate">{item.name}</div>
-                <div className="text-[10px] text-black/60">
-                  {item.quantity}x R${" "}
-                  {item.unitPrice.toFixed(2).replace(".", ",")}
-                </div>
+            <div key={`${item.name}-${index}`} className="grid grid-cols-12 gap-2">
+              <div className="col-span-5 leading-tight">{item.name}</div>
+              <div className="col-span-2 text-right">{item.quantity}</div>
+              <div className="col-span-2 text-right">
+                {item.unitPrice.toFixed(2).replace(".", ",")}
               </div>
-              <div className="text-right font-semibold">
-                R${" "}
-                {(item.unitPrice * item.quantity)
-                  .toFixed(2)
-                  .replace(".", ",")}
+              <div className="col-span-3 text-right font-semibold">
+                {(item.unitPrice * item.quantity).toFixed(2).replace(".", ",")}
               </div>
             </div>
           ))}
         </div>
       </div>
 
-      <div className="mb-4 border-t border-dashed border-gray-300 pt-3 text-xs">
-        <div className="flex justify-between">
+      <div className="mb-3 border-b border-dashed border-black/25 pb-2 text-[11px]">
+        <div className="flex items-center justify-between">
           <span>Subtotal</span>
-          <span>
-            R$ {itemsTotal.toFixed(2).replace(".", ",")}
-          </span>
+          <span>{formatCurrency(subtotal)}</span>
         </div>
-        {discounts > 0 && (
-          <div className="flex justify-between text-green-700">
-            <span>Descontos</span>
-            <span>
-              - R$ {discounts.toFixed(2).replace(".", ",")}
-            </span>
-          </div>
-        )}
-        <div className="mt-2 flex justify-between text-sm font-bold">
-          <span>Total</span>
-          <span>
-            R$ {receipt.total.toFixed(2).replace(".", ",")}
-          </span>
+        <div className="flex items-center justify-between">
+          <span>Descontos</span>
+          <span>{discounts > 0 ? `- ${formatCurrency(discounts)}` : "R$ 0,00"}</span>
+        </div>
+        <div className="mt-1 flex items-center justify-between text-[12px] font-bold">
+          <span>Valor final</span>
+          <span>{formatCurrency(receipt.total)}</span>
         </div>
       </div>
 
-      <div className="mb-4 text-xs">
-        <div className="flex justify-between">
-          <span>Forma de pagamento</span>
+      <div className="mb-3 text-[10px]">
+        <div className="flex items-center justify-between">
+          <span>Pagamento</span>
           <span className="font-semibold">{receipt.paymentMethod}</span>
         </div>
+        <div className="flex items-center justify-between">
+          <span>Codigo autorizacao</span>
+          <span>{receipt.authorizationCode || "Nao informado"}</span>
+        </div>
+        <div className="flex items-start justify-between gap-2 pt-1">
+          <span>Chave acesso</span>
+          <span className="max-w-[70%] break-all text-right">
+            {receipt.accessKey || "Nao informado"}
+          </span>
+        </div>
       </div>
 
-      <div className="border-t border-dashed border-gray-300 pt-3 text-center text-[11px] text-black/70">
-        Obrigado pela preferência!
+      <div className="border-t border-dashed border-black/25 pt-2 text-center text-[10px] text-black/70">
+        Obrigado pela preferencia!
         <br />
-        Este não é um comprovante fiscal.
+        {receipt.additionalMessage ||
+          "Este comprovante foi emitido pelo autoatendimento."}
       </div>
     </div>
   )
 }
-

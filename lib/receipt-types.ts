@@ -9,13 +9,21 @@ export interface ReceiptData {
   orderNumber?: number | null
   createdAt: string
   customerName?: string | null
+  customerDocument?: string
   items: ReceiptItem[]
   paymentMethod: string
   subtotal: number
   discounts?: number
   total: number
   storeName: string
+  storeLegalName?: string
   storeAddress?: string
+  storeTaxId?: string
+  storePhone?: string
+  storeLogoPath?: string
+  authorizationCode?: string
+  accessKey?: string
+  additionalMessage?: string
 }
 
 const RECEIPT_STORAGE_KEY = "last_kiosk_receipt"
@@ -25,7 +33,7 @@ export function saveReceiptToSession(receipt: ReceiptData) {
   try {
     sessionStorage.setItem(RECEIPT_STORAGE_KEY, JSON.stringify(receipt))
   } catch {
-    // ignore storage errors – kiosk still works without persisted receipt
+    // ignore storage errors - kiosk still works without persisted receipt
   }
 }
 
@@ -55,20 +63,22 @@ export function clearReceiptFromSession() {
 export function getDefaultStoreInfo() {
   return {
     storeName: "Autoatendimento",
-    storeAddress: "Loja Totem - Endereço não configurado",
+    storeAddress: "Loja Totem - Endereco nao configurado",
+    storeLegalName: "Autoatendimento Comercial Ltda.",
+    storeTaxId: "CNPJ nao informado",
+    storePhone: "Telefone nao informado",
+    storeLogoPath: "/logo.svg",
   }
 }
 
-// Hook para futura impressão avançada via backend/serviço local.
-// Quando houver suporte, esta função pode enviar o `receipt` para um endpoint
-// como POST /api/print-receipt, que então delega a impressão para o serviço correto.
+// Hook para futura impressao avancada via backend/servico local.
+// Quando houver suporte, esta funcao pode enviar o `receipt` para um endpoint
+// como POST /api/print-receipt, que entao delega a impressao para o servico correto.
 export async function printReceiptViaBackend(_receipt: ReceiptData) {
-  // Implementação futura:
+  // Implementacao futura:
   // await fetch("/api/print-receipt", {
   //   method: "POST",
   //   headers: { "Content-Type": "application/json" },
   //   body: JSON.stringify(receipt),
   // })
 }
-
-

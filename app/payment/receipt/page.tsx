@@ -18,7 +18,6 @@ export default function ReceiptPage() {
   const urlOrderId = searchParams.get("orderId")
 
   const [isModalOpen, setIsModalOpen] = useState(false)
-  const [hasInteracted, setHasInteracted] = useState(false)
   const [isPrinting, setIsPrinting] = useState(false)
   const [receiptLoaded, setReceiptLoaded] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -29,8 +28,7 @@ export default function ReceiptPage() {
 
   useEffect(() => {
     if (!receipt) {
-      setError("Não encontramos os dados do comprovante deste pedido.")
-      // volta para a tela de sucesso genérica após alguns segundos
+      setError("Nao encontramos os dados do comprovante deste pedido.")
       const id = setTimeout(() => {
         router.push("/payment/success")
       }, 4000)
@@ -38,7 +36,6 @@ export default function ReceiptPage() {
     }
 
     if (urlOrderId && receipt.orderId !== urlOrderId) {
-      // se o orderId não bater, ainda assim mostramos o comprovante mais recente
       console.warn(
         "[receipt] orderId from URL does not match stored receipt orderId",
       )
@@ -64,12 +61,7 @@ export default function ReceiptPage() {
     router.push("/")
   }
 
-  const cancelAutoTimeout = () => {
-    setHasInteracted(true)
-  }
-
   const handleViewReceipt = () => {
-    cancelAutoTimeout()
     setIsModalOpen(true)
   }
 
@@ -79,7 +71,6 @@ export default function ReceiptPage() {
 
   const handlePrint = () => {
     if (!receipt || isPrinting) return
-    cancelAutoTimeout()
     setIsPrinting(true)
 
     try {
@@ -100,100 +91,97 @@ export default function ReceiptPage() {
   }
 
   return (
-    <main className="flex h-[100svh] w-full flex-col items-center overflow-hidden bg-[#f3f1ee] px-4 py-5">
-      <div className="flex w-full max-w-3xl flex-1 flex-col">
-        <div className="flex justify-center">
+    <main className="flex min-h-[100svh] w-full flex-col bg-[#f3f1ee] px-4 pb-5 pt-5">
+      <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col">
+        <div className="flex justify-center pt-1">
           <Image
             src="/logo.svg"
             alt="Logo"
-            width={180}
-            height={60}
-            className="h-12 w-auto sm:h-16"
+            width={220}
+            height={72}
+            className="h-14 w-auto sm:h-16"
           />
         </div>
 
-        <div className="mt-5 space-y-2 text-center">
-          <h1 className="text-3xl font-bold text-black sm:text-4xl">
-            Pronto
-            {receipt?.customerName ? `, ${receipt.customerName}` : ","}
+        <div className="mt-6 space-y-2 text-center">
+          <h1 className="text-[clamp(2rem,5vw,3.4rem)] font-black leading-[0.97] text-black">
+            <span className="block">
+              Pronto{receipt?.customerName ? `, ${receipt.customerName}!` : "!"}
+            </span>
+            <span className="block">Aqui está o seu comprovante.</span>
           </h1>
-          <p className="text-lg font-bold text-black sm:text-xl">
-            Aqui está o seu comprovante
-          </p>
           {receipt?.orderId && (
-            <p className="text-sm font-semibold text-orange-500">
-              Nº do pedido: {receipt.orderId}
+            <p className="text-xl font-black text-orange-500 sm:text-2xl">
+              N° do pedido: {receipt.orderId}
             </p>
           )}
-          <p className="pt-1 text-sm font-medium text-black/80 sm:text-base">
-            Abra a geladeira e retire os itens do seu pedido
+          <p className="mx-auto max-w-2xl pt-2 text-lg font-medium text-black/80 sm:text-2xl">
+            Abra a geladeira e pegue os itens do seu pedido
           </p>
         </div>
 
-        <div className="mt-5 grid flex-1 gap-4 md:grid-cols-2 md:gap-6">
+        <div className="mx-auto mt-8 grid w-full max-w-2xl grid-cols-2 gap-4 md:mt-10 md:gap-8">
           <button
+            type="button"
             onClick={handleViewReceipt}
-            className="flex h-[min(28vh,220px)] flex-col items-center justify-center gap-3 rounded-2xl border-2 border-orange-500 bg-white p-5 text-center shadow-sm transition hover:border-orange-600 hover:shadow-md md:aspect-square md:h-auto md:gap-4 md:p-6"
+            className="group flex aspect-square w-full flex-col items-center justify-center gap-3 rounded-[28px] border border-black/15 bg-white p-5 text-center shadow-[0_12px_34px_rgba(0,0,0,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_40px_rgba(0,0,0,0.13)]"
           >
-            <div className="relative h-14 w-14 md:h-20 md:w-20">
+            <div className="relative h-20 w-20 sm:h-24 sm:w-24">
               <Image
-                src="/receipt/10.svg"
+                src="/receipt/view-note.svg"
                 alt="Ver Nota"
                 fill
                 className="object-contain"
               />
             </div>
-            <h2 className="text-xl font-semibold text-black md:text-2xl">
+            <h2 className="text-2xl font-black text-black sm:text-3xl">
               Ver Nota
             </h2>
           </button>
 
           <button
+            type="button"
             onClick={handlePrint}
-            className="flex h-[min(28vh,220px)] flex-col items-center justify-center gap-3 rounded-2xl border-2 border-orange-500 bg-orange-500 p-5 text-center text-white shadow-sm transition hover:bg-orange-600 hover:shadow-md md:aspect-square md:h-auto md:gap-4 md:p-6"
+            className="group flex aspect-square w-full flex-col items-center justify-center gap-3 rounded-[28px] border border-black/15 bg-white p-5 text-center shadow-[0_12px_34px_rgba(0,0,0,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_40px_rgba(0,0,0,0.13)]"
           >
-            <div className="relative h-14 w-14 md:h-20 md:w-20">
+            <div className="relative h-20 w-20 sm:h-24 sm:w-24">
               <Image
-                src="/receipt/11.svg"
+                src="/receipt/print-note.svg"
                 alt="Imprimir Nota"
                 fill
                 className="object-contain"
               />
             </div>
-            <h2 className="text-xl font-semibold md:text-2xl">
+            <h2 className="text-2xl font-black text-black sm:text-3xl">
               Imprimir Nota
             </h2>
-            <div className="text-xs text-white/90">
-              {isPrinting ? "Enviando para impressão..." : "Toque para imprimir"}
+            <div className="text-xs font-medium text-orange-600 sm:text-sm">
+              {isPrinting ? "Enviando para impressao..." : "Toque para imprimir"}
             </div>
           </button>
         </div>
 
         {error && (
-          <div className="rounded-lg border border-red-300 bg-red-50 p-4 text-center text-sm text-red-700">
+          <div className="mx-auto mt-4 w-full max-w-2xl rounded-lg border border-red-300 bg-red-50 p-4 text-center text-sm text-red-700">
             {error}
           </div>
         )}
-
-        {!hasInteracted && (
-          <p className="mt-3 text-center text-xs text-black/60">
-            Se você não tocar na tela, retornaremos automaticamente ao início
-            em 3 minutos.
-          </p>
-        )}
       </div>
 
-      <div id="printable-receipt" className="pointer-events-none fixed inset-0 z-[-1] flex items-center justify-center p-4">
+      <div
+        id="printable-receipt"
+        className="pointer-events-none fixed inset-0 z-[-1] flex items-center justify-center p-4"
+      >
         {receipt && <ReceiptPreview receipt={receipt} />}
       </div>
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-        <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto bg-white p-6">
-          {receipt && <ReceiptPreview receipt={receipt} />}
+        <DialogContent className="max-h-[90vh] max-w-[420px] overflow-y-auto border-black/10 bg-white p-5 sm:max-w-[460px]">
+          {receipt && <ReceiptPreview receipt={receipt} className="max-w-none" />}
           <div className="mt-4 flex justify-center">
             <Button
               variant="outline"
-              className="border-orange-500 text-orange-600 hover:bg-orange-50"
+              className="h-11 min-w-[160px] rounded-full border-orange-500 text-orange-600 hover:bg-orange-50"
               onClick={handleCloseModal}
             >
               Fechar
@@ -202,10 +190,10 @@ export default function ReceiptPage() {
         </DialogContent>
       </Dialog>
 
-      <div className="mt-auto flex justify-center bg-gradient-to-t from-[#f3f1ee] via-[#f3f1ee]/95 to-transparent pb-2 pt-4">
+      <div className="mt-auto flex justify-center bg-gradient-to-t from-[#f3f1ee] via-[#f3f1ee]/95 to-transparent pb-2 pt-5">
         <Button
           size="lg"
-          className="h-12 min-w-[240px] rounded-full bg-orange-500 text-base font-semibold text-white shadow-md hover:bg-orange-600 sm:h-14 sm:min-w-[260px] sm:text-lg"
+          className="h-12 min-w-[250px] rounded-full bg-orange-500 text-base font-bold text-white shadow-md hover:bg-orange-600 sm:h-14 sm:min-w-[280px] sm:text-lg"
           onClick={finishFlow}
         >
           Finalizar pedido
@@ -214,4 +202,3 @@ export default function ReceiptPage() {
     </main>
   )
 }
-
