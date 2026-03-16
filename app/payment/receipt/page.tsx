@@ -91,42 +91,49 @@ export default function ReceiptPage() {
   }
 
   return (
-    <main className="flex min-h-[100svh] w-full flex-col bg-[#f3f1ee] px-4 pb-5 pt-5">
+    <main className="flex min-h-[100svh] w-full flex-col bg-white px-4 pb-5 pt-8">
       <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col">
-        <div className="flex justify-center pt-1">
+        <div className="flex justify-center pt-4">
           <Image
-            src="/logo.svg"
+            src="/logologin.png"
             alt="Logo"
-            width={220}
-            height={72}
-            className="h-14 w-auto sm:h-16"
+            width={420}
+            height={420}
+            className="h-28 w-auto object-contain sm:h-36"
+            priority
           />
         </div>
 
-        <div className="mt-6 space-y-2 text-center">
-          <h1 className="text-[clamp(2rem,5vw,3.4rem)] font-black leading-[0.97] text-black">
+        <div className="mt-8 text-center">
+          <h1
+            className="text-[clamp(2.1rem,5.2vw,3.6rem)] font-black leading-[0.96] text-black"
+            style={{ fontFamily: "'Arial Black', Impact, sans-serif" }}
+          >
             <span className="block">
               Pronto{receipt?.customerName ? `, ${receipt.customerName}!` : "!"}
             </span>
             <span className="block">Aqui está o seu comprovante.</span>
           </h1>
           {receipt?.orderId && (
-            <p className="text-xl font-black text-orange-500 sm:text-2xl">
+            <p className="mt-8 text-xl font-black text-orange-500 sm:text-2xl">
               N° do pedido: {receipt.orderId}
             </p>
           )}
-          <p className="mx-auto max-w-2xl pt-2 text-lg font-medium text-black/80 sm:text-2xl">
+          <p
+            className="mx-auto mt-8 max-w-2xl text-lg font-medium text-black/80 sm:text-2xl"
+            style={{ fontFamily: "Geist, sans-serif" }}
+          >
             Abra a geladeira e pegue os itens do seu pedido
           </p>
         </div>
 
-        <div className="mx-auto mt-8 grid w-full max-w-2xl grid-cols-2 gap-4 md:mt-10 md:gap-8">
+        <div className="mx-auto mt-16 grid w-full max-w-2xl grid-cols-2 gap-4 md:mt-20 md:gap-8">
           <button
             type="button"
             onClick={handleViewReceipt}
-            className="group flex aspect-square w-full flex-col items-center justify-center gap-3 rounded-[28px] border border-black/15 bg-white p-5 text-center shadow-[0_12px_34px_rgba(0,0,0,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_40px_rgba(0,0,0,0.13)]"
+            className="group flex aspect-square w-full flex-col items-center justify-center gap-3 rounded-[28px] border-2 border-black bg-orange-500 p-5 text-center shadow-[0_14px_36px_rgba(0,0,0,0.2)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_44px_rgba(0,0,0,0.24)]"
           >
-            <div className="relative h-20 w-20 sm:h-24 sm:w-24">
+            <div className="relative h-20 w-20 rounded-2xl bg-white/90 p-2 sm:h-24 sm:w-24">
               <Image
                 src="/receipt/view-note.svg"
                 alt="Ver Nota"
@@ -134,7 +141,7 @@ export default function ReceiptPage() {
                 className="object-contain"
               />
             </div>
-            <h2 className="text-2xl font-black text-black sm:text-3xl">
+            <h2 className="text-2xl font-black text-white sm:text-3xl">
               Ver Nota
             </h2>
           </button>
@@ -142,9 +149,9 @@ export default function ReceiptPage() {
           <button
             type="button"
             onClick={handlePrint}
-            className="group flex aspect-square w-full flex-col items-center justify-center gap-3 rounded-[28px] border border-black/15 bg-white p-5 text-center shadow-[0_12px_34px_rgba(0,0,0,0.08)] transition hover:-translate-y-0.5 hover:shadow-[0_16px_40px_rgba(0,0,0,0.13)]"
+            className="group flex aspect-square w-full flex-col items-center justify-center gap-3 rounded-[28px] border-2 border-black bg-orange-500 p-5 text-center shadow-[0_14px_36px_rgba(0,0,0,0.2)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_44px_rgba(0,0,0,0.24)]"
           >
-            <div className="relative h-20 w-20 sm:h-24 sm:w-24">
+            <div className="relative h-20 w-20 rounded-2xl bg-white/90 p-2 sm:h-24 sm:w-24">
               <Image
                 src="/receipt/print-note.svg"
                 alt="Imprimir Nota"
@@ -152,10 +159,10 @@ export default function ReceiptPage() {
                 className="object-contain"
               />
             </div>
-            <h2 className="text-2xl font-black text-black sm:text-3xl">
+            <h2 className="text-2xl font-black text-white sm:text-3xl">
               Imprimir Nota
             </h2>
-            <div className="text-xs font-medium text-orange-600 sm:text-sm">
+            <div className="text-xs font-semibold text-white/90 sm:text-sm">
               {isPrinting ? "Enviando para impressao..." : "Toque para imprimir"}
             </div>
           </button>
@@ -190,7 +197,7 @@ export default function ReceiptPage() {
         </DialogContent>
       </Dialog>
 
-      <div className="mt-auto flex justify-center bg-gradient-to-t from-[#f3f1ee] via-[#f3f1ee]/95 to-transparent pb-2 pt-5">
+      <div className="mt-auto flex justify-center bg-gradient-to-t from-white via-white/95 to-transparent pb-2 pt-5">
         <Button
           size="lg"
           className="h-12 min-w-[250px] rounded-full bg-orange-500 text-base font-bold text-white shadow-md hover:bg-orange-600 sm:h-14 sm:min-w-[280px] sm:text-lg"
