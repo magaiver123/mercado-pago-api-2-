@@ -100,8 +100,8 @@ export default function ReceiptPage() {
   }
 
   return (
-    <main className="flex h-[100svh] w-full items-center justify-center overflow-hidden bg-[#f3f1ee] px-4 py-5">
-      <div className="flex h-full w-full max-w-3xl flex-col">
+    <main className="flex h-[100svh] w-full flex-col items-center overflow-hidden bg-[#f3f1ee] px-4 py-5">
+      <div className="flex w-full max-w-3xl flex-1 flex-col">
         <div className="flex justify-center">
           <Image
             src="/logo.svg"
@@ -202,7 +202,7 @@ export default function ReceiptPage() {
         </DialogContent>
       </Dialog>
 
-      <div className="sticky bottom-0 left-0 right-0 mt-4 flex justify-center bg-gradient-to-t from-[#f3f1ee] via-[#f3f1ee]/95 to-transparent pb-5 pt-3">
+      <div className="mt-auto flex justify-center bg-gradient-to-t from-[#f3f1ee] via-[#f3f1ee]/95 to-transparent pb-2 pt-4">
         <Button
           size="lg"
           className="h-12 min-w-[240px] rounded-full bg-orange-500 text-base font-semibold text-white shadow-md hover:bg-orange-600 sm:h-14 sm:min-w-[260px] sm:text-lg"
