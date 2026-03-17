@@ -39,3 +39,17 @@
    - tela exibida,
    - resultado no terminal.
 
+## Reset manual da numeracao de pedidos
+Use quando houver limpeza operacional da tabela `orders` e for necessario recomecar o contador global de `order_number`.
+
+### Opcao 1 (recomendado para zerar tudo)
+```sql
+TRUNCATE public.orders RESTART IDENTITY;
+```
+
+### Opcao 2 (quando usar DELETE em vez de TRUNCATE)
+```sql
+ALTER SEQUENCE public.order_number_seq RESTART WITH 1;
+```
+
+Observacao: o formato exibido no app e fixo em 8 digitos (`00000001`, `00000002`, ...), mas o valor armazenado no banco continua inteiro.

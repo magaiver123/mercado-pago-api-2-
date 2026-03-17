@@ -26,7 +26,7 @@ export async function registerOrderService(input: RegisterOrderInput) {
     throw new AppError("Dados invalidos", 400)
   }
 
-  await getRepositoryFactory().order.registerOrder({
+  const createdOrder = await getRepositoryFactory().order.registerOrder({
     storeId: input.storeId,
     userId: input.userId,
     mercadopagoOrderId: input.mercadopagoOrderId,
@@ -36,5 +36,9 @@ export async function registerOrderService(input: RegisterOrderInput) {
     items: input.items,
   })
 
-  return { success: true }
+  return {
+    success: true,
+    orderId: createdOrder.id,
+    orderNumber: createdOrder.orderNumber,
+  }
 }

@@ -10,6 +10,7 @@ import {
   type UserprofileUser,
 } from "@/lib/userprofile-auth-store";
 import { normalizePointOrderStatus } from "@/lib/mercadopago-point-status";
+import { formatOrderNumberOrFallback } from "@/lib/order-number";
 
 type Order = {
   id: string;
@@ -75,11 +76,10 @@ function formatDate(value: string) {
 }
 
 function formatOrderNumber(order: Order) {
-  if (typeof order.order_number === "number") {
-    return String(order.order_number).padStart(6, "0");
-  }
-
-  return order.id.slice(0, 6).toUpperCase();
+  return formatOrderNumberOrFallback(
+    order.order_number,
+    order.id.slice(0, 8).toUpperCase()
+  );
 }
 
 export default function PedidosPage() {

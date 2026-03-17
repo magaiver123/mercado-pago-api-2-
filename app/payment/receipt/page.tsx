@@ -11,6 +11,7 @@ import {
   getReceiptFromSession,
 } from "@/lib/receipt-types"
 import { clearAuthUser } from "@/lib/auth-store"
+import { formatOrderNumberOrFallback } from "@/lib/order-number"
 
 export default function ReceiptPage() {
   const router = useRouter()
@@ -23,7 +24,6 @@ export default function ReceiptPage() {
   const [error, setError] = useState<string | null>(null)
 
   const [receipt] = useState(() => getReceiptFromSession())
-
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
@@ -42,7 +42,6 @@ export default function ReceiptPage() {
     }
 
     setReceiptLoaded(true)
-
     timeoutRef.current = setTimeout(() => {
       finishFlow()
     }, 180000)
@@ -90,6 +89,10 @@ export default function ReceiptPage() {
     )
   }
 
+  const displayOrderNumber = receipt
+    ? formatOrderNumberOrFallback(receipt.orderNumber, receipt.orderId)
+    : ""
+
   return (
     <main className="flex min-h-[100svh] w-full flex-col bg-white px-4 pb-5 pt-8">
       <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col">
@@ -112,11 +115,11 @@ export default function ReceiptPage() {
             <span className="block">
               Pronto{receipt?.customerName ? `, ${receipt.customerName}!` : "!"}
             </span>
-            <span className="block">Aqui está o seu comprovante.</span>
+            <span className="block">Aqui esta o seu comprovante.</span>
           </h1>
-          {receipt?.orderId && (
+          {displayOrderNumber && (
             <p className="mt-8 text-xl font-black text-orange-500 sm:text-2xl">
-              N° do pedido: {receipt.orderId}
+              No. do pedido: {displayOrderNumber}
             </p>
           )}
           <p

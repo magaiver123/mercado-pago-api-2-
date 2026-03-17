@@ -1,19 +1,32 @@
 import { AppError } from "@/api/utils/app-error"
 import { OrderRecord } from "@/api/types/domain"
 import { BaseSupabaseRepository } from "@/api/repositories/supabase/base-supabase-repository"
-import { OrderRepository, RegisterOrderInput } from "@/api/repositories/contracts/order-repository"
+import { OrderRepository, RegisterOrderInput, RegisterOrderResult } from "@/api/repositories/contracts/order-repository"
 
 export class OrderSupabaseRepository extends BaseSupabaseRepository implements OrderRepository {
-  async registerOrder(input: RegisterOrderInput): Promise<void> {
-    await this.db.from("orders").insert({
-      store_id: input.storeId,
-      user_id: input.userId,
-      mercadopago_order_id: input.mercadopagoOrderId,
-      total_amount: input.totalAmount,
-      payment_method: input.paymentMethod,
-      status: input.status,
-      items: input.items,
-    })
+  async registerOrder(input: RegisterOrderInput): Promise<RegisterOrderResult> {
+    const { data, error } = await this.db
+      .from("orders")
+      .insert({
+        store_id: input.storeId,
+        user_id: input.userId,
+        mercadopago_order_id: input.mercadopagoOrderId,
+        total_amount: input.totalAmount,
+        payment_method: input.paymentMethod,
+        status: input.status,
+        items: input.items,
+      })
+      .select("id, order_number")
+      .single()
+
+    if (error || !data) {
+      throw new AppError("Erro ao registrar pedido", 500)
+    }
+
+    return {
+      id: data.id as string,
+      orderNumber: (data.order_number as number | null) ?? null,
+    }
   }
 
   async getStatusByMercadopagoOrderId(orderId: string): Promise<{ status: string; created_at: string } | null> {

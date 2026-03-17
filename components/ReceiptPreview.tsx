@@ -1,5 +1,6 @@
 import Image from "next/image"
 import { ReceiptData } from "@/lib/receipt-types"
+import { formatOrderNumberOrFallback } from "@/lib/order-number"
 
 interface ReceiptPreviewProps {
   receipt: ReceiptData
@@ -37,8 +38,10 @@ export function ReceiptPreview({ receipt, className }: ReceiptPreviewProps) {
       : itemsTotal
 
   const discounts = receipt.discounts ?? 0
-  const orderNumber =
-    receipt.orderNumber != null ? receipt.orderNumber : receipt.orderId
+  const orderNumber = formatOrderNumberOrFallback(
+    receipt.orderNumber,
+    receipt.orderId,
+  )
   const logoPath =
     receipt.storeLogoPath && receipt.storeLogoPath.startsWith("/")
       ? receipt.storeLogoPath

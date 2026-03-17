@@ -133,8 +133,10 @@ export async function createMercadoPagoOrderService(body: unknown, storeId: stri
     throw new AppError("Resposta invalida ao criar pedido no Mercado Pago", 502)
   }
 
+  let registerResult: { id: string; orderNumber: number | null } | null = null
+
   try {
-    await repositories.order.registerOrder({
+    registerResult = await repositories.order.registerOrder({
       storeId,
       userId,
       mercadopagoOrderId: createdOrder.id,
@@ -157,6 +159,7 @@ export async function createMercadoPagoOrderService(body: unknown, storeId: stri
 
   return {
     orderId: createdOrder.id,
+    orderNumber: registerResult?.orderNumber ?? null,
     status: normalizePointOrderStatus(createdOrder.status),
     externalReference: createdOrder.external_reference,
     totalAmount: totalAmount.toFixed(2),

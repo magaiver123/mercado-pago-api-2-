@@ -10,8 +10,13 @@ export interface RegisterOrderInput {
   items: unknown
 }
 
+export interface RegisterOrderResult {
+  id: string
+  orderNumber: number | null
+}
+
 export interface OrderRepository {
-  registerOrder(input: RegisterOrderInput): Promise<void>
+  registerOrder(input: RegisterOrderInput): Promise<RegisterOrderResult>
   getStatusByMercadopagoOrderId(orderId: string): Promise<{ status: string; created_at: string } | null>
   listByUserId(userId: string): Promise<Array<Pick<OrderRecord, "id" | "order_number" | "status" | "total_amount" | "items" | "created_at">>>
   findForStockProcessing(mercadopagoOrderId: string): Promise<Pick<OrderRecord, "id" | "store_id" | "items" | "stock_processed"> | null>

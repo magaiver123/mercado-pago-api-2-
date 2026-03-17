@@ -19,6 +19,12 @@ import { getDefaultStoreInfo, saveReceiptToSession } from "@/lib/receipt-types";
 
 type PaymentMethod = "credit_card" | "debit_card" | "pix";
 
+type CreateOrderResponse = {
+  orderId?: string;
+  orderNumber?: number | null;
+  error?: string;
+};
+
 export default function CheckoutPage() {
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(
     null
@@ -97,7 +103,7 @@ export default function CheckoutPage() {
         }),
       });
 
-      const data = await response.json();
+      const data = (await response.json()) as CreateOrderResponse;
 
       if (!response.ok) {
         if (response.status === 409) {
@@ -107,6 +113,14 @@ export default function CheckoutPage() {
         }
         throw new Error(data.error || "Erro ao criar pedido");
       }
+
+      const orderId = typeof data.orderId === "string" ? data.orderId : null;
+      if (!orderId) {
+        throw new Error("Resposta invalida ao criar pedido");
+      }
+
+      const orderNumber =
+        typeof data.orderNumber === "number" ? data.orderNumber : null;
 
       const {
         storeName,
@@ -119,8 +133,8 @@ export default function CheckoutPage() {
       const createdAtIso = new Date().toISOString();
 
       saveReceiptToSession({
-        orderId: String(data.orderId),
-        orderNumber: data.orderNumber ?? null,
+        orderId,
+        orderNumber,
         createdAt: createdAtIso,
         customerName: user.name,
         items: items.map((item) => ({
@@ -139,7 +153,7 @@ export default function CheckoutPage() {
         storeLogoPath,
       });
 
-      router.push(`/payment/processing?orderId=${data.orderId}`);
+      router.push(`/payment/processing?orderId=${orderId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro desconhecido");
     } finally {
