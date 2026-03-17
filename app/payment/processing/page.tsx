@@ -139,7 +139,7 @@ function ProcessingContent() {
             <p className="text-xs text-orange-700">
               {timeoutReached
                 ? "Ainda estamos aguardando resposta final do terminal. O pedido pode continuar em processamento."
-                : "Nota: se o pagamento ja estiver sendo processado no terminal, voce precisara cancelar diretamente na maquina."}
+                : "Nota: se o pagamento já estiver sendo processado no terminal, você precisará cancelar diretamente na máquina."}
             </p>
           </div>
 
@@ -170,4 +170,3 @@ export default function ProcessingPage() {
     </Suspense>
   );
 }
-

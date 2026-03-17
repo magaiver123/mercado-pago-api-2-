@@ -28,7 +28,7 @@ export default function ReceiptPage() {
 
   useEffect(() => {
     if (!receipt) {
-      setError("Nao encontramos os dados do comprovante deste pedido.")
+      setError("Não encontramos os dados do comprovante deste pedido.")
       const id = setTimeout(() => {
         router.push("/payment/success")
       }, 4000)
@@ -115,7 +115,7 @@ export default function ReceiptPage() {
             <span className="block">
               Pronto{receipt?.customerName ? `, ${receipt.customerName}!` : "!"}
             </span>
-            <span className="block">Aqui esta o seu comprovante.</span>
+            <span className="block">Aqui está o seu comprovante.</span>
           </h1>
           {displayOrderNumber && (
             <p className="mt-8 text-xl font-black text-orange-500 sm:text-2xl">
@@ -166,7 +166,7 @@ export default function ReceiptPage() {
               Imprimir Nota
             </h2>
             <div className="text-xs font-semibold text-white/90 sm:text-sm">
-              {isPrinting ? "Enviando para impressao..." : "Toque para imprimir"}
+              {isPrinting ? "Enviando para impressão..." : "Toque para imprimir"}
             </div>
           </button>
         </div>

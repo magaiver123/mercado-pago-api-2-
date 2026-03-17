@@ -1,73 +1,87 @@
-"use client";
+"use client"
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import { ShoppingCart, Mail, Lock, ArrowLeft } from "lucide-react";
+import { type FormEvent, type KeyboardEvent, useEffect, useMemo, useState } from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { motion } from "framer-motion"
+import { ArrowLeft, ArrowRight, Lock, Mail } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { setUserprofileAuthUser } from "@/lib/userprofile-auth-store"
 
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { setUserprofileAuthUser } from "@/lib/userprofile-auth-store";
+type Mode = "login" | "forgot-email" | "forgot-code" | "forgot-reset"
 
-type Mode = "login" | "forgot-email" | "forgot-code" | "forgot-reset";
+const EMPTY_CODE = ["", "", "", "", "", ""]
 
-export default function LoginPage() {
-  const [mode, setMode] = useState<Mode>("login");
+function createEmptyCode() {
+  return [...EMPTY_CODE]
+}
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [code, setCode] = useState("");
+function sanitizeCodeInput(value: string) {
+  return value.replace(/\D/g, "").slice(0, 1)
+}
 
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+export default function UserprofileLoginPage() {
+  const router = useRouter()
 
-  // 🔹 CONTROLE DE REENVIO
-  const [resendCooldown, setResendCooldown] = useState(0);
-  const canResendCode = resendCooldown === 0;
+  const [mode, setMode] = useState<Mode>("login")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [code, setCode] = useState<string[]>(createEmptyCode())
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
+  const [isLoading, setIsLoading] = useState(false)
+  const [resendCooldown, setResendCooldown] = useState(0)
 
-  const router = useRouter();
+  const canResendCode = resendCooldown === 0
+  const joinedCode = useMemo(() => code.join(""), [code])
 
-  /* =====================
-     TIMER DE REENVIO
-  ===================== */
   useEffect(() => {
-    if (resendCooldown === 0) return;
+    if (typeof window === "undefined") return
+    const params = new URLSearchParams(window.location.search)
+    if (params.get("registered") === "true") {
+      setSuccess("Cadastro concluido com sucesso. Entre com seu e-mail e senha.")
+    }
+  }, [])
+
+  useEffect(() => {
+    if (resendCooldown === 0) return
 
     const timer = setInterval(() => {
-      setResendCooldown((prev) => {
-        if (prev <= 1) {
-          clearInterval(timer);
-          return 0;
+      setResendCooldown((current) => {
+        if (current <= 1) {
+          clearInterval(timer)
+          return 0
         }
-        return prev - 1;
-      });
-    }, 1000);
+        return current - 1
+      })
+    }, 1000)
 
-    return () => clearInterval(timer);
-  }, [resendCooldown]);
+    return () => clearInterval(timer)
+  }, [resendCooldown])
 
-  /* =====================
-     LOGIN NORMAL
-  ===================== */
-  async function handleLogin(e: React.FormEvent) {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
+  function clearTransientMessages() {
+    setError(null)
+    setSuccess(null)
+  }
+
+  async function handleLogin(event: FormEvent) {
+    event.preventDefault()
+    setIsLoading(true)
+    setError(null)
 
     try {
       const response = await fetch("/api/userprofile/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
-      });
+      })
 
-      const data = await response.json();
-
+      const data = await response.json().catch(() => null)
       if (!response.ok) {
-        setError(data.error || "Erro ao fazer login");
-        return;
+        setError(data?.error || "Erro ao fazer login")
+        return
       }
 
       setUserprofileAuthUser({
@@ -77,303 +91,431 @@ export default function LoginPage() {
         phone: data.phone ?? null,
         email: data.email,
         role: data.role ?? null,
-      });
+      })
 
-      router.push("/userprofile/perfil");
+      router.push("/userprofile/perfil")
     } catch {
-      setError("Erro ao fazer login");
+      setError("Erro ao fazer login")
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
   }
 
-  /* =====================
-     ESQUECI SENHA - EMAIL
-  ===================== */
-  async function handleSendCode(e: React.FormEvent) {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
+  async function handleSendCode(event: FormEvent) {
+    event.preventDefault()
+    setIsLoading(true)
+    setError(null)
 
-    const res = await fetch("/api/userprofile/auth/forgot-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    });
+    try {
+      const response = await fetch("/api/userprofile/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      })
 
-    const data = await res.json();
+      const data = await response.json().catch(() => null)
+      if (!data?.success) {
+        setError("Nao foi possivel enviar o codigo. Verifique o e-mail informado.")
+        return
+      }
 
-    setIsLoading(false);
-
-    if (!data.success) {
-      setError(
-        "Não foi possível enviar o código. Verifique o e-mail informado."
-      );
-      return;
+      setCode(createEmptyCode())
+      setResendCooldown(typeof data.cooldown === "number" ? data.cooldown : 60)
+      setMode("forgot-code")
+    } finally {
+      setIsLoading(false)
     }
-
-    setResendCooldown(60);
-    setMode("forgot-code");
   }
 
-  /* =====================
-     REENVIAR CÓDIGO
-  ===================== */
   async function handleResendCode() {
-    if (!canResendCode) return;
+    if (!canResendCode) return
 
-    setIsLoading(true);
-    setError(null);
+    setIsLoading(true)
+    setError(null)
 
-    const res = await fetch("/api/userprofile/auth/forgot-password", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email }),
-    });
+    try {
+      const response = await fetch("/api/userprofile/auth/forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      })
 
-    const data = await res.json();
+      const data = await response.json().catch(() => null)
+      if (!data?.success) {
+        setError("Nao foi possivel reenviar o codigo. Tente novamente.")
+        return
+      }
 
-    setIsLoading(false);
-
-    if (!data.success) {
-      setError(
-        "Não foi possível reenviar o código. Tente novamente mais tarde."
-      );
-      return;
+      setResendCooldown(typeof data.cooldown === "number" ? data.cooldown : 60)
+    } finally {
+      setIsLoading(false)
     }
-
-    setResendCooldown(60);
   }
 
-  /* =====================
-     VALIDAR CÓDIGO
-  ===================== */
-  async function handleVerifyCode(e: React.FormEvent) {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
+  async function handleVerifyCode(event: FormEvent) {
+    event.preventDefault()
+    setIsLoading(true)
+    setError(null)
 
-    const res = await fetch("/api/userprofile/auth/verify-reset-code", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email, code }),
-    });
+    try {
+      const response = await fetch("/api/userprofile/auth/verify-reset-code", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code: joinedCode }),
+      })
 
-    const data = await res.json();
+      const data = await response.json().catch(() => null)
+      if (!data?.valid) {
+        setError("Codigo invalido")
+        return
+      }
 
-    setIsLoading(false);
-
-    if (!data.valid) {
-      setError("Código inválido");
-      return;
+      setMode("forgot-reset")
+      setPassword("")
+      setConfirmPassword("")
+    } finally {
+      setIsLoading(false)
     }
-
-    setMode("forgot-reset");
   }
 
-  /* =====================
-     RESETAR SENHA
-  ===================== */
-  async function handleResetPassword(e: React.FormEvent) {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
+  async function handleResetPassword(event: FormEvent) {
+    event.preventDefault()
+    setIsLoading(true)
+    setError(null)
 
     if (password !== confirmPassword) {
-      setError("As senhas não coincidem");
-      setIsLoading(false);
-      return;
+      setError("As senhas nao coincidem")
+      setIsLoading(false)
+      return
+    }
+
+    if (password.length < 6) {
+      setError("A senha deve ter no minimo 6 digitos")
+      setIsLoading(false)
+      return
     }
 
     try {
-      const res = await fetch("/api/userprofile/auth/reset-password", {
+      const response = await fetch("/api/userprofile/auth/reset-password", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, code, password }),
-      });
+        body: JSON.stringify({ email, code: joinedCode, password }),
+      })
 
-      const data = await res.json();
-
-      if (!res.ok) {
-        setError(data.error || "Erro ao atualizar senha");
-        setIsLoading(false);
-        return;
+      const data = await response.json().catch(() => null)
+      if (!response.ok) {
+        setError(data?.error || "Erro ao atualizar senha")
+        return
       }
 
-      setMode("login");
-      setPassword("");
-      setConfirmPassword("");
-      setCode("");
+      setSuccess("Senha atualizada com sucesso. Faça login para continuar.")
+      setMode("login")
+      setPassword("")
+      setConfirmPassword("")
+      setCode(createEmptyCode())
     } catch {
-      setError("Erro inesperado");
+      setError("Erro inesperado")
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
   }
 
-  /* =====================
-     RENDER
-  ===================== */
+  function handleCodeChange(index: number, value: string) {
+    const digit = sanitizeCodeInput(value)
+    setCode((current) => {
+      const next = [...current]
+      next[index] = digit
+      return next
+    })
+
+    if (digit && index < 5) {
+      const nextInput = document.getElementById(`forgot-code-${index + 1}`)
+      nextInput?.focus()
+    }
+  }
+
+  function handleCodeKeyDown(index: number, event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Backspace" && !code[index] && index > 0) {
+      const previousInput = document.getElementById(`forgot-code-${index - 1}`)
+      previousInput?.focus()
+    }
+  }
+
+  function handleBackToLogin() {
+    clearTransientMessages()
+    setMode("login")
+    setCode(createEmptyCode())
+    setPassword("")
+    setConfirmPassword("")
+    setResendCooldown(0)
+  }
+
   return (
-    <main className="min-h-screen bg-background flex flex-col">
-      <header className="bg-card border-b border-border">
-        <div className="container mx-auto px-4 py-4 flex items-center gap-4">
-          <Link
-            href="/userprofile"
-            className="text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <ShoppingCart className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold text-foreground">
-              Mr <span className="text-primary">Smart</span>
-            </span>
-          </div>
-        </div>
+    <div className="min-h-screen bg-zinc-950 flex flex-col userprofile-theme">
+      <div className="absolute inset-0 bg-gradient-to-b from-zinc-950 via-zinc-950 to-zinc-900 pointer-events-none" />
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-zinc-800/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="up-noise-overlay" aria-hidden="true" />
+
+      <header className="relative z-10 p-6">
+        <Link href="/userprofile" className="inline-flex items-center gap-2">
+          <img src="/logo.svg" alt="Mr Smart" className="w-9 h-9 object-contain" />
+          <span className="font-semibold">
+            <span className="text-orange-500">Mr</span>
+            <span className="text-white"> Smart</span>
+          </span>
+        </Link>
       </header>
 
-      <div className="flex-1 flex items-center justify-center px-4 py-12">
-        <div className="w-full max-w-sm">
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
-              <Lock className="w-8 h-8 text-primary" />
-            </div>
-            <h1 className="text-2xl font-bold text-foreground mb-2">
-              {mode === "login" ? "Entrar" : "Recuperar senha"}
-            </h1>
-            <p className="text-muted-foreground">
-              {mode === "login"
-                ? "Acesse sua conta Mr Smart"
-                : "Siga os passos para redefinir sua senha"}
-            </p>
-          </div>
-
-          {error && (
-            <p className="text-sm text-destructive text-center mb-4">
-              {error}
-            </p>
-          )}
-
+      <main className="relative z-10 flex-1 flex items-center justify-center px-4 pb-16">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="w-full max-w-md"
+        >
           {mode === "login" && (
-            <form className="space-y-4" onSubmit={handleLogin}>
-              <Label>E-mail</Label>
-              <Input
-                type="email"
-                className="py-6"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
+            <div className="space-y-8">
+              <div className="text-center">
+                <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">Bem-vindo de volta</h1>
+                <p className="text-zinc-400">Entre com suas credenciais para acessar sua conta</p>
+              </div>
 
-              <Label>Senha</Label>
-              <Input
-                type="password"
-                className="py-6"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
+              {error && <p className="text-sm text-red-400 text-center">{error}</p>}
+              {success && <p className="text-sm text-green-400 text-center">{success}</p>}
 
-              <Button className="w-full py-6" disabled={isLoading}>
-                Entrar
-              </Button>
-            </form>
+              <form className="space-y-4" onSubmit={handleLogin}>
+                <div className="space-y-2">
+                  <label className="text-sm text-zinc-400">E-mail</label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+                    <Input
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      className="pl-12 h-12 bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-600 focus:border-orange-500 focus:ring-orange-500/20 rounded-xl"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm text-zinc-400">Senha</label>
+                  <div className="relative">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+                    <Input
+                      type="password"
+                      placeholder="********"
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      className="pl-12 h-12 bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-600 focus:border-orange-500 focus:ring-orange-500/20 rounded-xl"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    clearTransientMessages()
+                    setMode("forgot-email")
+                  }}
+                  className="text-sm text-orange-500 hover:text-orange-400 transition-colors"
+                >
+                  Esqueci minha senha
+                </button>
+
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full h-12 bg-orange-500 text-white hover:bg-orange-600 rounded-xl font-medium shadow-lg shadow-orange-500/20"
+                >
+                  Entrar
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+              </form>
+
+              <p className="text-center text-zinc-400">
+                Nao tem uma conta?{" "}
+                <Link href="/userprofile/cadastro" className="text-orange-500 hover:text-orange-400 transition-colors font-medium">
+                  Cadastrar
+                </Link>
+              </p>
+            </div>
           )}
 
           {mode === "forgot-email" && (
-            <form className="space-y-4" onSubmit={handleSendCode}>
-              <Label>E-mail</Label>
-              <Input
-                type="email"
-                className="py-6"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-              <Button className="w-full py-6" disabled={isLoading}>
-                Enviar código
-              </Button>
-            </form>
+            <div className="space-y-8">
+              <button
+                onClick={handleBackToLogin}
+                className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Voltar
+              </button>
+
+              <div className="text-center">
+                <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">Recuperar senha</h1>
+                <p className="text-zinc-400">Digite seu e-mail para receber o codigo de recuperacao</p>
+              </div>
+
+              {error && <p className="text-sm text-red-400 text-center">{error}</p>}
+
+              <form className="space-y-4" onSubmit={handleSendCode}>
+                <div className="space-y-2">
+                  <label className="text-sm text-zinc-400">E-mail</label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+                    <Input
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      className="pl-12 h-12 bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-600 focus:border-orange-500 focus:ring-orange-500/20 rounded-xl"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full h-12 bg-orange-500 text-white hover:bg-orange-600 rounded-xl font-medium shadow-lg shadow-orange-500/20"
+                >
+                  Enviar codigo
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+              </form>
+            </div>
           )}
 
           {mode === "forgot-code" && (
-            <form className="space-y-4" onSubmit={handleVerifyCode}>
-              <Label>Código recebido</Label>
-              <Input
-                className="py-6"
-                value={code}
-                onChange={(e) => setCode(e.target.value)}
-              />
+            <div className="space-y-8">
+              <button
+                onClick={() => {
+                  clearTransientMessages()
+                  setMode("forgot-email")
+                }}
+                className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Voltar
+              </button>
 
-              <Button className="w-full py-6" disabled={isLoading}>
-                Validar código
-              </Button>
-
-              <div className="text-center text-sm text-muted-foreground">
-                {canResendCode ? (
-                  <button
-                    type="button"
-                    onClick={handleResendCode}
-                    className="text-primary hover:underline"
-                  >
-                    Enviar código novamente
-                  </button>
-                ) : (
-                  <span>Reenviar código em {resendCooldown}s</span>
-                )}
+              <div className="text-center">
+                <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">Digite o codigo</h1>
+                <p className="text-zinc-400">
+                  Enviamos um codigo de 6 digitos para <span className="text-white">{email || "seu e-mail"}</span>
+                </p>
               </div>
-            </form>
+
+              {error && <p className="text-sm text-red-400 text-center">{error}</p>}
+
+              <form className="space-y-6" onSubmit={handleVerifyCode}>
+                <div className="flex justify-center gap-2 sm:gap-3">
+                  {code.map((digit, index) => (
+                    <Input
+                      key={index}
+                      id={`forgot-code-${index}`}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={digit}
+                      onChange={(event) => handleCodeChange(index, event.target.value)}
+                      onKeyDown={(event) => handleCodeKeyDown(index, event)}
+                      className="w-10 h-12 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-bold bg-zinc-900 border-zinc-800 text-white focus:border-orange-500 focus:ring-orange-500/20 rounded-xl"
+                    />
+                  ))}
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={isLoading || joinedCode.length !== 6}
+                  className="w-full h-12 bg-orange-500 text-white hover:bg-orange-600 rounded-xl font-medium shadow-lg shadow-orange-500/20"
+                >
+                  Verificar codigo
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+
+                <p className="text-center text-zinc-400">
+                  {canResendCode ? (
+                    <button
+                      type="button"
+                      onClick={handleResendCode}
+                      className="text-orange-500 hover:text-orange-400 transition-colors font-medium"
+                    >
+                      Reenviar codigo
+                    </button>
+                  ) : (
+                    <span>Reenviar em {resendCooldown}s</span>
+                  )}
+                </p>
+              </form>
+            </div>
           )}
 
           {mode === "forgot-reset" && (
-            <form className="space-y-4" onSubmit={handleResetPassword}>
-              <Label>Nova senha</Label>
-              <Input
-                type="password"
-                className="py-6"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-
-              <Label>Confirmar nova senha</Label>
-              <Input
-                type="password"
-                className="py-6"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-              />
-
-              <Button className="w-full py-6" disabled={isLoading}>
-                Atualizar senha
-              </Button>
-            </form>
-          )}
-
-          <div className="mt-6 text-center">
-            {mode === "login" ? (
-              <button
-                onClick={() => setMode("forgot-email")}
-                className="text-sm text-muted-foreground hover:text-primary"
-              >
-                Esqueci minha senha
-              </button>
-            ) : (
+            <div className="space-y-8">
               <button
                 onClick={() => {
-                  setMode("login");
-                  setCode("");
-                  setResendCooldown(0);
-                  setError(null);
+                  clearTransientMessages()
+                  setMode("forgot-code")
                 }}
-                className="text-sm text-muted-foreground hover:text-primary"
+                className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors"
               >
-                Voltar ao login
+                <ArrowLeft className="w-4 h-4" />
+                Voltar
               </button>
-            )}
-          </div>
-        </div>
-      </div>
-    </main>
-  );
-}
 
+              <div className="text-center">
+                <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">Redefinir senha</h1>
+                <p className="text-zinc-400">Defina sua nova senha de acesso</p>
+              </div>
+
+              {error && <p className="text-sm text-red-400 text-center">{error}</p>}
+
+              <form className="space-y-4" onSubmit={handleResetPassword}>
+                <div className="space-y-2">
+                  <label className="text-sm text-zinc-400">Nova senha</label>
+                  <div className="relative">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+                    <Input
+                      type="password"
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      className="pl-12 h-12 bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-600 focus:border-orange-500 focus:ring-orange-500/20 rounded-xl"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm text-zinc-400">Confirmar nova senha</label>
+                  <div className="relative">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+                    <Input
+                      type="password"
+                      value={confirmPassword}
+                      onChange={(event) => setConfirmPassword(event.target.value)}
+                      className="pl-12 h-12 bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-600 focus:border-orange-500 focus:ring-orange-500/20 rounded-xl"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full h-12 bg-orange-500 text-white hover:bg-orange-600 rounded-xl font-medium shadow-lg shadow-orange-500/20"
+                >
+                  Atualizar senha
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+              </form>
+            </div>
+          )}
+        </motion.div>
+      </main>
+    </div>
+  )
+}

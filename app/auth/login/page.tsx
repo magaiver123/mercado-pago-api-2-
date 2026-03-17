@@ -44,7 +44,7 @@ export default function LoginPage() {
     setError(null);
 
     if (!validateCPF(cpf)) {
-      setError("CPF invalido");
+      setError("CPF inválido");
       setIsLoading(false);
       return;
     }
@@ -66,7 +66,7 @@ export default function LoginPage() {
         return;
       }
 
-      // Mantem exatamente o mesmo comportamento anterior
+      // Mantém exatamente o mesmo comportamento anterior
       setAuthUser({
         id: data.id,
         cpf: data.cpf,
@@ -93,7 +93,7 @@ export default function LoginPage() {
           <div className="grid grid-cols-[auto_1fr_auto] items-center">
             <Link
               href="/"
-              aria-label="Voltar para inicio"
+              aria-label="Voltar para início"
               className="flex h-12 w-12 items-center justify-center rounded-full border border-zinc-200 bg-white text-zinc-700 shadow-sm transition hover:border-orange-300 hover:text-orange-500"
             >
               <ArrowLeft className="h-6 w-6" />
@@ -135,7 +135,7 @@ export default function LoginPage() {
               value={formattedCpf}
               onChange={handleCPFChange}
               className="h-16 rounded-full border-zinc-200 bg-zinc-100 px-6 text-center text-[1.35rem] font-semibold uppercase tracking-[0.02em] text-zinc-900 placeholder:text-zinc-500 focus-visible:border-orange-400 focus-visible:ring-orange-400"
-              aria-label="Digita seu CPF"
+              aria-label="Digite seu CPF"
             />
           </div>
 
@@ -165,7 +165,7 @@ export default function LoginPage() {
               type="button"
               onClick={handleKeypadDelete}
               className="col-span-2 flex h-16 items-center justify-center rounded-full border-2 border-zinc-800 bg-white text-zinc-900 shadow-[0_6px_16px_rgba(0,0,0,0.06)] transition hover:border-orange-500 hover:text-orange-600 active:scale-[0.97]"
-              aria-label="Apagar ultimo digito"
+              aria-label="Apagar último dígito"
             >
               <DeleteIcon className="h-7 w-7" />
             </button>

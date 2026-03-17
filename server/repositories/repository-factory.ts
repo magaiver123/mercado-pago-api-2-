@@ -1,6 +1,7 @@
 import { MenuRepository } from "@/api/repositories/contracts/menu-repository"
 import { OrderRepository } from "@/api/repositories/contracts/order-repository"
 import { PasswordResetRepository } from "@/api/repositories/contracts/password-reset-repository"
+import { SignupVerificationRepository } from "@/api/repositories/contracts/signup-verification-repository"
 import { StockRepository } from "@/api/repositories/contracts/stock-repository"
 import { TotemRepository } from "@/api/repositories/contracts/totem-repository"
 import { UserRepository } from "@/api/repositories/contracts/user-repository"
@@ -9,6 +10,7 @@ import { KioskSlideSupabaseRepository } from "@/api/repositories/supabase/kiosk-
 import { MenuSupabaseRepository } from "@/api/repositories/supabase/menu-supabase-repository"
 import { OrderSupabaseRepository } from "@/api/repositories/supabase/order-supabase-repository"
 import { PasswordResetSupabaseRepository } from "@/api/repositories/supabase/password-reset-supabase-repository"
+import { SignupVerificationSupabaseRepository } from "@/api/repositories/supabase/signup-verification-supabase-repository"
 import { StockSupabaseRepository } from "@/api/repositories/supabase/stock-supabase-repository"
 import { TotemSupabaseRepository } from "@/api/repositories/supabase/totem-supabase-repository"
 import { UserSupabaseRepository } from "@/api/repositories/supabase/user-supabase-repository"
@@ -19,6 +21,7 @@ export interface RepositoryFactory {
   order: OrderRepository
   totem: TotemRepository
   passwordReset: PasswordResetRepository
+  signupVerification: SignupVerificationRepository
   kioskSlide: KioskSlideRepository
   stock: StockRepository
 }
@@ -33,6 +36,7 @@ export function getRepositoryFactory(): RepositoryFactory {
       order: new OrderSupabaseRepository(),
       totem: new TotemSupabaseRepository(),
       passwordReset: new PasswordResetSupabaseRepository(),
+      signupVerification: new SignupVerificationSupabaseRepository(),
       kioskSlide: new KioskSlideSupabaseRepository(),
       stock: new StockSupabaseRepository(),
     }
@@ -40,4 +44,3 @@ export function getRepositoryFactory(): RepositoryFactory {
 
   return cachedFactory
 }
-

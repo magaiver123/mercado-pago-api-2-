@@ -30,12 +30,12 @@ export default function TotemActivationPage() {
     const trimmedCode = activationCode.trim();
 
     if (!trimmedCode) {
-      setError("Informe o codigo de ativacao.");
+      setError("Informe o código de ativação.");
       return;
     }
 
     if (!deviceId) {
-      setError("Nao foi possivel identificar o dispositivo.");
+      setError("Não foi possível identificar o dispositivo.");
       return;
     }
 
@@ -56,7 +56,7 @@ export default function TotemActivationPage() {
       const data = await response.json().catch(() => null);
 
       if (!response.ok) {
-        setError(data?.error || "Nao foi possivel ativar o totem.");
+        setError(data?.error || "Não foi possível ativar o totem.");
         return;
       }
 
@@ -64,7 +64,7 @@ export default function TotemActivationPage() {
       setActivationCode("");
       window.location.href = "/";
     } catch {
-      setError("Falha de conexao. Tente novamente.");
+      setError("Falha de conexão. Tente novamente.");
     } finally {
       setIsSubmitting(false);
     }
@@ -84,7 +84,7 @@ export default function TotemActivationPage() {
         <CardHeader className="text-center">
           <CardTitle className="text-2xl text-black">Ativar TOTEM</CardTitle>
           <p className="text-zinc-600 text-sm mt-2">
-            Digite o codigo de ativacao para liberar este dispositivo.
+            Digite o código de ativação para liberar este dispositivo.
           </p>
         </CardHeader>
 
@@ -92,7 +92,7 @@ export default function TotemActivationPage() {
           <form onSubmit={handleActivate} className="space-y-5">
             <div className="grid gap-2">
               <Label htmlFor="activation-code" className="text-black">
-                Codigo de ativacao
+                Código de ativação
               </Label>
               <Input
                 id="activation-code"
@@ -100,7 +100,7 @@ export default function TotemActivationPage() {
                 required
                 value={activationCode}
                 onChange={(event) => setActivationCode(event.target.value)}
-                placeholder="Digite o codigo"
+                placeholder="Digite o código"
                 disabled={!deviceId || isSubmitting}
                 className="bg-white border-zinc-300 text-black focus:border-orange-500 focus:ring-orange-500"
               />
@@ -108,8 +108,8 @@ export default function TotemActivationPage() {
 
             {!deviceId && (
               <div className="rounded-md border border-orange-300 bg-orange-50 p-3 text-sm text-orange-700">
-                Dispositivo sem identificacao do Fully Browser Kiosk.
-                Verifique se a JavaScript Interface esta habilitada.
+                Dispositivo sem identificação do Fully Browser Kiosk.
+                Verifique se a JavaScript Interface está habilitada.
               </div>
             )}
 

@@ -55,6 +55,27 @@ export interface PasswordResetRecord {
   created_at: string | null
 }
 
+export interface SignupVerificationRecord {
+  id: string
+  name: string
+  cpf: string
+  phone: string
+  email: string
+  password_hash: string
+  email_code: string
+  phone_code: string
+  email_code_expires_at: string
+  phone_code_expires_at: string
+  email_verified_at: string | null
+  phone_verified_at: string | null
+  last_email_sent_at: string
+  last_phone_sent_at: string
+  expires_at: string
+  completed_at: string | null
+  created_at: string
+  updated_at: string
+}
+
 export interface OrderRecord {
   id: string
   order_number: number | null

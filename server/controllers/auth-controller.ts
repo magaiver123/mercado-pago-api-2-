@@ -6,6 +6,10 @@ import { emailLoginService } from "@/api/services/auth/email-login-service"
 import { forgotPasswordService } from "@/api/services/auth/forgot-password-service"
 import { verifyResetCodeService } from "@/api/services/auth/verify-reset-code-service"
 import { resetPasswordService } from "@/api/services/auth/reset-password-service"
+import { signupStartService } from "@/api/services/auth/signup-start-service"
+import { signupResendService } from "@/api/services/auth/signup-resend-service"
+import { signupVerifyEmailService } from "@/api/services/auth/signup-verify-email-service"
+import { signupVerifyPhoneService } from "@/api/services/auth/signup-verify-phone-service"
 import {
   clearAdminBypassCookie,
   clearAdminSessionCookie,
@@ -118,4 +122,71 @@ export async function resetPasswordController(request: Request) {
     }
     return NextResponse.json({ error: "Erro interno" }, { status: 500 })
   }
+}
+
+export async function signupStartController(request: Request) {
+  let body: any = null
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: "Dados invalidos" }, { status: 400 })
+  }
+
+  const data = await signupStartService({
+    name: body?.name,
+    cpf: body?.cpf,
+    phone: body?.phone,
+    email: body?.email,
+    password: body?.password,
+  })
+
+  return NextResponse.json(data)
+}
+
+export async function signupVerifyEmailController(request: Request) {
+  let body: any = null
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: "Dados invalidos" }, { status: 400 })
+  }
+
+  const data = await signupVerifyEmailService({
+    signupId: body?.signupId,
+    code: body?.code,
+  })
+
+  return NextResponse.json(data)
+}
+
+export async function signupResendController(request: Request) {
+  let body: any = null
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: "Dados invalidos" }, { status: 400 })
+  }
+
+  const data = await signupResendService({
+    signupId: body?.signupId,
+    channel: body?.channel,
+  })
+
+  return NextResponse.json(data)
+}
+
+export async function signupVerifyPhoneController(request: Request) {
+  let body: any = null
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: "Dados invalidos" }, { status: 400 })
+  }
+
+  const data = await signupVerifyPhoneService({
+    signupId: body?.signupId,
+    code: body?.code,
+  })
+
+  return NextResponse.json(data)
 }

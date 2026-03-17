@@ -1,5 +1,16 @@
 import { NextResponse } from "next/server"
-import { loginByCpfRoute, registerRoute, loginByEmailRoute, forgotPasswordRoute, resetPasswordRoute, verifyResetCodeRoute } from "@/api/routes/auth-routes"
+import {
+  forgotPasswordRoute,
+  loginByCpfRoute,
+  loginByEmailRoute,
+  registerRoute,
+  resetPasswordRoute,
+  signupResendRoute,
+  signupStartRoute,
+  signupVerifyEmailRoute,
+  signupVerifyPhoneRoute,
+  verifyResetCodeRoute,
+} from "@/api/routes/auth-routes"
 import { getKioskSlidesRoute } from "@/api/routes/kiosk-routes"
 import { getMenuCategoriesRoute, getMenuProductsRoute } from "@/api/routes/menu-routes"
 import { createMercadoPagoOrderRoute, cancelMercadoPagoOrderRoute, getMercadoPagoOrderStatusRoute, mercadopagoWebhookRoute, refundMercadoPagoOrderRoute } from "@/api/routes/mercadopago-routes"
@@ -38,6 +49,10 @@ const routeTable: Record<string, Handler> = {
   "POST /api/userprofile/auth/forgot-password": forgotPasswordRoute,
   "POST /api/userprofile/auth/login": loginByEmailRoute,
   "POST /api/userprofile/auth/reset-password": resetPasswordRoute,
+  "POST /api/userprofile/auth/signup/resend": signupResendRoute,
+  "POST /api/userprofile/auth/signup/start": signupStartRoute,
+  "POST /api/userprofile/auth/signup/verify-email": signupVerifyEmailRoute,
+  "POST /api/userprofile/auth/signup/verify-phone": signupVerifyPhoneRoute,
   "POST /api/userprofile/auth/verify-reset-code": verifyResetCodeRoute,
   "GET /api/userprofile/me": getUserProfileRoute,
   "PUT /api/userprofile/me": updateUserProfileRoute,

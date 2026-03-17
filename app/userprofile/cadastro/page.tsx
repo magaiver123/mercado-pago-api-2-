@@ -1,210 +1,554 @@
 "use client"
 
-import type React from "react"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { type Dispatch, type FormEvent, type KeyboardEvent, type SetStateAction, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
-import { ShoppingCart, User, Mail, Phone, CreditCard, ArrowLeft, Lock } from "lucide-react"
-
-import { validateCPF, formatCPF } from "@/lib/cpf-validator"
-
+import { useRouter } from "next/navigation"
+import { motion } from "framer-motion"
+import { ArrowLeft, ArrowRight, CreditCard, Lock, Mail, Phone, User } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { validateCPF } from "@/lib/cpf-validator"
 
-export default function CadastroPage() {
+type Step = "form" | "verify-email" | "verify-phone"
+
+const EMPTY_CODE = ["", "", "", "", "", ""]
+
+function createEmptyCode() {
+  return [...EMPTY_CODE]
+}
+
+function sanitizeCodeInput(value: string) {
+  return value.replace(/\D/g, "").slice(0, 1)
+}
+
+function formatCpf(value: string) {
+  return value
+    .replace(/\D/g, "")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d{1,2})$/, "$1-$2")
+    .slice(0, 14)
+}
+
+function formatPhone(value: string) {
+  const digits = value.replace(/\D/g, "").slice(0, 11)
+  if (digits.length <= 10) {
+    return digits.replace(/(\d{2})(\d{4})(\d{0,4})/, "($1) $2-$3").trim()
+  }
+  return digits.replace(/(\d{2})(\d{5})(\d{0,4})/, "($1) $2-$3").trim()
+}
+
+export default function UserprofileCadastroPage() {
   const router = useRouter()
 
-  const [cpf, setCpf] = useState("")
+  const [step, setStep] = useState<Step>("form")
   const [name, setName] = useState("")
+  const [cpf, setCpf] = useState("")
   const [phone, setPhone] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [signupId, setSignupId] = useState<string | null>(null)
+  const [emailMasked, setEmailMasked] = useState<string | null>(null)
+  const [phoneMasked, setPhoneMasked] = useState<string | null>(null)
+  const [emailCode, setEmailCode] = useState<string[]>(createEmptyCode())
+  const [phoneCode, setPhoneCode] = useState<string[]>(createEmptyCode())
+  const [emailCooldown, setEmailCooldown] = useState(0)
+  const [phoneCooldown, setPhoneCooldown] = useState(0)
+  const [debugPhoneCode, setDebugPhoneCode] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
-  const handleCPFChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, "")
-    if (value.length <= 11) setCpf(value)
-  }
+  const joinedEmailCode = useMemo(() => emailCode.join(""), [emailCode])
+  const joinedPhoneCode = useMemo(() => phoneCode.join(""), [phoneCode])
 
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, "")
-    if (value.length <= 11) setPhone(value)
-  }
+  useEffect(() => {
+    if (emailCooldown <= 0) return
+    const timer = setInterval(() => {
+      setEmailCooldown((current) => (current > 0 ? current - 1 : 0))
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [emailCooldown])
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+  useEffect(() => {
+    if (phoneCooldown <= 0) return
+    const timer = setInterval(() => {
+      setPhoneCooldown((current) => (current > 0 ? current - 1 : 0))
+    }, 1000)
+    return () => clearInterval(timer)
+  }, [phoneCooldown])
+
+  function clearMessages() {
     setError(null)
+    setSuccess(null)
+  }
+
+  function handleCpfChange(value: string) {
+    const digits = value.replace(/\D/g, "")
+    if (digits.length <= 11) setCpf(digits)
+  }
+
+  function handlePhoneChange(value: string) {
+    const digits = value.replace(/\D/g, "")
+    if (digits.length <= 11) setPhone(digits)
+  }
+
+  function updateCode(setter: Dispatch<SetStateAction<string[]>>, prefix: string, index: number, value: string) {
+    const digit = sanitizeCodeInput(value)
+    setter((current) => {
+      const next = [...current]
+      next[index] = digit
+      return next
+    })
+
+    if (digit && index < 5) {
+      const nextInput = document.getElementById(`${prefix}-${index + 1}`)
+      nextInput?.focus()
+    }
+  }
+
+  function moveCodeFocusBack(prefix: string, index: number, event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === "Backspace" && index > 0 && !(event.currentTarget.value || "")) {
+      const previousInput = document.getElementById(`${prefix}-${index - 1}`)
+      previousInput?.focus()
+    }
+  }
+
+  async function handleStartSignup(event: FormEvent) {
+    event.preventDefault()
+    clearMessages()
 
     if (!validateCPF(cpf)) {
-      setError("CPF inválido")
-      setIsLoading(false)
+      setError("CPF invalido")
       return
     }
 
     if (phone.length < 10) {
-      setError("Telefone inválido")
-      setIsLoading(false)
+      setError("Telefone invalido")
       return
     }
 
     if (password.length < 6) {
-      setError("A senha deve ter no mínimo 6 dígitos")
-      setIsLoading(false)
+      setError("A senha deve ter no minimo 6 digitos")
       return
     }
 
+    setIsLoading(true)
+
     try {
-      const response = await fetch("/api/auth/register", {
+      const response = await fetch("/api/userprofile/auth/signup/start", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          cpf,
           name,
+          cpf,
           phone,
           email,
           password,
         }),
       })
 
-      const data = await response.json()
-
+      const data = await response.json().catch(() => null)
       if (!response.ok) {
-        setError(data.error || "Erro ao cadastrar")
-        setIsLoading(false)
+        setError(data?.error || "Nao foi possivel iniciar o cadastro")
+        return
+      }
+
+      setSignupId(data.signupId)
+      setEmailMasked(data.emailMasked ?? email)
+      setPhoneMasked(data.phoneMasked ?? phone)
+      setDebugPhoneCode(data.debugPhoneCode ?? null)
+      setEmailCooldown(typeof data.resendCooldown === "number" ? data.resendCooldown : 60)
+      setPhoneCooldown(typeof data.resendCooldown === "number" ? data.resendCooldown : 60)
+      setEmailCode(createEmptyCode())
+      setPhoneCode(createEmptyCode())
+      setStep("verify-email")
+      setSuccess("Codigo enviado para seu e-mail.")
+    } catch {
+      setError("Nao foi possivel iniciar o cadastro")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  async function handleVerifyEmail(event: FormEvent) {
+    event.preventDefault()
+    clearMessages()
+    if (!signupId) {
+      setError("Sessao de cadastro invalida. Refaça o processo.")
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      const response = await fetch("/api/userprofile/auth/signup/verify-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          signupId,
+          code: joinedEmailCode,
+        }),
+      })
+
+      const data = await response.json().catch(() => null)
+      if (!response.ok || !data?.emailVerified) {
+        setError(data?.error || "Codigo de e-mail invalido")
+        return
+      }
+
+      setStep("verify-phone")
+      setSuccess("E-mail verificado. Agora confirme seu telefone.")
+    } catch {
+      setError("Nao foi possivel validar o e-mail")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  async function handleResend(channel: "email" | "phone") {
+    if (!signupId) return
+    clearMessages()
+    setIsLoading(true)
+
+    try {
+      const response = await fetch("/api/userprofile/auth/signup/resend", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          signupId,
+          channel,
+        }),
+      })
+
+      const data = await response.json().catch(() => null)
+      if (!response.ok || !data?.success) {
+        setError(data?.error || "Nao foi possivel reenviar o codigo")
+        return
+      }
+
+      const nextCooldown = typeof data.resendCooldown === "number" ? data.resendCooldown : 60
+      if (channel === "email") {
+        setEmailCooldown(nextCooldown)
+        setSuccess("Novo codigo de e-mail enviado.")
+      } else {
+        setPhoneCooldown(nextCooldown)
+        setDebugPhoneCode(data.debugPhoneCode ?? null)
+        setSuccess("Novo codigo de telefone gerado.")
+      }
+    } catch {
+      setError("Nao foi possivel reenviar o codigo")
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  async function handleVerifyPhone(event: FormEvent) {
+    event.preventDefault()
+    clearMessages()
+    if (!signupId) {
+      setError("Sessao de cadastro invalida. Refaça o processo.")
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      const response = await fetch("/api/userprofile/auth/signup/verify-phone", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          signupId,
+          code: joinedPhoneCode,
+        }),
+      })
+
+      const data = await response.json().catch(() => null)
+      if (!response.ok || !data?.success) {
+        setError(data?.error || "Codigo de telefone invalido")
         return
       }
 
       router.push("/userprofile/login?registered=true")
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Erro ao cadastrar")
+    } catch {
+      setError("Nao foi possivel finalizar o cadastro")
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <main className="min-h-screen bg-background flex flex-col">
-      {/* Header */}
-      <header className="bg-card border-b border-border">
-        <div className="container mx-auto px-4 py-4 flex items-center gap-4">
-          <Link href="/userprofile" className="text-muted-foreground hover:text-foreground transition-colors">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <ShoppingCart className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold text-foreground">
-              Mr <span className="text-primary">Smart</span>
-            </span>
-          </div>
-        </div>
+    <div className="min-h-screen bg-zinc-950 flex flex-col userprofile-theme">
+      <div className="absolute inset-0 bg-gradient-to-b from-zinc-950 via-zinc-950 to-zinc-900 pointer-events-none" />
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-zinc-800/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="up-noise-overlay" aria-hidden="true" />
+
+      <header className="relative z-10 p-6">
+        <Link href="/userprofile" className="inline-flex items-center gap-2">
+          <img src="/logo.svg" alt="Mr Smart" className="w-9 h-9 object-contain" />
+          <span className="font-semibold">
+            <span className="text-orange-500">Mr</span>
+            <span className="text-white"> Smart</span>
+          </span>
+        </Link>
       </header>
 
-      {/* Form */}
-      <div className="flex-1 px-4 py-8">
-        <div className="container mx-auto max-w-sm">
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
-              <User className="w-8 h-8 text-primary" />
-            </div>
-            <h1 className="text-2xl font-bold text-foreground mb-2">Criar conta</h1>
-            <p className="text-muted-foreground">Preencha seus dados para começar</p>
-          </div>
-
-          <form className="space-y-4" onSubmit={handleRegister}>
-            <div className="space-y-2">
-              <Label>Nome completo</Label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="pl-10 py-6"
-                />
+      <main className="relative z-10 flex-1 flex items-center justify-center px-4 pb-16">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+          className="w-full max-w-md"
+        >
+          {step === "form" && (
+            <div className="space-y-6">
+              <div className="text-center">
+                <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">Crie sua conta</h1>
+                <p className="text-zinc-400">Preencha os dados abaixo para comecar a comprar</p>
               </div>
+
+              {error && <p className="text-sm text-red-400 text-center">{error}</p>}
+              {success && <p className="text-sm text-green-400 text-center">{success}</p>}
+
+              <form className="space-y-4" onSubmit={handleStartSignup}>
+                <div className="space-y-2">
+                  <label className="text-sm text-zinc-400">Nome completo</label>
+                  <div className="relative">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+                    <Input
+                      type="text"
+                      placeholder="Seu nome completo"
+                      value={name}
+                      onChange={(event) => setName(event.target.value)}
+                      className="pl-12 h-12 bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-600 focus:border-orange-500 focus:ring-orange-500/20 rounded-xl"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm text-zinc-400">CPF</label>
+                  <div className="relative">
+                    <CreditCard className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+                    <Input
+                      type="text"
+                      placeholder="000.000.000-00"
+                      value={formatCpf(cpf)}
+                      onChange={(event) => handleCpfChange(event.target.value)}
+                      className="pl-12 h-12 bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-600 focus:border-orange-500 focus:ring-orange-500/20 rounded-xl"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm text-zinc-400">Telefone</label>
+                  <div className="relative">
+                    <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+                    <Input
+                      type="text"
+                      placeholder="(00) 00000-0000"
+                      value={formatPhone(phone)}
+                      onChange={(event) => handlePhoneChange(event.target.value)}
+                      className="pl-12 h-12 bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-600 focus:border-orange-500 focus:ring-orange-500/20 rounded-xl"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm text-zinc-400">E-mail</label>
+                  <div className="relative">
+                    <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+                    <Input
+                      type="email"
+                      placeholder="seu@email.com"
+                      value={email}
+                      onChange={(event) => setEmail(event.target.value)}
+                      className="pl-12 h-12 bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-600 focus:border-orange-500 focus:ring-orange-500/20 rounded-xl"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm text-zinc-400">Senha</label>
+                  <div className="relative">
+                    <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" />
+                    <Input
+                      type="password"
+                      placeholder="********"
+                      value={password}
+                      onChange={(event) => setPassword(event.target.value)}
+                      className="pl-12 h-12 bg-zinc-900 border-zinc-800 text-white placeholder:text-zinc-600 focus:border-orange-500 focus:ring-orange-500/20 rounded-xl"
+                      required
+                    />
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full h-12 bg-orange-500 text-white hover:bg-orange-600 rounded-xl font-medium shadow-lg shadow-orange-500/20"
+                >
+                  Criar minha conta
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+              </form>
+
+              <p className="text-center text-zinc-400">
+                Ja tem uma conta?{" "}
+                <Link href="/userprofile/login" className="text-orange-500 hover:text-orange-400 transition-colors font-medium">
+                  Entrar
+                </Link>
+              </p>
             </div>
+          )}
 
-            <div className="space-y-2">
-              <Label>CPF</Label>
-              <div className="relative">
-                <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  value={formatCPF(cpf)}
-                  onChange={handleCPFChange}
-                  className="pl-10 py-6"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Telefone</Label>
-              <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  value={phone.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3")}
-                  onChange={handlePhoneChange}
-                  className="pl-10 py-6"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>E-mail</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="pl-10 py-6"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Senha</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                <Input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="pl-10 py-6"
-                />
-              </div>
-            </div>
-
-            {error && (
-              <p className="text-sm text-red-600 text-center">{error}</p>
-            )}
-
-            <div className="pt-4">
-              <Button
-                type="submit"
-                size="lg"
-                className="w-full py-6 text-lg font-semibold"
-                disabled={isLoading}
+          {step === "verify-email" && (
+            <div className="space-y-8">
+              <button
+                onClick={() => {
+                  clearMessages()
+                  setStep("form")
+                }}
+                className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors"
               >
-                {isLoading ? "Criando conta..." : "Criar minha conta"}
-              </Button>
-            </div>
-          </form>
+                <ArrowLeft className="w-4 h-4" />
+                Voltar
+              </button>
 
-          <div className="mt-6 text-center">
-            <p className="text-muted-foreground">
-              Já tem uma conta?{" "}
-              <Link href="/userprofile/login" className="text-primary font-semibold hover:underline">
-                Entrar
-              </Link>
-            </p>
-          </div>
-        </div>
-      </div>
-    </main>
+              <div className="text-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-orange-500/10 flex items-center justify-center">
+                  <Mail className="w-8 h-8 text-orange-500" />
+                </div>
+                <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">Verifique seu e-mail</h1>
+                <p className="text-zinc-400">
+                  Enviamos um codigo de 6 digitos para <span className="text-white">{emailMasked ?? email}</span>
+                </p>
+              </div>
+
+              {error && <p className="text-sm text-red-400 text-center">{error}</p>}
+              {success && <p className="text-sm text-green-400 text-center">{success}</p>}
+
+              <form className="space-y-6" onSubmit={handleVerifyEmail}>
+                <div className="flex justify-center gap-2 sm:gap-3">
+                  {emailCode.map((digit, index) => (
+                    <Input
+                      key={index}
+                      id={`email-code-${index}`}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={digit}
+                      onChange={(event) => updateCode(setEmailCode, "email-code", index, event.target.value)}
+                      onKeyDown={(event) => moveCodeFocusBack("email-code", index, event)}
+                      className="w-10 h-12 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-bold bg-zinc-900 border-zinc-800 text-white focus:border-orange-500 focus:ring-orange-500/20 rounded-xl"
+                    />
+                  ))}
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={isLoading || joinedEmailCode.length !== 6}
+                  className="w-full h-12 bg-orange-500 text-white hover:bg-orange-600 rounded-xl font-medium shadow-lg shadow-orange-500/20"
+                >
+                  Verificar e-mail
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+
+                <p className="text-center text-zinc-400">
+                  {emailCooldown === 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => handleResend("email")}
+                      className="text-orange-500 hover:text-orange-400 transition-colors font-medium"
+                    >
+                      Reenviar codigo
+                    </button>
+                  ) : (
+                    <span>Reenviar em {emailCooldown}s</span>
+                  )}
+                </p>
+              </form>
+            </div>
+          )}
+
+          {step === "verify-phone" && (
+            <div className="space-y-8">
+              <button
+                onClick={() => {
+                  clearMessages()
+                  setStep("verify-email")
+                }}
+                className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Voltar
+              </button>
+
+              <div className="text-center">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-orange-500/10 flex items-center justify-center">
+                  <Phone className="w-8 h-8 text-orange-500" />
+                </div>
+                <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">Verifique seu telefone</h1>
+                <p className="text-zinc-400">
+                  Digite o codigo de 6 digitos do seu telefone <span className="text-white">{phoneMasked ?? formatPhone(phone)}</span>
+                </p>
+              </div>
+
+              {error && <p className="text-sm text-red-400 text-center">{error}</p>}
+              {success && <p className="text-sm text-green-400 text-center">{success}</p>}
+              {debugPhoneCode && (
+                <p className="text-xs text-amber-300 text-center">
+                  Codigo de teste (ambiente nao produtivo): <strong>{debugPhoneCode}</strong>
+                </p>
+              )}
+
+              <form className="space-y-6" onSubmit={handleVerifyPhone}>
+                <div className="flex justify-center gap-2 sm:gap-3">
+                  {phoneCode.map((digit, index) => (
+                    <Input
+                      key={index}
+                      id={`phone-code-${index}`}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={digit}
+                      onChange={(event) => updateCode(setPhoneCode, "phone-code", index, event.target.value)}
+                      onKeyDown={(event) => moveCodeFocusBack("phone-code", index, event)}
+                      className="w-10 h-12 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-bold bg-zinc-900 border-zinc-800 text-white focus:border-orange-500 focus:ring-orange-500/20 rounded-xl"
+                    />
+                  ))}
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={isLoading || joinedPhoneCode.length !== 6}
+                  className="w-full h-12 bg-orange-500 text-white hover:bg-orange-600 rounded-xl font-medium shadow-lg shadow-orange-500/20"
+                >
+                  Finalizar cadastro
+                  <ArrowRight className="ml-2 w-4 h-4" />
+                </Button>
+
+                <p className="text-center text-zinc-400">
+                  {phoneCooldown === 0 ? (
+                    <button
+                      type="button"
+                      onClick={() => handleResend("phone")}
+                      className="text-orange-500 hover:text-orange-400 transition-colors font-medium"
+                    >
+                      Reenviar codigo
+                    </button>
+                  ) : (
+                    <span>Reenviar em {phoneCooldown}s</span>
+                  )}
+                </p>
+              </form>
+            </div>
+          )}
+        </motion.div>
+      </main>
+    </div>
   )
 }
-

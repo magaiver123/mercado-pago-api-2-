@@ -151,7 +151,7 @@ export default function MenuPage() {
   const handleRewardsClick = () => {
     toast({
       title: "Em breve",
-      description: "Resgate de recompensas ainda nao esta disponivel.",
+      description: "Resgate de recompensas ainda não está disponível.",
     });
   };
 
@@ -162,7 +162,7 @@ export default function MenuPage() {
       toast({
         title: "Estoque insuficiente",
         description:
-          "Voce ja adicionou a quantidade maxima disponivel deste produto.",
+          "Você já adicionou a quantidade máxima disponível deste produto.",
         variant: "warning",
       });
       return;
@@ -239,7 +239,7 @@ export default function MenuPage() {
                     Cupons e recompensas
                   </p>
                   <p className="truncate text-xs font-semibold text-zinc-900 sm:text-sm">
-                    Inserir codigo
+                    Inserir código
                   </p>
                 </div>
                 <span className="rounded-full bg-orange-500 px-2.5 py-1 text-[0.62rem] font-semibold text-white transition group-hover:bg-orange-600">
@@ -433,7 +433,7 @@ export default function MenuPage() {
               </p>
               <p className="text-sm font-medium text-zinc-600">
                 {itemCount === 0
-                  ? "Sua sacola esta vazia"
+                  ? "Sua sacola está vazia"
                   : `${itemCount} item(ns) adicionados`}
               </p>
             </button>

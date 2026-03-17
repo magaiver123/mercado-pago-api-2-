@@ -40,7 +40,7 @@ export default function RefundedPage() {
           <h1 className="text-5xl font-bold text-white leading-tight">Pagamento reembolsado</h1>
 
           <p className="text-white/90 text-xl">
-            O valor desta compra foi devolvido. Se precisar, faca um novo pedido.
+            O valor desta compra foi devolvido. Se precisar, faça um novo pedido.
           </p>
         </div>
 
@@ -49,10 +49,9 @@ export default function RefundedPage() {
           size="lg"
           className="bg-white text-slate-700 hover:bg-white/90 mt-4 px-12 py-6 text-lg font-semibold"
         >
-          Voltar ao Inicio
+          Voltar ao Início
         </Button>
       </div>
     </main>
   );
 }
-
