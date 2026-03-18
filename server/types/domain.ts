@@ -103,3 +103,9 @@ export interface KioskSlide {
   image_url: string
   duration: number
 }
+
+export interface MenuBannerSlide {
+  id: string
+  image_url: string
+  duration: number
+}

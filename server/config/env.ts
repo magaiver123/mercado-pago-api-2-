@@ -10,6 +10,9 @@ type EnvKey =
   | "MERCADOPAGO_WEBHOOK_SECRET"
   | "RESEND_API_KEY"
   | "EMAIL_FROM"
+  | "EMAIL_LOGO_URL"
+  | "EMAIL_APP_URL"
+  | "EMAIL_SUPPORT_WHATSAPP_URL"
 
 function readEnv(key: EnvKey): string | undefined {
   const value = process.env[key]
@@ -55,6 +58,9 @@ export function getEmailEnv() {
   return {
     resendApiKey: requireEnv("RESEND_API_KEY"),
     emailFrom: requireEnv("EMAIL_FROM"),
+    emailLogoUrl: requireEnv("EMAIL_LOGO_URL"),
+    emailAppUrl: requireEnv("EMAIL_APP_URL"),
+    emailSupportWhatsappUrl: requireEnv("EMAIL_SUPPORT_WHATSAPP_URL"),
   }
 }
 

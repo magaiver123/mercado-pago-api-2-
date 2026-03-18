@@ -2,6 +2,7 @@ import { Resend } from "resend"
 import { getEmailEnv } from "@/api/config/env"
 import { AppError, isAppError } from "@/api/utils/app-error"
 import { logger } from "@/api/utils/logger"
+import { buildAuthOtpEmail } from "@/api/services/auth/build-auth-otp-email"
 
 let resendClient: Resend | null = null
 
@@ -13,7 +14,7 @@ function getResendClient() {
   return resendClient
 }
 
-function mapResendErrorToMessage(error: { statusCode?: number; message?: string }) {
+function mapResendErrorToMessage(error: { statusCode?: number | null; message?: string | null }) {
   const rawMessage = `${error.message ?? ""}`.toLowerCase()
   const looksLikeSenderDomainIssue =
     error.statusCode === 403 &&
@@ -26,30 +27,35 @@ function mapResendErrorToMessage(error: { statusCode?: number; message?: string 
   return "Nao foi possivel enviar o codigo de verificacao por e-mail. Tente novamente em instantes."
 }
 
-export async function sendSignupCodeEmail(email: string, code: string) {
+interface SendSignupCodeEmailInput {
+  email: string
+  code: string
+  recipientName: string | null | undefined
+  expiresInMinutes: number
+}
+
+export async function sendSignupCodeEmail(input: SendSignupCodeEmailInput) {
   let emailFrom = ""
   try {
     emailFrom = getEmailEnv().emailFrom
   } catch {
-    throw new AppError("Configuracao de e-mail incompleta (RESEND_API_KEY/EMAIL_FROM).", 500, "EMAIL_CONFIG_MISSING")
+    throw new AppError("Configuracao de e-mail incompleta (RESEND_API_KEY/EMAIL_FROM/EMAIL_LOGO_URL/EMAIL_APP_URL/EMAIL_SUPPORT_WHATSAPP_URL).", 500, "EMAIL_CONFIG_MISSING")
   }
 
   try {
+    const payload = buildAuthOtpEmail({
+      flow: "signup",
+      recipientName: input.recipientName,
+      code: input.code,
+      expiresInMinutes: input.expiresInMinutes,
+    })
+
     const { error } = await getResendClient().emails.send({
       from: emailFrom,
-      to: email,
-      subject: "Codigo de verificacao de cadastro - Mr Smart",
-      html: `
-        <div style="font-family: Arial, sans-serif;">
-          <h2>Verificacao de cadastro</h2>
-          <p>Use o codigo abaixo para validar seu cadastro:</p>
-          <div style="font-size: 24px; font-weight: bold; letter-spacing: 4px;">
-            ${code}
-          </div>
-          <p>Este codigo expira em alguns minutos.</p>
-          <p>Se voce nao solicitou esse cadastro, ignore este e-mail.</p>
-        </div>
-      `,
+      to: input.email,
+      subject: payload.subject,
+      html: payload.html,
+      text: payload.text,
     })
 
     if (!error) {

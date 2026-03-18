@@ -70,7 +70,12 @@ export async function signupStartService(input: SignupStartInput) {
     expiresAt: sessionExpiresAt,
   })
 
-  await sendSignupCodeEmail(email, emailCode)
+  await sendSignupCodeEmail({
+    email,
+    code: emailCode,
+    recipientName: name,
+    expiresInMinutes: Math.ceil(SIGNUP_CODE_EXPIRATION_MS / 60_000),
+  })
 
   return {
     signupId: signup.id,

@@ -19,6 +19,19 @@ export class PasswordResetSupabaseRepository extends BaseSupabaseRepository impl
     if (error) throw new AppError("Erro ao criar reset", 500)
   }
 
+  async findLatestByUserId(userId: string): Promise<PasswordResetRecord | null> {
+    const { data, error } = await this.db
+      .from("password_resets")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (error) throw new AppError("Erro ao consultar reset recente", 500)
+    return (data as PasswordResetRecord | null) ?? null
+  }
+
   async findValid(email: string, code: string, now: string): Promise<PasswordResetRecord | null> {
     const { data, error } = await this.db
       .from("password_resets")
@@ -43,4 +56,3 @@ export class PasswordResetSupabaseRepository extends BaseSupabaseRepository impl
     await this.db.from("password_resets").update({ used_at: usedAt }).eq("id", resetId)
   }
 }
-

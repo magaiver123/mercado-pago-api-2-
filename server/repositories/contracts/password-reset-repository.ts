@@ -10,8 +10,8 @@ export interface CreatePasswordResetInput {
 export interface PasswordResetRepository {
   expireAllActiveByUserId(userId: string, usedAt: string): Promise<void>
   create(input: CreatePasswordResetInput): Promise<void>
+  findLatestByUserId(userId: string): Promise<PasswordResetRecord | null>
   findValid(email: string, code: string, now: string): Promise<PasswordResetRecord | null>
   extendExpiration(resetId: string, expiresAt: string): Promise<void>
   markUsed(resetId: string, usedAt: string): Promise<void>
 }
-

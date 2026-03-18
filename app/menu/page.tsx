@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Check, ShoppingBag, TicketPercent } from "lucide-react";
 import { useCartStore } from "@/lib/cart-store";
 import { Cart } from "@/components/cart";
@@ -34,6 +34,12 @@ type AddableProduct = {
   stock: number;
 };
 
+type MenuBannerSlide = {
+  id: string;
+  image_url: string;
+  duration: number;
+};
+
 function getProductStock(product: Pick<Product, "product_stock">): number {
   const stockData = Array.isArray(product.product_stock)
     ? product.product_stock[0]
@@ -42,6 +48,8 @@ function getProductStock(product: Pick<Product, "product_stock">): number {
 }
 
 export default function MenuPage() {
+  const BANNER_TRANSITION_MS = 550;
+
   // Layout fine-tuning: adjust these values manually to calibrate proportions on your totem.
   const layoutTune = {
     bannerHeightPx: 160,
@@ -66,9 +74,14 @@ export default function MenuPage() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState("Cliente");
-  const [menuBannerUrl, setMenuBannerUrl] = useState<string | null>(null);
+  const [menuBanners, setMenuBanners] = useState<MenuBannerSlide[]>([]);
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+  const [incomingBannerIndex, setIncomingBannerIndex] = useState<number | null>(null);
+  const [isBannerAnimating, setIsBannerAnimating] = useState(false);
   const [loadingProducts, setLoadingProducts] = useState(false);
-  const hasCustomMenuBanner = Boolean(menuBannerUrl);
+  const bannerTransitionTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const bannerAnimationFrameRef = useRef<number | null>(null);
+  const hasCustomMenuBanner = menuBanners.length > 0;
 
   const { addItem, getTotal, getItemCount, clearCart } = useCartStore();
   const router = useRouter();
@@ -91,22 +104,104 @@ export default function MenuPage() {
   }, [router]);
 
   useEffect(() => {
-    async function loadMenuBanner() {
+    async function loadMenuBanners() {
       try {
         const response = await fetch("/api/menu/banner", { cache: "no-store" });
         if (!response.ok) {
-          setMenuBannerUrl(null);
+          setMenuBanners([]);
+          setCurrentBannerIndex(0);
           return;
         }
 
         const data = await response.json();
-        setMenuBannerUrl(typeof data?.image_url === "string" ? data.image_url : null);
+        const parsedBanners = Array.isArray(data)
+          ? data
+          : Array.isArray(data?.slides)
+            ? data.slides
+            : [];
+
+        const normalizedBanners = parsedBanners
+          .filter((item: any) => typeof item?.image_url === "string" && item.image_url.trim() !== "")
+          .map((item: any, index: number) => ({
+            id: String(item.id ?? `${index}`),
+            image_url: String(item.image_url),
+            duration: Math.max(1, Number(item.duration ?? 5)),
+          })) as MenuBannerSlide[];
+
+        setMenuBanners(normalizedBanners);
+        setCurrentBannerIndex((previous) =>
+          previous >= normalizedBanners.length ? 0 : previous
+        );
+        setIncomingBannerIndex(null);
+        setIsBannerAnimating(false);
       } catch {
-        setMenuBannerUrl(null);
+        setMenuBanners([]);
+        setCurrentBannerIndex(0);
       }
     }
 
-    loadMenuBanner();
+    loadMenuBanners();
+  }, []);
+
+  const goToNextBanner = useCallback(() => {
+    if (
+      isBannerAnimating ||
+      incomingBannerIndex !== null ||
+      menuBanners.length <= 1
+    ) {
+      return;
+    }
+
+    const nextBanner = (currentBannerIndex + 1) % menuBanners.length;
+    setIncomingBannerIndex(nextBanner);
+    setIsBannerAnimating(false);
+
+    if (bannerAnimationFrameRef.current !== null) {
+      cancelAnimationFrame(bannerAnimationFrameRef.current);
+    }
+
+    bannerAnimationFrameRef.current = requestAnimationFrame(() => {
+      setIsBannerAnimating(true);
+    });
+
+    if (bannerTransitionTimerRef.current) {
+      clearTimeout(bannerTransitionTimerRef.current);
+    }
+
+    bannerTransitionTimerRef.current = setTimeout(() => {
+      setCurrentBannerIndex(nextBanner);
+      setIncomingBannerIndex(null);
+      setIsBannerAnimating(false);
+      bannerTransitionTimerRef.current = null;
+    }, BANNER_TRANSITION_MS);
+  }, [
+    BANNER_TRANSITION_MS,
+    currentBannerIndex,
+    incomingBannerIndex,
+    isBannerAnimating,
+    menuBanners.length,
+  ]);
+
+  useEffect(() => {
+    if (menuBanners.length <= 1) return;
+
+    const currentBanner = menuBanners[currentBannerIndex];
+    const duration = currentBanner?.duration ?? 5;
+    const timer = setTimeout(goToNextBanner, duration * 1000);
+
+    return () => clearTimeout(timer);
+  }, [currentBannerIndex, goToNextBanner, menuBanners]);
+
+  useEffect(() => {
+    return () => {
+      if (bannerTransitionTimerRef.current) {
+        clearTimeout(bannerTransitionTimerRef.current);
+      }
+
+      if (bannerAnimationFrameRef.current !== null) {
+        cancelAnimationFrame(bannerAnimationFrameRef.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -193,6 +288,12 @@ export default function MenuPage() {
     setTimeout(() => setAddedProductId(null), 420);
   };
 
+  const currentBannerData = hasCustomMenuBanner
+    ? menuBanners[currentBannerIndex]
+    : null;
+  const incomingBannerData =
+    incomingBannerIndex !== null ? menuBanners[incomingBannerIndex] : null;
+
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-[#f3f1ee]">
       <header className="flex-none">
@@ -200,18 +301,49 @@ export default function MenuPage() {
           className="relative overflow-hidden"
           style={{ height: layoutTune.bannerHeightPx }}
         >
-          <Image
-            src={
-              menuBannerUrl ||
-              "/hot-dog-sandwich-snack-combo-meal-promotional-appe.jpg"
-            }
-            alt="Banner promocional"
-            fill
-            className="object-cover"
-            priority
-          />
-          {!hasCustomMenuBanner && (
+          {hasCustomMenuBanner && currentBannerData?.image_url ? (
             <>
+              <div
+                className={`absolute inset-0 transition-opacity ease-out ${
+                  isBannerAnimating && incomingBannerData ? "opacity-0" : "opacity-100"
+                }`}
+                style={{ transitionDuration: `${BANNER_TRANSITION_MS}ms` }}
+              >
+                <Image
+                  src={currentBannerData.image_url}
+                  alt="Banner promocional"
+                  fill
+                  className="object-cover"
+                  priority
+                />
+              </div>
+
+              {incomingBannerData?.image_url && (
+                <div
+                  className={`absolute inset-0 transition-opacity ease-out ${
+                    isBannerAnimating ? "opacity-100" : "opacity-0"
+                  }`}
+                  style={{ transitionDuration: `${BANNER_TRANSITION_MS}ms` }}
+                >
+                  <Image
+                    src={incomingBannerData.image_url}
+                    alt="Banner promocional"
+                    fill
+                    className="object-cover"
+                    priority
+                  />
+                </div>
+              )}
+            </>
+          ) : (
+            <>
+              <Image
+                src="/hot-dog-sandwich-snack-combo-meal-promotional-appe.jpg"
+                alt="Banner promocional"
+                fill
+                className="object-cover"
+                priority
+              />
               <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/88 via-zinc-900/58 to-orange-600/78" />
               <div className="relative flex h-full items-center justify-between px-5 sm:px-6">
                 <div className="max-w-[72%]">

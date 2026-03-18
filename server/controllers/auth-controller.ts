@@ -75,14 +75,13 @@ export async function loginByEmailController(request: Request) {
 }
 
 export async function forgotPasswordController(request: Request) {
-  let body: any = null
+  let email: string | null = null
   try {
-    body = await request.json()
-  } catch {
-    return NextResponse.json({ success: false })
-  }
+    const body = await request.json()
+    email = body?.email ?? null
+  } catch {}
 
-  const data = await forgotPasswordService(body?.email ?? null)
+  const data = await forgotPasswordService(email)
   return NextResponse.json(data)
 }
 

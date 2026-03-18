@@ -53,7 +53,12 @@ export async function signupResendService(input: SignupResendInput) {
   const sentAt = now.toISOString()
 
   await repositories.signupVerification.updateEmailCode(signupId, newCode, newExpiresAt, sentAt)
-  await sendSignupCodeEmail(signup.email, newCode)
+  await sendSignupCodeEmail({
+    email: signup.email,
+    code: newCode,
+    recipientName: signup.name,
+    expiresInMinutes: Math.ceil(SIGNUP_CODE_EXPIRATION_MS / 60_000),
+  })
 
   return {
     success: true,

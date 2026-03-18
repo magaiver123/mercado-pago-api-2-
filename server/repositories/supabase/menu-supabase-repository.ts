@@ -1,5 +1,5 @@
 import { AppError } from "@/api/utils/app-error"
-import { Category, Product } from "@/api/types/domain"
+import { Category, MenuBannerSlide, Product } from "@/api/types/domain"
 import { MenuRepository } from "@/api/repositories/contracts/menu-repository"
 import { BaseSupabaseRepository } from "@/api/repositories/supabase/base-supabase-repository"
 
@@ -35,15 +35,16 @@ export class MenuSupabaseRepository extends BaseSupabaseRepository implements Me
     return categories
   }
 
-  async getMenuBannerImageUrl(storeId: string): Promise<string | null> {
+  async listActiveMenuBanners(storeId: string): Promise<MenuBannerSlide[]> {
     const { data, error } = await this.db
       .from("menu_banners")
-      .select("image_url")
+      .select("id, image_url, duration")
       .eq("store_id", storeId)
-      .maybeSingle()
+      .eq("active", true)
+      .order("order", { ascending: true })
 
     if (error) throw new AppError("Erro ao carregar banner do menu", 500)
-    return data?.image_url ?? null
+    return (data as MenuBannerSlide[] | null) ?? []
   }
 
   async listActiveProductsByCategory(storeId: string, categoryId: string): Promise<Product[]> {
