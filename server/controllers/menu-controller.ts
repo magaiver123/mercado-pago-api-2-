@@ -1,11 +1,18 @@
 import { NextResponse } from "next/server"
 import { listCategoriesService } from "@/api/services/menu/list-categories-service"
+import { getMenuBannerImageService } from "@/api/services/menu/get-menu-banner-image-service"
 import { listProductsByCategoryService } from "@/api/services/menu/list-products-by-category-service"
 import { requireStoreContextFromRequest } from "@/api/utils/store-context"
 
 export async function getMenuCategoriesController(request: Request) {
   const storeContext = requireStoreContextFromRequest(request)
   const data = await listCategoriesService(storeContext.storeId)
+  return NextResponse.json(data)
+}
+
+export async function getMenuBannerController(request: Request) {
+  const storeContext = requireStoreContextFromRequest(request)
+  const data = await getMenuBannerImageService(storeContext.storeId)
   return NextResponse.json(data)
 }
 

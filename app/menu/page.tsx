@@ -66,6 +66,7 @@ export default function MenuPage() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState("Cliente");
+  const [menuBannerUrl, setMenuBannerUrl] = useState<string | null>(null);
   const [loadingProducts, setLoadingProducts] = useState(false);
 
   const { addItem, getTotal, getItemCount, clearCart } = useCartStore();
@@ -87,6 +88,25 @@ export default function MenuPage() {
     const firstName = user.name?.trim().split(/\s+/)[0] || "Cliente";
     setCustomerName(firstName);
   }, [router]);
+
+  useEffect(() => {
+    async function loadMenuBanner() {
+      try {
+        const response = await fetch("/api/menu/banner", { cache: "no-store" });
+        if (!response.ok) {
+          setMenuBannerUrl(null);
+          return;
+        }
+
+        const data = await response.json();
+        setMenuBannerUrl(typeof data?.image_url === "string" ? data.image_url : null);
+      } catch {
+        setMenuBannerUrl(null);
+      }
+    }
+
+    loadMenuBanner();
+  }, []);
 
   useEffect(() => {
     async function loadCategories() {
@@ -180,7 +200,10 @@ export default function MenuPage() {
           style={{ height: layoutTune.bannerHeightPx }}
         >
           <Image
-            src="/hot-dog-sandwich-snack-combo-meal-promotional-appe.jpg"
+            src={
+              menuBannerUrl ||
+              "/hot-dog-sandwich-snack-combo-meal-promotional-appe.jpg"
+            }
             alt="Banner promocional"
             fill
             className="object-cover"

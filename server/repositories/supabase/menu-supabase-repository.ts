@@ -35,6 +35,17 @@ export class MenuSupabaseRepository extends BaseSupabaseRepository implements Me
     return categories
   }
 
+  async getMenuBannerImageUrl(storeId: string): Promise<string | null> {
+    const { data, error } = await this.db
+      .from("menu_banners")
+      .select("image_url")
+      .eq("store_id", storeId)
+      .maybeSingle()
+
+    if (error) throw new AppError("Erro ao carregar banner do menu", 500)
+    return data?.image_url ?? null
+  }
+
   async listActiveProductsByCategory(storeId: string, categoryId: string): Promise<Product[]> {
     const { data: storeProducts, error: storeProductsError } = await this.db
       .from("store_products")

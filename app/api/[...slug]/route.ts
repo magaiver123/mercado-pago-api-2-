@@ -12,7 +12,7 @@ import {
   verifyResetCodeRoute,
 } from "@/api/routes/auth-routes"
 import { getKioskSlidesRoute } from "@/api/routes/kiosk-routes"
-import { getMenuCategoriesRoute, getMenuProductsRoute } from "@/api/routes/menu-routes"
+import { getMenuBannerRoute, getMenuCategoriesRoute, getMenuProductsRoute } from "@/api/routes/menu-routes"
 import { createMercadoPagoOrderRoute, cancelMercadoPagoOrderRoute, getMercadoPagoOrderStatusRoute, mercadopagoWebhookRoute, refundMercadoPagoOrderRoute } from "@/api/routes/mercadopago-routes"
 import { registerOrderRoute, listUserOrdersRoute } from "@/api/routes/order-routes"
 import {
@@ -32,6 +32,7 @@ const routeTable: Record<string, Handler> = {
   "POST /api/auth/login": loginByCpfRoute,
   "POST /api/auth/register": registerRoute,
   "GET /api/kiosk/slides": getKioskSlidesRoute,
+  "GET /api/menu/banner": getMenuBannerRoute,
   "GET /api/menu/categories": getMenuCategoriesRoute,
   "GET /api/menu/products": getMenuProductsRoute,
   "POST /api/mercadopago/cancel-order": cancelMercadoPagoOrderRoute,
