@@ -7,7 +7,7 @@ import { QRCodeCanvas } from "qrcode.react";
 import { Button } from "@/components/ui/button";
 
 export default function RegisterPage() {
-  const qrUrl = "https://mercado-pago-api-2-biqx.vercel.app/userprofile";
+  const qrUrl = "mrsmart.com.br";
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#f3f1ee] px-4 py-6 sm:px-8 sm:py-8">
