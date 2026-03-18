@@ -1,6 +1,6 @@
 "use client"
 
-import { type Dispatch, type FormEvent, type KeyboardEvent, type SetStateAction, useEffect, useMemo, useState } from "react"
+import { type ClipboardEvent, type Dispatch, type FormEvent, type KeyboardEvent, type SetStateAction, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
@@ -19,6 +19,25 @@ function createEmptyCode() {
 
 function sanitizeCodeInput(value: string) {
   return value.replace(/\D/g, "").slice(0, 1)
+}
+
+function distributePastedDigits(currentCode: string[], startIndex: number, rawValue: string) {
+  const digits = rawValue.replace(/\D/g, "")
+  if (!digits) return null
+
+  const nextCode = [...currentCode]
+  let writeIndex = startIndex
+
+  for (const digit of digits) {
+    if (writeIndex >= nextCode.length) break
+    nextCode[writeIndex] = digit
+    writeIndex += 1
+  }
+
+  const nextEmptyIndex = nextCode.findIndex((digit, index) => index >= startIndex && digit === "")
+  const focusIndex = nextEmptyIndex === -1 ? Math.min(writeIndex - 1, nextCode.length - 1) : nextEmptyIndex
+
+  return { nextCode, focusIndex }
 }
 
 function formatCpf(value: string) {
@@ -99,6 +118,24 @@ export default function UserprofileCadastroPage() {
       const previousInput = document.getElementById(`${prefix}-${index - 1}`)
       previousInput?.focus()
     }
+  }
+
+  function handleCodePaste(
+    currentCode: string[],
+    setter: Dispatch<SetStateAction<string[]>>,
+    prefix: string,
+    index: number,
+    event: ClipboardEvent<HTMLInputElement>,
+  ) {
+    const pastedText = event.clipboardData.getData("text")
+    const result = distributePastedDigits(currentCode, index, pastedText)
+    if (!result) return
+
+    event.preventDefault()
+    setter(result.nextCode)
+
+    const targetInput = document.getElementById(`${prefix}-${result.focusIndex}`) as HTMLInputElement | null
+    targetInput?.focus()
   }
 
   async function handleStartSignup(event: FormEvent) {
@@ -387,6 +424,7 @@ export default function UserprofileCadastroPage() {
                       value={digit}
                       onChange={(event) => updateCode(setEmailCode, "email-code", index, event.target.value)}
                       onKeyDown={(event) => moveCodeFocusBack("email-code", index, event)}
+                      onPaste={(event) => handleCodePaste(emailCode, setEmailCode, "email-code", index, event)}
                       className="w-10 h-12 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-bold bg-zinc-900 border-zinc-800 text-white focus:border-orange-500 focus:ring-orange-500/20 rounded-xl"
                     />
                   ))}

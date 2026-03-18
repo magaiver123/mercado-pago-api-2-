@@ -1,6 +1,6 @@
 "use client"
 
-import { type FormEvent, type KeyboardEvent, useEffect, useMemo, useState } from "react"
+import { type ClipboardEvent, type FormEvent, type KeyboardEvent, useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
@@ -19,6 +19,25 @@ function createEmptyCode() {
 
 function sanitizeCodeInput(value: string) {
   return value.replace(/\D/g, "").slice(0, 1)
+}
+
+function distributePastedDigits(currentCode: string[], startIndex: number, rawValue: string) {
+  const digits = rawValue.replace(/\D/g, "")
+  if (!digits) return null
+
+  const nextCode = [...currentCode]
+  let writeIndex = startIndex
+
+  for (const digit of digits) {
+    if (writeIndex >= nextCode.length) break
+    nextCode[writeIndex] = digit
+    writeIndex += 1
+  }
+
+  const nextEmptyIndex = nextCode.findIndex((digit, index) => index >= startIndex && digit === "")
+  const focusIndex = nextEmptyIndex === -1 ? Math.min(writeIndex - 1, nextCode.length - 1) : nextEmptyIndex
+
+  return { nextCode, focusIndex }
 }
 
 export default function UserprofileLoginPage() {
@@ -241,6 +260,18 @@ export default function UserprofileLoginPage() {
     }
   }
 
+  function handleCodePaste(index: number, event: ClipboardEvent<HTMLInputElement>) {
+    const pastedText = event.clipboardData.getData("text")
+    const result = distributePastedDigits(code, index, pastedText)
+    if (!result) return
+
+    event.preventDefault()
+    setCode(result.nextCode)
+
+    const targetInput = document.getElementById(`forgot-code-${result.focusIndex}`) as HTMLInputElement | null
+    targetInput?.focus()
+  }
+
   function handleBackToLogin() {
     clearTransientMessages()
     setMode("login")
@@ -424,6 +455,7 @@ export default function UserprofileLoginPage() {
                       value={digit}
                       onChange={(event) => handleCodeChange(index, event.target.value)}
                       onKeyDown={(event) => handleCodeKeyDown(index, event)}
+                      onPaste={(event) => handleCodePaste(index, event)}
                       className="w-10 h-12 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-bold bg-zinc-900 border-zinc-800 text-white focus:border-orange-500 focus:ring-orange-500/20 rounded-xl"
                     />
                   ))}
