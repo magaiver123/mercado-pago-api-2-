@@ -23,26 +23,25 @@ export default function RegisterPage() {
 
             <h1 className="mt-4 text-[2rem] font-bold leading-[1.05] tracking-[-0.02em] text-[#3b2417] sm:text-[2.5rem]">
               Crie sua conta
-              <span className="text-orange-500">.</span>
             </h1>
             <p className="mt-3 max-w-xl text-base font-medium text-zinc-700 sm:text-lg">
               Faça seu cadastro pelo smartphone e volte para continuar seu pedido no totem.
             </p>
 
             <ol className="mt-7 space-y-3">
-              <li className="flex items-start gap-3 rounded-2xl border border-[#eadbca] bg-white px-4 py-3 text-sm font-medium text-zinc-700 sm:text-base">
+              <li className="flex items-center gap-3 rounded-2xl border border-[#eadbca] bg-white px-4 py-3 text-sm font-medium text-zinc-700 sm:text-base">
                 <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-orange-500 text-sm font-bold text-white">
                   1
                 </span>
                 Escaneie o QR Code com seu smartphone.
               </li>
-              <li className="flex items-start gap-3 rounded-2xl border border-[#eadbca] bg-white px-4 py-3 text-sm font-medium text-zinc-700 sm:text-base">
+              <li className="flex items-center gap-3 rounded-2xl border border-[#eadbca] bg-white px-4 py-3 text-sm font-medium text-zinc-700 sm:text-base">
                 <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-orange-500 text-sm font-bold text-white">
                   2
                 </span>
                 Preencha suas informações no site.
               </li>
-              <li className="flex items-start gap-3 rounded-2xl border border-[#eadbca] bg-white px-4 py-3 text-sm font-medium text-zinc-700 sm:text-base">
+              <li className="flex items-center gap-3 rounded-2xl border border-[#eadbca] bg-white px-4 py-3 text-sm font-medium text-zinc-700 sm:text-base">
                 <span className="flex h-7 w-7 flex-none items-center justify-center rounded-full bg-orange-500 text-sm font-bold text-white">
                   3
                 </span>
