@@ -374,7 +374,7 @@ export default function MenuPage() {
                             {product.name}
                           </h4>
                           <p
-                            className={`text-[1.36rem] font-bold leading-none tracking-[-0.02em] ${
+                            className={`mt-1.5 text-[1.36rem] font-bold leading-none tracking-[-0.02em] ${
                               isOutOfStock ? "text-zinc-400" : "text-zinc-900"
                             }`}
                           >
