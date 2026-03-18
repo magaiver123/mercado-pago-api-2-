@@ -1,131 +1,102 @@
-"use client";
+"use client"
 
-import React, { useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import {
-  ShoppingCart,
-  ArrowLeft,
-  MessageCircle,
-  HelpCircle,
-  ChevronRight,
-} from "lucide-react";
-import { getUserprofileAuthUser } from "@/lib/userprofile-auth-store";
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { motion } from "framer-motion"
+import { ChevronRight, HelpCircle, MessageCircle } from "lucide-react"
+import { clearUserprofileAuthUser, getUserprofileAuthUser } from "@/lib/userprofile-auth-store"
+import { UserprofilePerfilShell } from "@/components/userprofile/perfil-shell"
 
-const WHATSAPP_URL = "https://wa.me/message/EC3OBFDLFSMTH1";
+const WHATSAPP_URL = "https://wa.me/message/EC3OBFDLFSMTH1"
+
+const faqItems = [
+  "Como usar o totem de autoatendimento?",
+  "Posso cancelar um pedido?",
+  "Como alterar meus dados cadastrais?",
+  "Quais formas de pagamento sao aceitas?",
+]
 
 export default function SuportePage() {
-  const router = useRouter();
-  const [isAuthorized, setIsAuthorized] = useState(false);
+  const router = useRouter()
+  const [isAuthorized, setIsAuthorized] = useState(false)
 
   useEffect(() => {
-    const user = getUserprofileAuthUser();
+    const user = getUserprofileAuthUser()
     if (!user) {
-      router.replace("/userprofile/login");
-      return;
+      router.replace("/userprofile/login")
+      return
     }
 
-    setIsAuthorized(true);
-  }, [router]);
+    setIsAuthorized(true)
+  }, [router])
 
-  if (!isAuthorized) {
-    return null;
+  function handleLogout() {
+    clearUserprofileAuthUser()
+    router.replace("/userprofile")
   }
 
+  if (!isAuthorized) return null
+
   return (
-    <main className="min-h-screen bg-background flex flex-col">
-      <header className="bg-primary text-primary-foreground">
-        <div className="container mx-auto px-4 py-4 flex items-center gap-4">
-          <Link
-            href="/userprofile/perfil"
-            className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary-foreground/20 rounded-lg flex items-center justify-center">
-              <ShoppingCart className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold">Mr Smart</span>
-          </div>
-        </div>
-      </header>
-
-      <div className="flex-1 px-4 py-6">
-        <div className="container mx-auto max-w-md">
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
-              <HelpCircle className="w-8 h-8 text-primary" />
-            </div>
-            <h1 className="text-xl font-bold text-foreground mb-2">
-              Como podemos ajudar?
-            </h1>
-            <p className="text-muted-foreground">
-              Escolha uma opcao de contato abaixo
-            </p>
-          </div>
-
-          <div className="space-y-3 mb-8">
-            <ContactCard
-              href={WHATSAPP_URL}
-              icon={<MessageCircle className="w-6 h-6" />}
-              title="WhatsApp"
-              description="51 99588-1730"
-            />
-          </div>
-
-          <div>
-            <h2 className="text-lg font-semibold text-foreground mb-4">
-              Perguntas frequentes
-            </h2>
-            <div className="space-y-2">
-              <FaqItem question="Como usar o totem de autoatendimento?" />
-              <FaqItem question="Posso cancelar um pedido?" />
-              <FaqItem question="Como alterar meus dados cadastrais?" />
-              <FaqItem question="Quais formas de pagamento sao aceitas?" />
-            </div>
-          </div>
-        </div>
-      </div>
-    </main>
-  );
-}
-
-function ContactCard({
-  href,
-  icon,
-  title,
-  description,
-}: {
-  href: string;
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-}) {
-  return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="w-full flex items-center gap-4 p-4 bg-card rounded-xl border border-border shadow-sm transition-all hover:shadow-md hover:border-primary/30 active:scale-[0.99] text-left"
+    <UserprofilePerfilShell
+      title="Central de Suporte"
+      description="Estamos aqui para ajudar. Fale com nosso time e encontre respostas para as duvidas mais comuns."
+      onLogout={handleLogout}
     >
-      <div className="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-primary">
-        {icon}
-      </div>
-      <div className="flex-1">
-        <h3 className="font-semibold text-foreground">{title}</h3>
-        <p className="text-sm text-muted-foreground">{description}</p>
-      </div>
-      <ChevronRight className="w-5 h-5 text-muted-foreground" />
-    </a>
-  );
-}
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, delay: 0.08 }}
+        className="grid gap-5 lg:grid-cols-[1.2fr_1fr]"
+      >
+        <section className="rounded-3xl border border-zinc-800 bg-zinc-900/45 p-6">
+          <div className="mb-6 flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-orange-500/15">
+              <HelpCircle className="h-6 w-6 text-orange-400" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-white">Contato Rapido</h2>
+              <p className="text-sm text-zinc-400">Atendimento direto pelo WhatsApp.</p>
+            </div>
+          </div>
 
-function FaqItem({ question }: { question: string }) {
-  return (
-    <button className="w-full flex items-center justify-between p-4 bg-card rounded-lg border border-border text-left hover:bg-muted/50 transition-colors">
-      <span className="text-sm text-foreground">{question}</span>
-      <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-    </button>
-  );
+          <a
+            href={WHATSAPP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group block rounded-2xl border border-zinc-800 bg-zinc-950/70 p-5 transition-colors hover:border-green-500/35 hover:bg-zinc-900"
+          >
+            <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-green-500/15 text-green-400 transition-colors group-hover:bg-green-500/25">
+              <MessageCircle className="h-6 w-6" />
+            </div>
+            <h3 className="text-lg font-semibold text-white">WhatsApp</h3>
+            <p className="mt-1 text-sm text-zinc-400">51 99588-1730</p>
+            <p className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-green-400">
+              Iniciar conversa
+              <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+            </p>
+          </a>
+        </section>
+
+        <section className="rounded-3xl border border-zinc-800 bg-zinc-900/45 p-6">
+          <h2 className="mb-4 text-lg font-semibold text-white">Perguntas Frequentes</h2>
+          <div className="space-y-2">
+            {faqItems.map((question, index) => (
+              <motion.button
+                key={question}
+                type="button"
+                initial={{ opacity: 0, x: -8 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ duration: 0.3, delay: 0.12 + index * 0.05 }}
+                className="flex w-full items-center justify-between rounded-xl border border-zinc-800 bg-zinc-950/75 px-4 py-3 text-left transition-colors hover:border-zinc-700 hover:bg-zinc-900"
+              >
+                <span className="text-sm text-zinc-200">{question}</span>
+                <ChevronRight className="h-4 w-4 shrink-0 text-zinc-500" />
+              </motion.button>
+            ))}
+          </div>
+        </section>
+      </motion.div>
+    </UserprofilePerfilShell>
+  )
 }

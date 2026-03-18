@@ -258,7 +258,7 @@ export default function UserprofileLoginPage() {
 
       <header className="relative z-10 p-6">
         <Link href="/userprofile" className="inline-flex items-center gap-2">
-          <img src="/logo.svg" alt="Mr Smart" className="w-9 h-9 object-contain" />
+          <img src="/LOGOMR.png" alt="Mr Smart" className="w-9 h-9 object-contain" />
           <span className="font-semibold">
             <span className="text-orange-500">Mr</span>
             <span className="text-white"> Smart</span>

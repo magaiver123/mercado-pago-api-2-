@@ -6,24 +6,25 @@ import {
   ensureSignupSessionIsActive,
   generateSignupCode,
   getCooldownSeconds,
-  shouldExposeDebugPhoneCode,
   SIGNUP_CODE_EXPIRATION_MS,
   SIGNUP_RESEND_COOLDOWN_MS,
 } from "@/api/services/auth/signup-verification-utils"
 
-type Channel = "email" | "phone"
-
 interface SignupResendInput {
   signupId: string
-  channel: Channel
+  channel: string
 }
 
 export async function signupResendService(input: SignupResendInput) {
   const signupId = typeof input.signupId === "string" ? input.signupId.trim() : ""
   const channel = input.channel
 
-  if (!isValidUUID(signupId) || (channel !== "email" && channel !== "phone")) {
+  if (!isValidUUID(signupId)) {
     throw new AppError("Dados invalidos", 400)
+  }
+
+  if (channel !== "email") {
+    throw new AppError("Reenvio por telefone nao e mais suportado", 400)
   }
 
   const repositories = getRepositoryFactory()
@@ -40,11 +41,7 @@ export async function signupResendService(input: SignupResendInput) {
     throw new AppError("Email ja verificado", 409)
   }
 
-  if (channel === "phone" && signup.phone_verified_at) {
-    throw new AppError("Telefone ja verificado", 409)
-  }
-
-  const lastSentAt = channel === "email" ? signup.last_email_sent_at : signup.last_phone_sent_at
+  const lastSentAt = signup.last_email_sent_at
   const cooldownSeconds = getCooldownSeconds(lastSentAt, now)
 
   if (cooldownSeconds > 0) {
@@ -55,16 +52,11 @@ export async function signupResendService(input: SignupResendInput) {
   const newExpiresAt = new Date(now.getTime() + SIGNUP_CODE_EXPIRATION_MS).toISOString()
   const sentAt = now.toISOString()
 
-  if (channel === "email") {
-    await repositories.signupVerification.updateEmailCode(signupId, newCode, newExpiresAt, sentAt)
-    await sendSignupCodeEmail(signup.email, newCode)
-  } else {
-    await repositories.signupVerification.updatePhoneCode(signupId, newCode, newExpiresAt, sentAt)
-  }
+  await repositories.signupVerification.updateEmailCode(signupId, newCode, newExpiresAt, sentAt)
+  await sendSignupCodeEmail(signup.email, newCode)
 
   return {
     success: true,
     resendCooldown: Math.ceil(SIGNUP_RESEND_COOLDOWN_MS / 1000),
-    debugPhoneCode: channel === "phone" && shouldExposeDebugPhoneCode() ? newCode : undefined,
   }
 }

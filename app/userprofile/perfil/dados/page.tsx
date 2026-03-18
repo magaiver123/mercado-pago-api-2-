@@ -1,114 +1,103 @@
-"use client";
+"use client"
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import {
-  ShoppingCart,
-  ArrowLeft,
-  User,
-  Mail,
-  Phone,
-  CreditCard,
-  Camera,
-} from "lucide-react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState, type FormEvent } from "react"
+import { useRouter } from "next/navigation"
+import { motion } from "framer-motion"
+import { Camera, CreditCard, Mail, Phone, User } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
 import {
   clearUserprofileAuthUser,
   getUserprofileAuthUser,
   setUserprofileAuthUser,
   type UserprofileUser,
-} from "@/lib/userprofile-auth-store";
+} from "@/lib/userprofile-auth-store"
+import { UserprofilePerfilShell } from "@/components/userprofile/perfil-shell"
 
 function formatCpf(value: string | null) {
-  if (!value) return "";
-  const digits = value.replace(/\D/g, "");
-  if (digits.length !== 11) return value;
-  return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+  if (!value) return ""
+  const digits = value.replace(/\D/g, "")
+  if (digits.length !== 11) return value
+  return digits.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4")
 }
 
 function formatPhone(value: string) {
-  const digits = value.replace(/\D/g, "");
-  if (digits.length <= 10) {
-    return digits.replace(/(\d{2})(\d{4})(\d{0,4})/, "($1) $2-$3").trim();
-  }
-  return digits.replace(/(\d{2})(\d{5})(\d{0,4})/, "($1) $2-$3").trim();
+  const digits = value.replace(/\D/g, "")
+  if (digits.length <= 10) return digits.replace(/(\d{2})(\d{4})(\d{0,4})/, "($1) $2-$3").trim()
+  return digits.replace(/(\d{2})(\d{5})(\d{0,4})/, "($1) $2-$3").trim()
 }
 
 export default function DadosPage() {
-  const router = useRouter();
-  const [authUser, setAuthUser] = useState<UserprofileUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
+  const router = useRouter()
+  const [authUser, setAuthUser] = useState<UserprofileUser | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
 
-  const [name, setName] = useState("");
-  const [cpf, setCpf] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
+  const [name, setName] = useState("")
+  const [cpf, setCpf] = useState("")
+  const [phone, setPhone] = useState("")
+  const [email, setEmail] = useState("")
 
   useEffect(() => {
-    const currentUser = getUserprofileAuthUser();
+    const currentUser = getUserprofileAuthUser()
     if (!currentUser) {
-      router.replace("/userprofile/login");
-      return;
+      router.replace("/userprofile/login")
+      return
     }
 
-    const userId = currentUser.id;
-    setAuthUser(currentUser);
+    const userId = currentUser.id
+    setAuthUser(currentUser)
 
     async function loadUserData() {
       try {
-        const response = await fetch(`/api/userprofile/me?userId=${userId}`);
-        const data = await response.json().catch(() => null);
+        const response = await fetch(`/api/userprofile/me?userId=${userId}`)
+        const data = await response.json().catch(() => null)
 
         if (response.status === 401 || response.status === 404) {
-          clearUserprofileAuthUser();
-          router.replace("/userprofile/login");
-          return;
+          clearUserprofileAuthUser()
+          router.replace("/userprofile/login")
+          return
         }
 
         if (!response.ok || !data) {
-          setError("Nao foi possivel carregar seus dados.");
-          return;
+          setError("Nao foi possivel carregar seus dados.")
+          return
         }
 
-        setName(data.name ?? "");
-        setCpf(formatCpf(data.cpf ?? ""));
-        setPhone(data.phone ?? "");
-        setEmail(data.email ?? "");
+        setName(data.name ?? "")
+        setCpf(formatCpf(data.cpf ?? ""))
+        setPhone(data.phone ?? "")
+        setEmail(data.email ?? "")
       } catch {
-        setError("Nao foi possivel carregar seus dados.");
+        setError("Nao foi possivel carregar seus dados.")
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
     }
 
-    loadUserData();
-  }, [router]);
+    loadUserData()
+  }, [router])
 
-  const handlePhoneChange = (value: string) => {
-    const digits = value.replace(/\D/g, "");
-    if (digits.length <= 11) {
-      setPhone(digits);
-    }
-  };
+  function handlePhoneChange(value: string) {
+    const digits = value.replace(/\D/g, "")
+    if (digits.length <= 11) setPhone(digits)
+  }
 
-  const handleSave = async (event: React.FormEvent) => {
-    event.preventDefault();
-    setError(null);
-    setSuccess(null);
+  async function handleSave(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    setError(null)
+    setSuccess(null)
 
     if (!authUser) {
-      router.replace("/userprofile/login");
-      return;
+      router.replace("/userprofile/login")
+      return
     }
 
     try {
-      setIsSaving(true);
+      setIsSaving(true)
       const response = await fetch("/api/userprofile/me", {
         method: "PUT",
         headers: {
@@ -120,19 +109,19 @@ export default function DadosPage() {
           phone,
           email,
         }),
-      });
+      })
 
-      const data = await response.json().catch(() => null);
+      const data = await response.json().catch(() => null)
 
       if (response.status === 401 || response.status === 404) {
-        clearUserprofileAuthUser();
-        router.replace("/userprofile/login");
-        return;
+        clearUserprofileAuthUser()
+        router.replace("/userprofile/login")
+        return
       }
 
       if (!response.ok) {
-        setError(data?.error || "Nao foi possivel salvar alteracoes.");
-        return;
+        setError(data?.error || "Nao foi possivel salvar alteracoes.")
+        return
       }
 
       const updatedUser: UserprofileUser = {
@@ -141,153 +130,143 @@ export default function DadosPage() {
         cpf: data.user.cpf ?? null,
         phone: data.user.phone ?? null,
         email: data.user.email,
-      };
+      }
 
-      setAuthUser(updatedUser);
-      setUserprofileAuthUser(updatedUser);
-      setSuccess("Alteracoes salvas com sucesso.");
+      setAuthUser(updatedUser)
+      setUserprofileAuthUser(updatedUser)
+      setSuccess("Alteracoes salvas com sucesso.")
     } catch {
-      setError("Nao foi possivel salvar alteracoes.");
+      setError("Nao foi possivel salvar alteracoes.")
     } finally {
-      setIsSaving(false);
+      setIsSaving(false)
     }
-  };
-
-  if (isLoading) {
-    return null;
   }
 
+  function handleLogout() {
+    clearUserprofileAuthUser()
+    router.replace("/userprofile")
+  }
+
+  if (isLoading) return null
+
   return (
-    <main className="min-h-screen bg-background flex flex-col">
-      <header className="bg-primary text-primary-foreground">
-        <div className="container mx-auto px-4 py-4 flex items-center gap-4">
-          <Link
-            href="/userprofile/perfil"
-            className="text-primary-foreground/80 hover:text-primary-foreground transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary-foreground/20 rounded-lg flex items-center justify-center">
-              <ShoppingCart className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold">Mr Smart</span>
-          </div>
-        </div>
-      </header>
+    <UserprofilePerfilShell
+      title="Dados Cadastrais"
+      description="Mantenha suas informacoes sempre atualizadas para uma experiencia mais rapida e segura."
+      onLogout={handleLogout}
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, delay: 0.06 }}
+        className="grid gap-5 lg:grid-cols-[320px_1fr]"
+      >
+        <section className="rounded-3xl border border-zinc-800 bg-zinc-900/45 p-6">
+          <h2 className="text-lg font-semibold text-white">Foto de Perfil</h2>
+          <p className="mt-2 text-sm text-zinc-400">Personalize sua conta com uma imagem.</p>
 
-      <div className="flex-1 px-4 py-6">
-        <div className="container mx-auto max-w-sm">
-          <h1 className="text-xl font-bold text-foreground mb-6">
-            Dados Cadastrais
-          </h1>
-
-          <form className="space-y-4" onSubmit={handleSave}>
-            <div className="flex flex-col items-center mb-6">
-              <Label className="mb-3 text-center">Foto de perfil</Label>
-              <div className="relative">
-                <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center border-2 border-dashed border-border overflow-hidden">
-                  <User className="w-10 h-10 text-muted-foreground" />
-                </div>
-                <button
-                  type="button"
-                  className="absolute bottom-0 right-0 w-8 h-8 bg-primary rounded-full flex items-center justify-center text-primary-foreground shadow-md hover:bg-primary/90 transition-colors"
-                  aria-label="Adicionar foto"
-                >
-                  <Camera className="w-4 h-4" />
-                </button>
+          <div className="mt-6 flex flex-col items-center">
+            <div className="relative">
+              <div className="flex h-32 w-32 items-center justify-center rounded-full border border-dashed border-zinc-700 bg-zinc-950">
+                <User className="h-12 w-12 text-zinc-500" />
               </div>
-              <p className="text-xs text-muted-foreground mt-2">
-                Toque para adicionar uma foto
-              </p>
-              <input
-                type="file"
-                id="profile-photo"
-                accept="image/*"
-                className="hidden"
-                aria-label="Upload de foto de perfil"
-              />
+              <button
+                type="button"
+                className="absolute -bottom-1 -right-1 inline-flex h-10 w-10 items-center justify-center rounded-full bg-orange-500 text-white shadow-lg shadow-orange-500/25 transition-colors hover:bg-orange-600"
+                aria-label="Adicionar foto"
+              >
+                <Camera className="h-4 w-4" />
+              </button>
             </div>
 
+            <p className="mt-4 text-center text-xs text-zinc-500">Toque no icone para enviar uma foto de perfil.</p>
+            <input type="file" id="profile-photo" accept="image/*" className="hidden" aria-label="Upload de foto de perfil" />
+          </div>
+        </section>
+
+        <section className="rounded-3xl border border-zinc-800 bg-zinc-900/45 p-5 sm:p-6">
+          <form className="space-y-4" onSubmit={handleSave}>
             <div className="space-y-2">
-              <Label htmlFor="nome">Nome completo</Label>
+              <Label htmlFor="nome" className="text-zinc-300">
+                Nome completo
+              </Label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <User className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
                 <Input
                   id="nome"
                   type="text"
                   value={name}
                   onChange={(event) => setName(event.target.value)}
-                  className="pl-10 py-6"
+                  className="h-12 rounded-xl border-zinc-800 bg-zinc-950 pl-12 text-white placeholder:text-zinc-600 focus-visible:border-orange-500 focus-visible:ring-orange-500/25"
                   required
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="cpf">CPF</Label>
+              <Label htmlFor="cpf" className="text-zinc-300">
+                CPF
+              </Label>
               <div className="relative">
-                <CreditCard className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <CreditCard className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
                 <Input
                   id="cpf"
                   type="text"
                   value={cpf}
-                  className="pl-10 py-6 bg-muted"
+                  className="h-12 rounded-xl border-zinc-800 bg-zinc-900/80 pl-12 text-zinc-300"
                   disabled
                 />
               </div>
-              <p className="text-xs text-muted-foreground">
-                O CPF nao pode ser alterado
-              </p>
+              <p className="text-xs text-zinc-500">O CPF nao pode ser alterado.</p>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="telefone">Telefone</Label>
+              <Label htmlFor="telefone" className="text-zinc-300">
+                Telefone
+              </Label>
               <div className="relative">
-                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Phone className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
                 <Input
                   id="telefone"
                   type="tel"
                   value={formatPhone(phone)}
                   onChange={(event) => handlePhoneChange(event.target.value)}
-                  className="pl-10 py-6"
+                  className="h-12 rounded-xl border-zinc-800 bg-zinc-950 pl-12 text-white placeholder:text-zinc-600 focus-visible:border-orange-500 focus-visible:ring-orange-500/25"
                   required
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">E-mail</Label>
+              <Label htmlFor="email" className="text-zinc-300">
+                E-mail
+              </Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Mail className="absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-zinc-500" />
                 <Input
                   id="email"
                   type="email"
                   value={email}
                   onChange={(event) => setEmail(event.target.value)}
-                  className="pl-10 py-6"
+                  className="h-12 rounded-xl border-zinc-800 bg-zinc-950 pl-12 text-white placeholder:text-zinc-600 focus-visible:border-orange-500 focus-visible:ring-orange-500/25"
                   required
                 />
               </div>
             </div>
 
-            {error && <p className="text-sm text-red-600 text-center">{error}</p>}
-            {success && (
-              <p className="text-sm text-green-700 text-center">{success}</p>
-            )}
+            {error && <p className="text-center text-sm text-red-400">{error}</p>}
+            {success && <p className="text-center text-sm text-green-400">{success}</p>}
 
-            <div className="pt-4">
-              <Button
-                size="lg"
-                className="w-full py-6 text-lg font-semibold"
-                disabled={isSaving}
-              >
-                {isSaving ? "Salvando..." : "Salvar alteracoes"}
-              </Button>
-            </div>
+            <Button
+              type="submit"
+              disabled={isSaving}
+              className="mt-2 h-12 w-full rounded-xl bg-orange-500 text-white shadow-lg shadow-orange-500/20 transition-colors hover:bg-orange-600 up-shimmer-btn"
+            >
+              {isSaving ? "Salvando..." : "Salvar alteracoes"}
+            </Button>
           </form>
-        </div>
-      </div>
-    </main>
-  );
+        </section>
+      </motion.div>
+    </UserprofilePerfilShell>
+  )
 }

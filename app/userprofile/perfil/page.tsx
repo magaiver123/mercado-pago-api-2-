@@ -1,53 +1,66 @@
-"use client";
+"use client"
 
-import React, { useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import {
-  ShoppingCart,
-  User,
-  ClipboardList,
-  UserCog,
-  Headphones,
-  ChevronRight,
-  LogOut,
-  Trash2,
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { useEffect, useState, type ReactNode } from "react"
+import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { motion } from "framer-motion"
+import { ChevronRight, ClipboardList, Headphones, Mail, Phone, UserCog } from "lucide-react"
 import {
   clearUserprofileAuthUser,
   getUserprofileAuthUser,
   setUserprofileAuthUser,
   type UserprofileUser,
-} from "@/lib/userprofile-auth-store";
+} from "@/lib/userprofile-auth-store"
+import { UserprofilePerfilShell } from "@/components/userprofile/perfil-shell"
+
+const menuItems = [
+  {
+    title: "Historico de Pedidos",
+    description: "Acompanhe compras anteriores e status de cada pedido.",
+    href: "/userprofile/perfil/pedidos",
+    icon: ClipboardList,
+  },
+  {
+    title: "Dados Cadastrais",
+    description: "Atualize telefone, e-mail e informacoes da sua conta.",
+    href: "/userprofile/perfil/dados",
+    icon: UserCog,
+  },
+  {
+    title: "Suporte",
+    description: "Precisa de ajuda? Fale com nossa equipe de atendimento.",
+    href: "/userprofile/perfil/suporte",
+    icon: Headphones,
+  },
+]
 
 export default function PerfilPage() {
-  const router = useRouter();
-  const [user, setUser] = useState<UserprofileUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const router = useRouter()
+  const [user, setUser] = useState<UserprofileUser | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    const currentUser = getUserprofileAuthUser();
+    const currentUser = getUserprofileAuthUser()
     if (!currentUser) {
-      router.replace("/userprofile/login");
-      return;
+      router.replace("/userprofile/login")
+      return
     }
 
-    const userId = currentUser.id;
-    setUser(currentUser);
+    const userId = currentUser.id
+    setUser(currentUser)
 
     async function loadUser() {
       try {
-        const response = await fetch(`/api/userprofile/me?userId=${userId}`);
-        const data = await response.json().catch(() => null);
+        const response = await fetch(`/api/userprofile/me?userId=${userId}`)
+        const data = await response.json().catch(() => null)
 
         if (response.status === 401 || response.status === 404) {
-          clearUserprofileAuthUser();
-          router.replace("/userprofile/login");
-          return;
+          clearUserprofileAuthUser()
+          router.replace("/userprofile/login")
+          return
         }
 
-        if (!response.ok) return;
+        if (!response.ok || !data) return
 
         const refreshedUser: UserprofileUser = {
           id: data.id,
@@ -55,132 +68,103 @@ export default function PerfilPage() {
           cpf: data.cpf ?? null,
           phone: data.phone ?? null,
           email: data.email,
-        };
+          role: data.role ?? null,
+        }
 
-        setUser(refreshedUser);
-        setUserprofileAuthUser(refreshedUser);
+        setUser(refreshedUser)
+        setUserprofileAuthUser(refreshedUser)
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
     }
 
-    loadUser();
-  }, [router]);
+    loadUser()
+  }, [router])
 
-  const handleLogout = () => {
-    clearUserprofileAuthUser();
-    router.replace("/userprofile");
-  };
-
-  if (isLoading && !user) {
-    return null;
+  function handleLogout() {
+    clearUserprofileAuthUser()
+    router.replace("/userprofile")
   }
 
+  if (isLoading && !user) return null
+
   return (
-    <main className="min-h-screen bg-background flex flex-col">
-      <header className="bg-primary text-primary-foreground">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary-foreground/20 rounded-lg flex items-center justify-center">
-              <ShoppingCart className="w-5 h-5 text-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold">Mr Smart</span>
-          </div>
-        </div>
+    <UserprofilePerfilShell
+      title={`Ola${user?.name ? `, ${user.name}` : ""}`}
+      description="Bem-vindo ao seu painel. Gerencie pedidos, dados cadastrais e suporte em um unico lugar."
+      onLogout={handleLogout}
+    >
+      <motion.section
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, delay: 0.05 }}
+        className="mb-6 grid gap-3 sm:grid-cols-2"
+      >
+        <QuickInfo icon={<Mail className="h-4 w-4 text-orange-400" />} label="E-mail" value={user?.email ?? "--"} />
+        <QuickInfo
+          icon={<Phone className="h-4 w-4 text-orange-400" />}
+          label="Telefone"
+          value={user?.phone || "Nao informado"}
+        />
+      </motion.section>
 
-        <div className="container mx-auto px-4 pb-8 pt-4">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 bg-primary-foreground/20 rounded-full flex items-center justify-center">
-              <User className="w-8 h-8 text-primary-foreground" />
-            </div>
-            <div>
-              <p className="text-primary-foreground/80">Ola,</p>
-              <h1 className="text-2xl font-bold">{user?.name || "Cliente"}</h1>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="flex-1 px-4 py-6 -mt-2">
-        <div className="container mx-auto max-w-md space-y-5">
-          <h2 className="text-lg font-semibold text-foreground mb-4">
-            Minha Conta
-          </h2>
-
-          <div className="mb-4">
-            <MenuCard
-              icon={<ClipboardList className="w-6 h-6" />}
-              title="Historico de Pedidos"
-              description="Veja seus pedidos anteriores"
-              href="/userprofile/perfil/pedidos"
-            />
-          </div>
-
-          <div className="mb-4">
-            <MenuCard
-              icon={<UserCog className="w-6 h-6" />}
-              title="Dados Cadastrais"
-              description="Suas informacoes pessoais"
-              href="/userprofile/perfil/dados"
-            />
-          </div>
-
-          <div>
-            <MenuCard
-              icon={<Headphones className="w-6 h-6" />}
-              title="Suporte"
-              description="Precisa de ajuda? Fale conosco"
-              href="/userprofile/perfil/suporte"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="px-4 py-6 bg-card border-t border-border">
-        <div className="container mx-auto max-w-md space-y-5">
-          <Button
-            variant="outline"
-            size="lg"
-            className="w-full py-5 gap-2 bg-transparent"
-            onClick={handleLogout}
+      <motion.section
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.45, delay: 0.12 }}
+        className="grid gap-4 lg:grid-cols-3"
+      >
+        {menuItems.map((item, index) => (
+          <motion.div
+            key={item.href}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.16 + index * 0.07 }}
           >
-            <LogOut className="w-5 h-5" />
-            Sair da conta
-          </Button>
+            <Link
+              href={item.href}
+              className="group block h-full rounded-2xl border border-zinc-800 bg-zinc-900/45 p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-orange-500/40 hover:bg-zinc-900/80"
+            >
+              <div className="mb-5 inline-flex h-12 w-12 items-center justify-center rounded-xl bg-orange-500/12 text-orange-400 transition-colors group-hover:bg-orange-500/20">
+                <item.icon className="h-6 w-6" />
+              </div>
+              <h2 className="text-lg font-semibold text-white">{item.title}</h2>
+              <p className="mt-2 text-sm leading-relaxed text-zinc-400">{item.description}</p>
+              <div className="mt-5 flex items-center gap-2 text-sm font-medium text-orange-400">
+                Acessar
+                <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+              </div>
+            </Link>
+          </motion.div>
+        ))}
+      </motion.section>
 
-          <button className="w-full text-center text-destructive text-sm font-medium hover:underline flex items-center justify-center gap-2 mt-2">
-            <Trash2 className="w-4 h-4" />
-            Excluir minha conta
-          </button>
-        </div>
-      </div>
-    </main>
-  );
+      <motion.section
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, delay: 0.22 }}
+        className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-900/45 p-5"
+      >
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">Seguranca da conta</h3>
+        <button
+          type="button"
+          className="mt-3 inline-flex items-center rounded-full border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-300 transition-colors hover:bg-red-500/15"
+        >
+          Excluir minha conta
+        </button>
+      </motion.section>
+    </UserprofilePerfilShell>
+  )
 }
 
-function MenuCard({
-  icon,
-  title,
-  description,
-  href,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  description: string;
-  href: string;
-}) {
+function QuickInfo({ icon, label, value }: { icon: ReactNode; label: string; value: string }) {
   return (
-    <Link href={href}>
-      <div className="flex items-center gap-4 p-4 bg-card rounded-xl border border-border shadow-sm transition-all hover:shadow-md hover:border-primary/30 active:scale-[0.99]">
-        <div className="flex-shrink-0 w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center text-primary">
-          {icon}
-        </div>
-        <div className="flex-1">
-          <h3 className="font-semibold text-foreground">{title}</h3>
-          <p className="text-sm text-muted-foreground">{description}</p>
-        </div>
-        <ChevronRight className="w-5 h-5 text-muted-foreground" />
+    <div className="rounded-2xl border border-zinc-800 bg-zinc-900/45 p-4 sm:p-5">
+      <div className="mb-2 flex items-center gap-2 text-xs uppercase tracking-wide text-zinc-500">
+        {icon}
+        {label}
       </div>
-    </Link>
-  );
+      <p className="truncate text-sm sm:text-base text-zinc-200">{value}</p>
+    </div>
+  )
 }

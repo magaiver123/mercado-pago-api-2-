@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { validateCPF } from "@/lib/cpf-validator"
 
-type Step = "form" | "verify-email" | "verify-phone"
+type Step = "form" | "verify-email"
 
 const EMPTY_CODE = ["", "", "", "", "", ""]
 
@@ -49,18 +49,13 @@ export default function UserprofileCadastroPage() {
   const [password, setPassword] = useState("")
   const [signupId, setSignupId] = useState<string | null>(null)
   const [emailMasked, setEmailMasked] = useState<string | null>(null)
-  const [phoneMasked, setPhoneMasked] = useState<string | null>(null)
   const [emailCode, setEmailCode] = useState<string[]>(createEmptyCode())
-  const [phoneCode, setPhoneCode] = useState<string[]>(createEmptyCode())
   const [emailCooldown, setEmailCooldown] = useState(0)
-  const [phoneCooldown, setPhoneCooldown] = useState(0)
-  const [debugPhoneCode, setDebugPhoneCode] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
 
   const joinedEmailCode = useMemo(() => emailCode.join(""), [emailCode])
-  const joinedPhoneCode = useMemo(() => phoneCode.join(""), [phoneCode])
 
   useEffect(() => {
     if (emailCooldown <= 0) return
@@ -69,14 +64,6 @@ export default function UserprofileCadastroPage() {
     }, 1000)
     return () => clearInterval(timer)
   }, [emailCooldown])
-
-  useEffect(() => {
-    if (phoneCooldown <= 0) return
-    const timer = setInterval(() => {
-      setPhoneCooldown((current) => (current > 0 ? current - 1 : 0))
-    }, 1000)
-    return () => clearInterval(timer)
-  }, [phoneCooldown])
 
   function clearMessages() {
     setError(null)
@@ -156,12 +143,8 @@ export default function UserprofileCadastroPage() {
 
       setSignupId(data.signupId)
       setEmailMasked(data.emailMasked ?? email)
-      setPhoneMasked(data.phoneMasked ?? phone)
-      setDebugPhoneCode(data.debugPhoneCode ?? null)
       setEmailCooldown(typeof data.resendCooldown === "number" ? data.resendCooldown : 60)
-      setPhoneCooldown(typeof data.resendCooldown === "number" ? data.resendCooldown : 60)
       setEmailCode(createEmptyCode())
-      setPhoneCode(createEmptyCode())
       setStep("verify-email")
       setSuccess("Codigo enviado para seu e-mail.")
     } catch {
@@ -197,8 +180,8 @@ export default function UserprofileCadastroPage() {
         return
       }
 
-      setStep("verify-phone")
-      setSuccess("E-mail verificado. Agora confirme seu telefone.")
+      setSuccess("E-mail verificado. Cadastro concluido.")
+      router.push("/userprofile/login?registered=true")
     } catch {
       setError("Nao foi possivel validar o e-mail")
     } finally {
@@ -206,7 +189,7 @@ export default function UserprofileCadastroPage() {
     }
   }
 
-  async function handleResend(channel: "email" | "phone") {
+  async function handleResend() {
     if (!signupId) return
     clearMessages()
     setIsLoading(true)
@@ -217,7 +200,7 @@ export default function UserprofileCadastroPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           signupId,
-          channel,
+          channel: "email",
         }),
       })
 
@@ -228,50 +211,10 @@ export default function UserprofileCadastroPage() {
       }
 
       const nextCooldown = typeof data.resendCooldown === "number" ? data.resendCooldown : 60
-      if (channel === "email") {
-        setEmailCooldown(nextCooldown)
-        setSuccess("Novo codigo de e-mail enviado.")
-      } else {
-        setPhoneCooldown(nextCooldown)
-        setDebugPhoneCode(data.debugPhoneCode ?? null)
-        setSuccess("Novo codigo de telefone gerado.")
-      }
+      setEmailCooldown(nextCooldown)
+      setSuccess("Novo codigo de e-mail enviado.")
     } catch {
       setError("Nao foi possivel reenviar o codigo")
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  async function handleVerifyPhone(event: FormEvent) {
-    event.preventDefault()
-    clearMessages()
-    if (!signupId) {
-      setError("Sessao de cadastro invalida. Refaça o processo.")
-      return
-    }
-
-    setIsLoading(true)
-
-    try {
-      const response = await fetch("/api/userprofile/auth/signup/verify-phone", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          signupId,
-          code: joinedPhoneCode,
-        }),
-      })
-
-      const data = await response.json().catch(() => null)
-      if (!response.ok || !data?.success) {
-        setError(data?.error || "Codigo de telefone invalido")
-        return
-      }
-
-      router.push("/userprofile/login?registered=true")
-    } catch {
-      setError("Nao foi possivel finalizar o cadastro")
     } finally {
       setIsLoading(false)
     }
@@ -285,7 +228,7 @@ export default function UserprofileCadastroPage() {
 
       <header className="relative z-10 p-6">
         <Link href="/userprofile" className="inline-flex items-center gap-2">
-          <img src="/logo.svg" alt="Mr Smart" className="w-9 h-9 object-contain" />
+          <img src="/LOGOMR.png" alt="Mr Smart" className="w-9 h-9 object-contain" />
           <span className="font-semibold">
             <span className="text-orange-500">Mr</span>
             <span className="text-white"> Smart</span>
@@ -461,87 +404,13 @@ export default function UserprofileCadastroPage() {
                   {emailCooldown === 0 ? (
                     <button
                       type="button"
-                      onClick={() => handleResend("email")}
+                      onClick={handleResend}
                       className="text-orange-500 hover:text-orange-400 transition-colors font-medium"
                     >
                       Reenviar codigo
                     </button>
                   ) : (
                     <span>Reenviar em {emailCooldown}s</span>
-                  )}
-                </p>
-              </form>
-            </div>
-          )}
-
-          {step === "verify-phone" && (
-            <div className="space-y-8">
-              <button
-                onClick={() => {
-                  clearMessages()
-                  setStep("verify-email")
-                }}
-                className="flex items-center gap-2 text-zinc-400 hover:text-white transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4" />
-                Voltar
-              </button>
-
-              <div className="text-center">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-orange-500/10 flex items-center justify-center">
-                  <Phone className="w-8 h-8 text-orange-500" />
-                </div>
-                <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">Verifique seu telefone</h1>
-                <p className="text-zinc-400">
-                  Digite o codigo de 6 digitos do seu telefone <span className="text-white">{phoneMasked ?? formatPhone(phone)}</span>
-                </p>
-              </div>
-
-              {error && <p className="text-sm text-red-400 text-center">{error}</p>}
-              {success && <p className="text-sm text-green-400 text-center">{success}</p>}
-              {debugPhoneCode && (
-                <p className="text-xs text-amber-300 text-center">
-                  Codigo de teste (ambiente nao produtivo): <strong>{debugPhoneCode}</strong>
-                </p>
-              )}
-
-              <form className="space-y-6" onSubmit={handleVerifyPhone}>
-                <div className="flex justify-center gap-2 sm:gap-3">
-                  {phoneCode.map((digit, index) => (
-                    <Input
-                      key={index}
-                      id={`phone-code-${index}`}
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={1}
-                      value={digit}
-                      onChange={(event) => updateCode(setPhoneCode, "phone-code", index, event.target.value)}
-                      onKeyDown={(event) => moveCodeFocusBack("phone-code", index, event)}
-                      className="w-10 h-12 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-bold bg-zinc-900 border-zinc-800 text-white focus:border-orange-500 focus:ring-orange-500/20 rounded-xl"
-                    />
-                  ))}
-                </div>
-
-                <Button
-                  type="submit"
-                  disabled={isLoading || joinedPhoneCode.length !== 6}
-                  className="w-full h-12 bg-orange-500 text-white hover:bg-orange-600 rounded-xl font-medium shadow-lg shadow-orange-500/20"
-                >
-                  Finalizar cadastro
-                  <ArrowRight className="ml-2 w-4 h-4" />
-                </Button>
-
-                <p className="text-center text-zinc-400">
-                  {phoneCooldown === 0 ? (
-                    <button
-                      type="button"
-                      onClick={() => handleResend("phone")}
-                      className="text-orange-500 hover:text-orange-400 transition-colors font-medium"
-                    >
-                      Reenviar codigo
-                    </button>
-                  ) : (
-                    <span>Reenviar em {phoneCooldown}s</span>
                   )}
                 </p>
               </form>

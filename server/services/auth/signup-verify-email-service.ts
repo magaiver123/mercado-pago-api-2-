@@ -26,22 +26,56 @@ export async function signupVerifyEmailService(input: SignupVerifyEmailInput) {
     throw new AppError("Verificacao de cadastro nao encontrada", 404)
   }
 
-  const now = new Date()
-  ensureSignupSessionIsActive(signup, now)
-
-  if (signup.email_verified_at) {
+  if (signup.completed_at) {
     return { emailVerified: true as const }
   }
 
-  if (isCodeExpired(signup.email_code_expires_at, now)) {
-    throw new AppError("Codigo de email expirado", 410)
+  const now = new Date()
+  ensureSignupSessionIsActive(signup, now)
+
+  if (!signup.email_verified_at) {
+    if (isCodeExpired(signup.email_code_expires_at, now)) {
+      throw new AppError("Codigo de email expirado", 410)
+    }
+
+    if (code !== signup.email_code) {
+      throw new AppError("Codigo de email invalido", 400)
+    }
+
+    await repositories.signupVerification.markEmailVerified(signupId, now.toISOString())
   }
 
-  if (code !== signup.email_code) {
-    throw new AppError("Codigo de email invalido", 400)
+  const existingByEmail = await repositories.user.findByEmail(signup.email)
+  if (existingByEmail) {
+    const alreadyCreatedFromSameData = existingByEmail.cpf === signup.cpf && existingByEmail.phone === signup.phone
+
+    if (!alreadyCreatedFromSameData) {
+      throw new AppError("Email ja cadastrado", 409)
+    }
+
+    await repositories.signupVerification.markCompleted(signupId, now.toISOString())
+    return { emailVerified: true as const }
   }
 
-  await repositories.signupVerification.markEmailVerified(signupId, now.toISOString())
+  if (await repositories.user.existsByCpf(signup.cpf)) {
+    throw new AppError("CPF ja cadastrado", 409)
+  }
+
+  if (await repositories.user.existsByPhone(signup.phone)) {
+    throw new AppError("Telefone ja cadastrado", 409)
+  }
+
+  await repositories.user.create({
+    cpf: signup.cpf,
+    name: signup.name,
+    phone: signup.phone,
+    email: signup.email,
+    passwordHash: signup.password_hash,
+    status: "ativo",
+    createdAt: now.toISOString(),
+  })
+
+  await repositories.signupVerification.markCompleted(signupId, now.toISOString())
 
   return { emailVerified: true as const }
 }
