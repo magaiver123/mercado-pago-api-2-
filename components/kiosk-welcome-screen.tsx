@@ -98,18 +98,9 @@ export function KioskWelcomeScreen() {
     router.push("/auth/login")
   }
 
-  const handleHowToBuy = () => {
-    router.push("/userprofile/como-comprar")
-  }
-
   const handleButtonClick = (event: MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation()
     handleStartOrder()
-  }
-
-  const handleHowToBuyClick = (event: MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation()
-    handleHowToBuy()
   }
 
   if (!slides.length) return null
@@ -170,13 +161,6 @@ export function KioskWelcomeScreen() {
             }`}
           >
             Iniciar compra
-          </button>
-
-          <button
-            onClick={handleHowToBuyClick}
-            className="w-full max-w-[26rem] rounded-[1.35rem] border-2 border-orange-500 bg-white px-10 py-4 text-[1.15rem] font-bold tracking-[0.01em] text-orange-600 shadow-[0_10px_18px_rgba(249,115,22,0.14)] transition hover:bg-orange-50"
-          >
-            Como comprar
           </button>
 
           <div className="flex w-full flex-col items-center gap-2.5">
