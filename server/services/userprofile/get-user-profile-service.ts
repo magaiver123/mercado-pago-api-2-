@@ -4,13 +4,13 @@ import { getRepositoryFactory } from "@/api/repositories/repository-factory"
 
 export async function getUserProfileService(userId: string | null) {
   if (!userId || !isValidUUID(userId)) {
-    throw new AppError("Usuario invalido", 400)
+    throw new AppError("Usuário inválido", 400)
   }
 
   const user = await getRepositoryFactory().user.findActiveById(userId)
 
   if (!user) {
-    throw new AppError("Usuario nao encontrado", 404)
+    throw new AppError("Usuário não encontrado", 404)
   }
 
   return {

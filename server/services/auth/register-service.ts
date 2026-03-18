@@ -27,21 +27,21 @@ export async function registerService(input: RegisterInput) {
     typeof input.password !== "string" ||
     input.password.length < 6
   ) {
-    throw new AppError("Dados invalidos", 400)
+    throw new AppError("Dados inválidos", 400)
   }
 
   const repositories = getRepositoryFactory()
 
   if (await repositories.user.existsByCpf(input.cpf)) {
-    throw new AppError("CPF ja cadastrado", 409)
+    throw new AppError("CPF já cadastrado", 409)
   }
 
   if (await repositories.user.existsByEmail(input.email)) {
-    throw new AppError("Email ja cadastrado", 409)
+    throw new AppError("E-mail já cadastrado", 409)
   }
 
   if (await repositories.user.existsByPhone(input.phone)) {
-    throw new AppError("Telefone ja cadastrado", 409)
+    throw new AppError("Telefone já cadastrado", 409)
   }
 
   const passwordHash = await bcrypt.hash(input.password, 10)

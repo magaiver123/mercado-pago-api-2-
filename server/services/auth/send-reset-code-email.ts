@@ -21,10 +21,10 @@ function mapResendErrorToMessage(error: { statusCode?: number | null; message?: 
     (rawMessage.includes("testing emails") || rawMessage.includes("verify a domain") || rawMessage.includes("from address"))
 
   if (looksLikeSenderDomainIssue) {
-    return "Falha ao enviar o codigo de recuperacao. Configure EMAIL_FROM com um remetente @mrsmart.com.br verificado no Resend."
+    return "Falha ao enviar o código de recuperação. Configure EMAIL_FROM com um remetente @mrsmart.com.br verificado no Resend."
   }
 
-  return "Nao foi possivel enviar o codigo de recuperacao por e-mail. Tente novamente em instantes."
+  return "Não foi possível enviar o código de recuperação por e-mail. Tente novamente em instantes."
 }
 
 interface SendResetCodeEmailInput {
@@ -39,7 +39,7 @@ export async function sendResetCodeEmail(input: SendResetCodeEmailInput) {
   try {
     emailFrom = getEmailEnv().emailFrom
   } catch {
-    throw new AppError("Configuracao de e-mail incompleta (RESEND_API_KEY/EMAIL_FROM/EMAIL_LOGO_URL/EMAIL_APP_URL/EMAIL_SUPPORT_WHATSAPP_URL).", 500, "EMAIL_CONFIG_MISSING")
+    throw new AppError("Configuração de e-mail incompleta (RESEND_API_KEY/EMAIL_FROM/EMAIL_LOGO_URL/EMAIL_APP_URL/EMAIL_SUPPORT_WHATSAPP_URL).", 500, "EMAIL_CONFIG_MISSING")
   }
 
   try {
@@ -62,7 +62,7 @@ export async function sendResetCodeEmail(input: SendResetCodeEmailInput) {
       return
     }
 
-    logger.error("Falha no envio de email de recuperacao via Resend", {
+    logger.error("Falha no envio de e-mail de recuperação via Resend", {
       reason: error.message,
       name: error.name,
       statusCode: (error as { statusCode?: number }).statusCode,
@@ -73,9 +73,9 @@ export async function sendResetCodeEmail(input: SendResetCodeEmailInput) {
       throw error
     }
 
-    logger.error("Erro inesperado no envio de email de recuperacao", {
+    logger.error("Erro inesperado no envio de e-mail de recuperação", {
       error: error instanceof Error ? error.message : "unknown_error",
     })
-    throw new AppError("Nao foi possivel enviar o codigo de recuperacao por e-mail. Tente novamente em instantes.", 502, "EMAIL_SEND_FAILED")
+    throw new AppError("Não foi possível enviar o código de recuperação por e-mail. Tente novamente em instantes.", 502, "EMAIL_SEND_FAILED")
   }
 }

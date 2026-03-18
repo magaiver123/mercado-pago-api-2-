@@ -63,7 +63,7 @@ export default function DadosPage() {
         }
 
         if (!response.ok || !data) {
-          setError("Nao foi possivel carregar seus dados.")
+          setError("Não foi possível carregar seus dados.")
           return
         }
 
@@ -72,7 +72,7 @@ export default function DadosPage() {
         setPhone(data.phone ?? "")
         setEmail(data.email ?? "")
       } catch {
-        setError("Nao foi possivel carregar seus dados.")
+        setError("Não foi possível carregar seus dados.")
       } finally {
         setIsLoading(false)
       }
@@ -120,7 +120,7 @@ export default function DadosPage() {
       }
 
       if (!response.ok) {
-        setError(data?.error || "Nao foi possivel salvar alteracoes.")
+        setError(data?.error || "Não foi possível salvar alterações.")
         return
       }
 
@@ -134,9 +134,9 @@ export default function DadosPage() {
 
       setAuthUser(updatedUser)
       setUserprofileAuthUser(updatedUser)
-      setSuccess("Alteracoes salvas com sucesso.")
+      setSuccess("Alterações salvas com sucesso.")
     } catch {
-      setError("Nao foi possivel salvar alteracoes.")
+      setError("Não foi possível salvar alterações.")
     } finally {
       setIsSaving(false)
     }
@@ -152,7 +152,7 @@ export default function DadosPage() {
   return (
     <UserprofilePerfilShell
       title="Dados Cadastrais"
-      description="Mantenha suas informacoes sempre atualizadas para uma experiencia mais rapida e segura."
+      description="Mantenha suas informações sempre atualizadas para uma experiência mais rápida e segura."
       onLogout={handleLogout}
     >
       <motion.div
@@ -179,7 +179,7 @@ export default function DadosPage() {
               </button>
             </div>
 
-            <p className="mt-4 text-center text-xs text-zinc-500">Toque no icone para enviar uma foto de perfil.</p>
+            <p className="mt-4 text-center text-xs text-zinc-500">Toque no ícone para enviar uma foto de perfil.</p>
             <input type="file" id="profile-photo" accept="image/*" className="hidden" aria-label="Upload de foto de perfil" />
           </div>
         </section>
@@ -217,7 +217,7 @@ export default function DadosPage() {
                   disabled
                 />
               </div>
-              <p className="text-xs text-zinc-500">O CPF nao pode ser alterado.</p>
+              <p className="text-xs text-zinc-500">O CPF não pode ser alterado.</p>
             </div>
 
             <div className="space-y-2">
@@ -262,7 +262,7 @@ export default function DadosPage() {
               disabled={isSaving}
               className="mt-2 h-12 w-full rounded-xl bg-orange-500 text-white shadow-lg shadow-orange-500/20 transition-colors hover:bg-orange-600 up-shimmer-btn"
             >
-              {isSaving ? "Salvando..." : "Salvar alteracoes"}
+              {isSaving ? "Salvando..." : "Salvar alterações"}
             </Button>
           </form>
         </section>

@@ -106,17 +106,17 @@ export default function UserprofileCadastroPage() {
     clearMessages()
 
     if (!validateCPF(cpf)) {
-      setError("CPF invalido")
+      setError("CPF inválido")
       return
     }
 
     if (phone.length < 10) {
-      setError("Telefone invalido")
+      setError("Telefone inválido")
       return
     }
 
     if (password.length < 6) {
-      setError("A senha deve ter no minimo 6 digitos")
+      setError("A senha deve ter no mínimo 6 dígitos")
       return
     }
 
@@ -137,7 +137,7 @@ export default function UserprofileCadastroPage() {
 
       const data = await response.json().catch(() => null)
       if (!response.ok) {
-        setError(data?.error || "Nao foi possivel iniciar o cadastro")
+        setError(data?.error || "Não foi possível iniciar o cadastro")
         return
       }
 
@@ -146,9 +146,9 @@ export default function UserprofileCadastroPage() {
       setEmailCooldown(typeof data.resendCooldown === "number" ? data.resendCooldown : 60)
       setEmailCode(createEmptyCode())
       setStep("verify-email")
-      setSuccess("Codigo enviado para seu e-mail.")
+      setSuccess("Código enviado para seu e-mail.")
     } catch {
-      setError("Nao foi possivel iniciar o cadastro")
+      setError("Não foi possível iniciar o cadastro")
     } finally {
       setIsLoading(false)
     }
@@ -158,7 +158,7 @@ export default function UserprofileCadastroPage() {
     event.preventDefault()
     clearMessages()
     if (!signupId) {
-      setError("Sessao de cadastro invalida. Refaça o processo.")
+      setError("Sessão de cadastro inválida. Refaça o processo.")
       return
     }
 
@@ -176,14 +176,14 @@ export default function UserprofileCadastroPage() {
 
       const data = await response.json().catch(() => null)
       if (!response.ok || !data?.emailVerified) {
-        setError(data?.error || "Codigo de e-mail invalido")
+        setError(data?.error || "Código de e-mail inválido")
         return
       }
 
-      setSuccess("E-mail verificado. Cadastro concluido.")
+      setSuccess("E-mail verificado. Cadastro concluído.")
       router.push("/userprofile/login?registered=true")
     } catch {
-      setError("Nao foi possivel validar o e-mail")
+      setError("Não foi possível validar o e-mail")
     } finally {
       setIsLoading(false)
     }
@@ -206,15 +206,15 @@ export default function UserprofileCadastroPage() {
 
       const data = await response.json().catch(() => null)
       if (!response.ok || !data?.success) {
-        setError(data?.error || "Nao foi possivel reenviar o codigo")
+        setError(data?.error || "Não foi possível reenviar o código")
         return
       }
 
       const nextCooldown = typeof data.resendCooldown === "number" ? data.resendCooldown : 60
       setEmailCooldown(nextCooldown)
-      setSuccess("Novo codigo de e-mail enviado.")
+      setSuccess("Novo código de e-mail enviado.")
     } catch {
-      setError("Nao foi possivel reenviar o codigo")
+      setError("Não foi possível reenviar o código")
     } finally {
       setIsLoading(false)
     }
@@ -247,7 +247,7 @@ export default function UserprofileCadastroPage() {
             <div className="space-y-6">
               <div className="text-center">
                 <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">Crie sua conta</h1>
-                <p className="text-zinc-400">Preencha os dados abaixo para comecar a comprar</p>
+                <p className="text-zinc-400">Preencha os dados abaixo para começar a comprar</p>
               </div>
 
               {error && <p className="text-sm text-red-400 text-center">{error}</p>}
@@ -340,7 +340,7 @@ export default function UserprofileCadastroPage() {
               </form>
 
               <p className="text-center text-zinc-400">
-                Ja tem uma conta?{" "}
+                Já tem uma conta?{" "}
                 <Link href="/userprofile/login" className="text-orange-500 hover:text-orange-400 transition-colors font-medium">
                   Entrar
                 </Link>
@@ -367,7 +367,7 @@ export default function UserprofileCadastroPage() {
                 </div>
                 <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">Verifique seu e-mail</h1>
                 <p className="text-zinc-400">
-                  Enviamos um codigo de 6 digitos para <span className="text-white">{emailMasked ?? email}</span>
+                  Enviamos um código de 6 dígitos para <span className="text-white">{emailMasked ?? email}</span>
                 </p>
               </div>
 
@@ -407,7 +407,7 @@ export default function UserprofileCadastroPage() {
                       onClick={handleResend}
                       className="text-orange-500 hover:text-orange-400 transition-colors font-medium"
                     >
-                      Reenviar codigo
+                      Reenviar código
                     </button>
                   ) : (
                     <span>Reenviar em {emailCooldown}s</span>

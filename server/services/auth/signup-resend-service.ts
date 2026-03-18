@@ -20,32 +20,32 @@ export async function signupResendService(input: SignupResendInput) {
   const channel = input.channel
 
   if (!isValidUUID(signupId)) {
-    throw new AppError("Dados invalidos", 400)
+    throw new AppError("Dados inválidos", 400)
   }
 
   if (channel !== "email") {
-    throw new AppError("Reenvio por telefone nao e mais suportado", 400)
+    throw new AppError("Reenvio por telefone não é mais suportado", 400)
   }
 
   const repositories = getRepositoryFactory()
   const signup = await repositories.signupVerification.findById(signupId)
 
   if (!signup) {
-    throw new AppError("Verificacao de cadastro nao encontrada", 404)
+    throw new AppError("Verificação de cadastro não encontrada", 404)
   }
 
   const now = new Date()
   ensureSignupSessionIsActive(signup, now)
 
   if (channel === "email" && signup.email_verified_at) {
-    throw new AppError("Email ja verificado", 409)
+    throw new AppError("Email já verificado", 409)
   }
 
   const lastSentAt = signup.last_email_sent_at
   const cooldownSeconds = getCooldownSeconds(lastSentAt, now)
 
   if (cooldownSeconds > 0) {
-    throw new AppError(`Aguarde ${cooldownSeconds}s para reenviar o codigo`, 429)
+    throw new AppError(`Aguarde ${cooldownSeconds}s para reenviar o código`, 429)
   }
 
   const newCode = generateSignupCode()

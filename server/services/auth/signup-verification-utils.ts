@@ -30,11 +30,11 @@ export function maskPhone(phone: string) {
 
 export function ensureSignupSessionIsActive(record: SignupVerificationRecord, now: Date) {
   if (record.completed_at) {
-    throw new AppError("Cadastro ja finalizado", 409)
+    throw new AppError("Cadastro já finalizado", 409)
   }
 
   if (new Date(record.expires_at).getTime() <= now.getTime()) {
-    throw new AppError("Sessao de cadastro expirada", 410)
+    throw new AppError("Sessão de cadastro expirada", 410)
   }
 }
 

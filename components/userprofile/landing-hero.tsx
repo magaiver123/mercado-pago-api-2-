@@ -49,7 +49,7 @@ export function UserprofileLandingHero() {
           transition={{ duration: 0.6, delay: 0.5 }}
           className="text-base sm:text-lg md:text-xl text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed px-2"
         >
-          Seu mini mercado autonomo, disponivel 24 horas. Compre com praticidade, sem filas e sem complicacao.
+          Seu mini mercado autônomo, disponível 24 horas. Compre com praticidade, sem filas e sem complicação.
         </motion.p>
 
         <motion.div

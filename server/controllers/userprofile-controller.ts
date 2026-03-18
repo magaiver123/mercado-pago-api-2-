@@ -15,7 +15,7 @@ export async function updateUserProfileController(request: Request) {
   try {
     body = await request.json()
   } catch {
-    return NextResponse.json({ error: "Dados invalidos" }, { status: 400 })
+    return NextResponse.json({ error: "Dados inválidos" }, { status: 400 })
   }
 
   const data = await updateUserProfileService({

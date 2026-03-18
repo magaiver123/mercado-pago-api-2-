@@ -44,7 +44,7 @@ export function UserprofileLandingAjuda() {
           className="text-center mb-16"
         >
           <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white mb-4">Vamos te ajudar</h2>
-          <p className="text-lg text-zinc-400 max-w-xl mx-auto">Entre em contato conosco atraves das opcoes abaixo.</p>
+          <p className="text-lg text-zinc-400 max-w-xl mx-auto">Entre em contato conosco através das opções abaixo.</p>
         </motion.div>
 
         <motion.div

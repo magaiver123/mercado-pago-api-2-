@@ -17,24 +17,24 @@ export async function updateUserProfileService(input: UpdateUserProfileInput) {
   const phone = typeof input.phone === "string" ? normalizePhone(input.phone) : ""
 
   if (!userId || !isValidUUID(userId) || !name || !email || !isValidEmail(email) || phone.length < 10 || phone.length > 11) {
-    throw new AppError("Dados invalidos", 400)
+    throw new AppError("Dados inválidos", 400)
   }
 
   const repositories = getRepositoryFactory()
   const existingUser = await repositories.user.findById(userId)
 
   if (!existingUser || existingUser.status !== "ativo") {
-    throw new AppError("Usuario nao encontrado", 404)
+    throw new AppError("Usuário não encontrado", 404)
   }
 
   if (await repositories.user.existsByEmailExcludingId(email, userId)) {
-    throw new AppError("Email ja cadastrado", 409)
+    throw new AppError("E-mail já cadastrado", 409)
   }
 
   const updatedUser = await repositories.user.updateProfile(userId, { name, email, phone })
 
   if (!updatedUser) {
-    throw new AppError("Usuario nao encontrado", 404)
+    throw new AppError("Usuário não encontrado", 404)
   }
 
   return {

@@ -43,7 +43,7 @@ export default function AdminBypassPage() {
         const data = await response.json().catch(() => null)
 
         if (!response.ok || data?.allowed !== true) {
-          setError(data?.error ?? "Nao foi possivel ativar o modo de teste admin.")
+          setError(data?.error ?? "Não foi possível ativar o modo de teste admin.")
           return
         }
 
@@ -69,7 +69,7 @@ export default function AdminBypassPage() {
             </Link>
           </div>
         ) : (
-          <p className="mt-4 text-sm text-muted-foreground">Processando solicitacao...</p>
+          <p className="mt-4 text-sm text-muted-foreground">Processando solicitação...</p>
         )}
       </div>
     </main>

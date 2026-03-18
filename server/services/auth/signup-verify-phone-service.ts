@@ -10,19 +10,19 @@ interface SignupVerifyPhoneInput {
 export async function signupVerifyPhoneService(input: SignupVerifyPhoneInput) {
   const signupId = typeof input.signupId === "string" ? input.signupId.trim() : ""
   if (!isValidUUID(signupId)) {
-    throw new AppError("Dados invalidos", 400)
+    throw new AppError("Dados inválidos", 400)
   }
 
   const repositories = getRepositoryFactory()
   const signup = await repositories.signupVerification.findById(signupId)
 
   if (!signup) {
-    throw new AppError("Verificacao de cadastro nao encontrada", 404)
+    throw new AppError("Verificação de cadastro não encontrada", 404)
   }
 
   if (signup.completed_at) {
     return { success: true as const }
   }
 
-  throw new AppError("Verificacao por telefone nao e mais necessaria. Conclua pelo codigo de e-mail.", 410)
+  throw new AppError("Verificação por telefone não é mais necessária. Conclua pelo código de e-mail.", 410)
 }

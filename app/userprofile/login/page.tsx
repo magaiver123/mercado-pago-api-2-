@@ -41,7 +41,7 @@ export default function UserprofileLoginPage() {
     if (typeof window === "undefined") return
     const params = new URLSearchParams(window.location.search)
     if (params.get("registered") === "true") {
-      setSuccess("Cadastro concluido com sucesso. Entre com seu e-mail e senha.")
+      setSuccess("Cadastro concluído com sucesso. Entre com seu e-mail e senha.")
     }
   }, [])
 
@@ -115,7 +115,7 @@ export default function UserprofileLoginPage() {
 
       const data = await response.json().catch(() => null)
       if (!data?.success) {
-        setError("Nao foi possivel enviar o codigo. Verifique o e-mail informado.")
+        setError("Não foi possível enviar o código. Verifique o e-mail informado.")
         return
       }
 
@@ -142,7 +142,7 @@ export default function UserprofileLoginPage() {
 
       const data = await response.json().catch(() => null)
       if (!data?.success) {
-        setError("Nao foi possivel reenviar o codigo. Tente novamente.")
+        setError("Não foi possível reenviar o código. Tente novamente.")
         return
       }
 
@@ -166,7 +166,7 @@ export default function UserprofileLoginPage() {
 
       const data = await response.json().catch(() => null)
       if (!data?.valid) {
-        setError("Codigo invalido")
+        setError("Código inválido")
         return
       }
 
@@ -184,13 +184,13 @@ export default function UserprofileLoginPage() {
     setError(null)
 
     if (password !== confirmPassword) {
-      setError("As senhas nao coincidem")
+      setError("As senhas não coincidem")
       setIsLoading(false)
       return
     }
 
     if (password.length < 6) {
-      setError("A senha deve ter no minimo 6 digitos")
+      setError("A senha deve ter no mínimo 6 dígitos")
       setIsLoading(false)
       return
     }
@@ -336,7 +336,7 @@ export default function UserprofileLoginPage() {
               </form>
 
               <p className="text-center text-zinc-400">
-                Nao tem uma conta?{" "}
+                Não tem uma conta?{" "}
                 <Link href="/userprofile/cadastro" className="text-orange-500 hover:text-orange-400 transition-colors font-medium">
                   Cadastrar
                 </Link>
@@ -356,7 +356,7 @@ export default function UserprofileLoginPage() {
 
               <div className="text-center">
                 <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">Recuperar senha</h1>
-                <p className="text-zinc-400">Digite seu e-mail para receber o codigo de recuperacao</p>
+                <p className="text-zinc-400">Digite seu e-mail para receber o código de recuperação</p>
               </div>
 
               {error && <p className="text-sm text-red-400 text-center">{error}</p>}
@@ -382,7 +382,7 @@ export default function UserprofileLoginPage() {
                   disabled={isLoading}
                   className="w-full h-12 bg-orange-500 text-white hover:bg-orange-600 rounded-xl font-medium shadow-lg shadow-orange-500/20"
                 >
-                  Enviar codigo
+                  Enviar código
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
               </form>
@@ -403,9 +403,9 @@ export default function UserprofileLoginPage() {
               </button>
 
               <div className="text-center">
-                <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">Digite o codigo</h1>
+                <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">Digite o código</h1>
                 <p className="text-zinc-400">
-                  Enviamos um codigo de 6 digitos para <span className="text-white">{email || "seu e-mail"}</span>
+                  Enviamos um código de 6 dígitos para <span className="text-white">{email || "seu e-mail"}</span>
                 </p>
               </div>
 
@@ -433,7 +433,7 @@ export default function UserprofileLoginPage() {
                   disabled={isLoading || joinedCode.length !== 6}
                   className="w-full h-12 bg-orange-500 text-white hover:bg-orange-600 rounded-xl font-medium shadow-lg shadow-orange-500/20"
                 >
-                  Verificar codigo
+                  Verificar código
                   <ArrowRight className="ml-2 w-4 h-4" />
                 </Button>
 
@@ -444,7 +444,7 @@ export default function UserprofileLoginPage() {
                       onClick={handleResendCode}
                       className="text-orange-500 hover:text-orange-400 transition-colors font-medium"
                     >
-                      Reenviar codigo
+                      Reenviar código
                     </button>
                   ) : (
                     <span>Reenviar em {resendCooldown}s</span>

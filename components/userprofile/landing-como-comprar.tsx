@@ -14,7 +14,7 @@ const steps = [
   {
     number: "02",
     title: "Acesse o Totem",
-    description: "Va ate uma de nossas lojas e faca login no totem usando seu CPF.",
+    description: "Vá até uma de nossas lojas e faça login no totem usando seu CPF.",
     icon: Monitor,
   },
   {
@@ -63,7 +63,7 @@ export function UserprofileLandingComoComprar() {
           className="text-center mb-16"
         >
           <h2 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold tracking-tight text-white mb-4">Como comprar</h2>
-          <p className="text-lg text-zinc-400 max-w-xl mx-auto">Em apenas 3 passos, voce ja pode aproveitar nossos produtos.</p>
+          <p className="text-lg text-zinc-400 max-w-xl mx-auto">Em apenas 3 passos, você já pode aproveitar nossos produtos.</p>
         </motion.div>
 
         <motion.div

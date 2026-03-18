@@ -31,21 +31,21 @@ export async function signupStartService(input: SignupStartInput) {
   const password = typeof input.password === "string" ? input.password : ""
 
   if (!name || !validateCPF(cpf) || phone.length < 10 || phone.length > 11 || !isValidEmail(email) || password.length < 6) {
-    throw new AppError("Dados invalidos", 400)
+    throw new AppError("Dados inválidos", 400)
   }
 
   const repositories = getRepositoryFactory()
 
   if (await repositories.user.existsByCpf(cpf)) {
-    throw new AppError("CPF ja cadastrado", 409)
+    throw new AppError("CPF já cadastrado", 409)
   }
 
   if (await repositories.user.existsByEmail(email)) {
-    throw new AppError("Email ja cadastrado", 409)
+    throw new AppError("E-mail já cadastrado", 409)
   }
 
   if (await repositories.user.existsByPhone(phone)) {
-    throw new AppError("Telefone ja cadastrado", 409)
+    throw new AppError("Telefone já cadastrado", 409)
   }
 
   const passwordHash = await bcrypt.hash(password, 10)

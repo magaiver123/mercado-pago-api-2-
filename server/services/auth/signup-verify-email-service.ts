@@ -16,14 +16,14 @@ export async function signupVerifyEmailService(input: SignupVerifyEmailInput) {
   const code = typeof input.code === "string" ? input.code.trim() : ""
 
   if (!isValidUUID(signupId) || !/^\d{6}$/.test(code)) {
-    throw new AppError("Dados invalidos", 400)
+    throw new AppError("Dados inválidos", 400)
   }
 
   const repositories = getRepositoryFactory()
   const signup = await repositories.signupVerification.findById(signupId)
 
   if (!signup) {
-    throw new AppError("Verificacao de cadastro nao encontrada", 404)
+    throw new AppError("Verificação de cadastro não encontrada", 404)
   }
 
   if (signup.completed_at) {
@@ -35,11 +35,11 @@ export async function signupVerifyEmailService(input: SignupVerifyEmailInput) {
 
   if (!signup.email_verified_at) {
     if (isCodeExpired(signup.email_code_expires_at, now)) {
-      throw new AppError("Codigo de email expirado", 410)
+      throw new AppError("Código de e-mail expirado", 410)
     }
 
     if (code !== signup.email_code) {
-      throw new AppError("Codigo de email invalido", 400)
+      throw new AppError("Código de e-mail inválido", 400)
     }
 
     await repositories.signupVerification.markEmailVerified(signupId, now.toISOString())
@@ -50,7 +50,7 @@ export async function signupVerifyEmailService(input: SignupVerifyEmailInput) {
     const alreadyCreatedFromSameData = existingByEmail.cpf === signup.cpf && existingByEmail.phone === signup.phone
 
     if (!alreadyCreatedFromSameData) {
-      throw new AppError("Email ja cadastrado", 409)
+      throw new AppError("E-mail já cadastrado", 409)
     }
 
     await repositories.signupVerification.markCompleted(signupId, now.toISOString())
@@ -58,11 +58,11 @@ export async function signupVerifyEmailService(input: SignupVerifyEmailInput) {
   }
 
   if (await repositories.user.existsByCpf(signup.cpf)) {
-    throw new AppError("CPF ja cadastrado", 409)
+    throw new AppError("CPF já cadastrado", 409)
   }
 
   if (await repositories.user.existsByPhone(signup.phone)) {
-    throw new AppError("Telefone ja cadastrado", 409)
+    throw new AppError("Telefone já cadastrado", 409)
   }
 
   await repositories.user.create({

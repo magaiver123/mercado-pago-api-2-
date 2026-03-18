@@ -4,14 +4,14 @@ import { getRepositoryFactory } from "@/api/repositories/repository-factory"
 
 export async function cpfLoginService(cpf: string) {
   if (!cpf || typeof cpf !== "string" || !validateCPF(cpf)) {
-    throw new AppError("CPF invalido", 400)
+    throw new AppError("CPF inválido", 400)
   }
 
   const repositories = getRepositoryFactory()
   const user = await repositories.user.findActiveByCpf(cpf)
 
   if (!user) {
-    throw new AppError("CPF invalido", 401)
+    throw new AppError("CPF inválido", 401)
   }
 
   await repositories.user.updateLastAccess(user.id, new Date().toISOString())

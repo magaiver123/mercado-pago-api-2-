@@ -15,14 +15,14 @@ import { UserprofilePerfilShell } from "@/components/userprofile/perfil-shell"
 
 const menuItems = [
   {
-    title: "Historico de Pedidos",
+    title: "Histórico de Pedidos",
     description: "Acompanhe compras anteriores e status de cada pedido.",
     href: "/userprofile/perfil/pedidos",
     icon: ClipboardList,
   },
   {
     title: "Dados Cadastrais",
-    description: "Atualize telefone, e-mail e informacoes da sua conta.",
+    description: "Atualize telefone, e-mail e informações da sua conta.",
     href: "/userprofile/perfil/dados",
     icon: UserCog,
   },
@@ -90,8 +90,8 @@ export default function PerfilPage() {
 
   return (
     <UserprofilePerfilShell
-      title={`Ola${user?.name ? `, ${user.name}` : ""}`}
-      description="Bem-vindo ao seu painel. Gerencie pedidos, dados cadastrais e suporte em um unico lugar."
+      title={`Olá${user?.name ? `, ${user.name}` : ""}`}
+      description="Bem-vindo ao seu painel. Gerencie pedidos, dados cadastrais e suporte em um único lugar."
       onLogout={handleLogout}
     >
       <motion.section
@@ -104,7 +104,7 @@ export default function PerfilPage() {
         <QuickInfo
           icon={<Phone className="h-4 w-4 text-orange-400" />}
           label="Telefone"
-          value={user?.phone || "Nao informado"}
+          value={user?.phone || "Não informado"}
         />
       </motion.section>
 
@@ -145,7 +145,7 @@ export default function PerfilPage() {
         transition={{ duration: 0.45, delay: 0.22 }}
         className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-900/45 p-5"
       >
-        <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">Seguranca da conta</h3>
+        <h3 className="text-sm font-semibold uppercase tracking-wide text-zinc-400">Segurança da conta</h3>
         <button
           type="button"
           className="mt-3 inline-flex items-center rounded-full border border-red-500/30 bg-red-500/10 px-4 py-2 text-sm font-medium text-red-300 transition-colors hover:bg-red-500/15"

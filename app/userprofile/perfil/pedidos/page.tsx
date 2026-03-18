@@ -27,7 +27,7 @@ function getStatusPresentation(status: string) {
 
   switch (key) {
     case "processed":
-      return { label: "Concluido", className: "border-emerald-500/30 bg-emerald-500/15 text-emerald-300" }
+      return { label: "Concluído", className: "border-emerald-500/30 bg-emerald-500/15 text-emerald-300" }
     case "created":
     case "at_terminal":
     case "pending":
@@ -41,7 +41,7 @@ function getStatusPresentation(status: string) {
     case "expired":
       return { label: "Expirado", className: "border-orange-500/30 bg-orange-500/15 text-orange-300" }
     case "action_required":
-      return { label: "Acao necessaria", className: "border-amber-500/30 bg-amber-500/15 text-amber-300" }
+      return { label: "Ação necessária", className: "border-amber-500/30 bg-amber-500/15 text-amber-300" }
     case "refunded":
       return { label: "Reembolsado", className: "border-zinc-500/30 bg-zinc-500/15 text-zinc-300" }
     default:
@@ -94,13 +94,13 @@ export default function PedidosPage() {
         }
 
         if (!response.ok || !Array.isArray(data)) {
-          setError("Nao foi possivel carregar seus pedidos.")
+          setError("Não foi possível carregar seus pedidos.")
           return
         }
 
         setOrders(data as Order[])
       } catch {
-        setError("Nao foi possivel carregar seus pedidos.")
+        setError("Não foi possível carregar seus pedidos.")
       } finally {
         setIsLoading(false)
       }
@@ -118,8 +118,8 @@ export default function PedidosPage() {
 
   return (
     <UserprofilePerfilShell
-      title="Historico de Pedidos"
-      description="Veja o status de cada compra e acompanhe seus ultimos pedidos com praticidade."
+      title="Histórico de Pedidos"
+      description="Veja o status de cada compra e acompanhe seus últimos pedidos com praticidade."
       onLogout={handleLogout}
     >
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.45, delay: 0.08 }}>
@@ -133,7 +133,7 @@ export default function PedidosPage() {
               <Package className="h-7 w-7 text-zinc-400" />
             </div>
             <h2 className="text-lg font-semibold text-white">Nenhum pedido encontrado</h2>
-            <p className="mt-2 text-sm text-zinc-400">Quando voce concluir uma compra, ela aparecera aqui automaticamente.</p>
+            <p className="mt-2 text-sm text-zinc-400">Quando você concluir uma compra, ela aparecerá aqui automaticamente.</p>
           </div>
         ) : (
           <div className="space-y-3">

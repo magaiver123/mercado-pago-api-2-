@@ -13,7 +13,7 @@ const faqItems = [
   "Como usar o totem de autoatendimento?",
   "Posso cancelar um pedido?",
   "Como alterar meus dados cadastrais?",
-  "Quais formas de pagamento sao aceitas?",
+  "Quais formas de pagamento são aceitas?",
 ]
 
 export default function SuportePage() {
@@ -40,7 +40,7 @@ export default function SuportePage() {
   return (
     <UserprofilePerfilShell
       title="Central de Suporte"
-      description="Estamos aqui para ajudar. Fale com nosso time e encontre respostas para as duvidas mais comuns."
+      description="Estamos aqui para ajudar. Fale com nosso time e encontre respostas para as dúvidas mais comuns."
       onLogout={handleLogout}
     >
       <motion.div
@@ -55,7 +55,7 @@ export default function SuportePage() {
               <HelpCircle className="h-6 w-6 text-orange-400" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-white">Contato Rapido</h2>
+              <h2 className="text-lg font-semibold text-white">Contato Rápido</h2>
               <p className="text-sm text-zinc-400">Atendimento direto pelo WhatsApp.</p>
             </div>
           </div>

@@ -91,7 +91,7 @@ export function UserprofilePerfilShell({ title, description, onLogout, children 
             type="button"
             onClick={() => setMobileMenuOpen((prev) => !prev)}
             className="md:hidden rounded-xl p-2 text-zinc-300 transition-colors hover:bg-zinc-800 hover:text-white"
-            aria-label="Alternar menu de navegacao"
+            aria-label="Alternar menu de navegação"
           >
             {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
