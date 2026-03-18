@@ -251,7 +251,7 @@ export default function UserprofileLoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 flex flex-col userprofile-theme">
+    <div className="relative min-h-screen overflow-x-hidden bg-zinc-950 flex flex-col userprofile-theme">
       <div className="absolute inset-0 bg-gradient-to-b from-zinc-950 via-zinc-950 to-zinc-900 pointer-events-none" />
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[800px] h-[600px] bg-zinc-800/20 rounded-full blur-3xl pointer-events-none" />
       <div className="up-noise-overlay" aria-hidden="true" />
@@ -404,8 +404,9 @@ export default function UserprofileLoginPage() {
 
               <div className="text-center">
                 <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3">Digite o código</h1>
-                <p className="text-zinc-400">
-                  Enviamos um código de 6 dígitos para <span className="text-white">{email || "seu e-mail"}</span>
+                <p className="text-zinc-400 break-words">
+                  Enviamos um código de 6 dígitos para{" "}
+                  <span className="text-white break-all">{email || "seu e-mail"}</span>
                 </p>
               </div>
 

@@ -8,7 +8,7 @@ import { UserprofileSmoothScroll } from "@/components/userprofile/smooth-scroll"
 export default function UserprofilePage() {
   return (
     <UserprofileSmoothScroll>
-      <main className="relative min-h-screen bg-zinc-950 userprofile-theme">
+      <main className="relative min-h-screen overflow-x-hidden bg-zinc-950 userprofile-theme">
         <div className="up-noise-overlay" aria-hidden="true" />
         <UserprofileLandingNavbar />
         <UserprofileLandingHero />
