@@ -68,6 +68,7 @@ export default function MenuPage() {
   const [customerName, setCustomerName] = useState("Cliente");
   const [menuBannerUrl, setMenuBannerUrl] = useState<string | null>(null);
   const [loadingProducts, setLoadingProducts] = useState(false);
+  const hasCustomMenuBanner = Boolean(menuBannerUrl);
 
   const { addItem, getTotal, getItemCount, clearCart } = useCartStore();
   const router = useRouter();
@@ -209,25 +210,29 @@ export default function MenuPage() {
             className="object-cover"
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/88 via-zinc-900/58 to-orange-600/78" />
-          <div className="relative flex h-full items-center justify-between px-5 sm:px-6">
-            <div className="max-w-[72%]">
-              <p className="text-[0.68rem] font-semibold uppercase tracking-[0.3em] text-orange-200 sm:text-[0.75rem]">
-                Autoatendimento
-              </p>
-              <h1 className="mt-1 text-[1.5rem] font-bold leading-[0.95] tracking-[-0.02em] text-white sm:text-[2rem]">
-                Monte seu pedido
-              </h1>
-            </div>
-            <Image
-              src="/logologin.png"
-              alt="Logo Mr Smart"
-              width={96}
-              height={64}
-              className="h-16 w-16 object-contain sm:h-20 sm:w-20"
-              priority
-            />
-          </div>
+          {!hasCustomMenuBanner && (
+            <>
+              <div className="absolute inset-0 bg-gradient-to-r from-zinc-950/88 via-zinc-900/58 to-orange-600/78" />
+              <div className="relative flex h-full items-center justify-between px-5 sm:px-6">
+                <div className="max-w-[72%]">
+                  <p className="text-[0.68rem] font-semibold uppercase tracking-[0.3em] text-orange-200 sm:text-[0.75rem]">
+                    Autoatendimento
+                  </p>
+                  <h1 className="mt-1 text-[1.5rem] font-bold leading-[0.95] tracking-[-0.02em] text-white sm:text-[2rem]">
+                    Monte seu pedido
+                  </h1>
+                </div>
+                <Image
+                  src="/logologin.png"
+                  alt="Logo Mr Smart"
+                  width={96}
+                  height={64}
+                  className="h-16 w-16 object-contain sm:h-20 sm:w-20"
+                  priority
+                />
+              </div>
+            </>
+          )}
         </section>
 
         <section
