@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { getUserProfileService } from "@/api/services/userprofile/get-user-profile-service"
+import { listPublicStoresService } from "@/api/services/userprofile/list-public-stores-service"
 import { updateUserProfileService } from "@/api/services/userprofile/update-user-profile-service"
 
 export async function getUserProfileController(request: Request) {
@@ -7,6 +8,19 @@ export async function getUserProfileController(request: Request) {
   const userId = searchParams.get("userId")
 
   const data = await getUserProfileService(userId)
+  return NextResponse.json(data)
+}
+
+export async function listPublicStoresController(request: Request) {
+  const { searchParams } = new URL(request.url)
+
+  const data = await listPublicStoresService({
+    search: searchParams.get("search"),
+    city: searchParams.get("city"),
+    page: searchParams.get("page"),
+    pageSize: searchParams.get("pageSize"),
+  })
+
   return NextResponse.json(data)
 }
 
@@ -27,4 +41,3 @@ export async function updateUserProfileController(request: Request) {
 
   return NextResponse.json(data)
 }
-

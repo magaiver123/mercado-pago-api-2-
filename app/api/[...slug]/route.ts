@@ -22,7 +22,7 @@ import {
   deactivateAdminBypassRoute,
   totemStatusRoute,
 } from "@/api/routes/totem-routes"
-import { getUserProfileRoute, updateUserProfileRoute } from "@/api/routes/userprofile-routes"
+import { getUserProfileRoute, listPublicStoresRoute, updateUserProfileRoute } from "@/api/routes/userprofile-routes"
 
 export const dynamic = "force-dynamic"
 
@@ -56,6 +56,7 @@ const routeTable: Record<string, Handler> = {
   "POST /api/userprofile/auth/signup/verify-phone": signupVerifyPhoneRoute,
   "POST /api/userprofile/auth/verify-reset-code": verifyResetCodeRoute,
   "GET /api/userprofile/me": getUserProfileRoute,
+  "GET /api/userprofile/stores": listPublicStoresRoute,
   "PUT /api/userprofile/me": updateUserProfileRoute,
   "GET /api/userprofile/orders": listUserOrdersRoute,
 }

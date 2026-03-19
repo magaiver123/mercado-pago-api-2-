@@ -52,7 +52,7 @@ export function UserprofileLandingComoComprar() {
   const isInView = useInView(ref, { once: true, margin: "-100px" })
 
   return (
-    <section id="como-comprar" className="relative py-16 sm:py-24 px-6 sm:px-4 overflow-hidden">
+    <section id="como-comprar" className="relative py-20 sm:py-28 px-6 sm:px-4 overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-zinc-900 via-zinc-950 to-zinc-950 pointer-events-none" />
 
       <div className="relative z-10 max-w-5xl mx-auto">

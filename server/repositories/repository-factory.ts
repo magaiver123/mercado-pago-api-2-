@@ -6,12 +6,14 @@ import { StockRepository } from "@/api/repositories/contracts/stock-repository"
 import { TotemRepository } from "@/api/repositories/contracts/totem-repository"
 import { UserRepository } from "@/api/repositories/contracts/user-repository"
 import { KioskSlideRepository } from "@/api/repositories/contracts/kiosk-slide-repository"
+import { StoreRepository } from "@/api/repositories/contracts/store-repository"
 import { KioskSlideSupabaseRepository } from "@/api/repositories/supabase/kiosk-slide-supabase-repository"
 import { MenuSupabaseRepository } from "@/api/repositories/supabase/menu-supabase-repository"
 import { OrderSupabaseRepository } from "@/api/repositories/supabase/order-supabase-repository"
 import { PasswordResetSupabaseRepository } from "@/api/repositories/supabase/password-reset-supabase-repository"
 import { SignupVerificationSupabaseRepository } from "@/api/repositories/supabase/signup-verification-supabase-repository"
 import { StockSupabaseRepository } from "@/api/repositories/supabase/stock-supabase-repository"
+import { StoreSupabaseRepository } from "@/api/repositories/supabase/store-supabase-repository"
 import { TotemSupabaseRepository } from "@/api/repositories/supabase/totem-supabase-repository"
 import { UserSupabaseRepository } from "@/api/repositories/supabase/user-supabase-repository"
 
@@ -24,6 +26,7 @@ export interface RepositoryFactory {
   signupVerification: SignupVerificationRepository
   kioskSlide: KioskSlideRepository
   stock: StockRepository
+  store: StoreRepository
 }
 
 let cachedFactory: RepositoryFactory | null = null
@@ -39,6 +42,7 @@ export function getRepositoryFactory(): RepositoryFactory {
       signupVerification: new SignupVerificationSupabaseRepository(),
       kioskSlide: new KioskSlideSupabaseRepository(),
       stock: new StockSupabaseRepository(),
+      store: new StoreSupabaseRepository(),
     }
   }
 

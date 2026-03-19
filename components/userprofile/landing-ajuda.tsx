@@ -33,7 +33,7 @@ export function UserprofileLandingAjuda() {
   const isInView = useInView(ref, { once: true, margin: "-100px" })
 
   return (
-    <section id="ajuda" className="relative py-16 sm:py-24 px-6 sm:px-4 overflow-hidden">
+    <section id="ajuda" className="relative py-20 sm:py-28 px-6 sm:px-4 overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-zinc-950 via-zinc-900 to-zinc-950 pointer-events-none" />
 
       <div className="relative z-10 max-w-3xl mx-auto">

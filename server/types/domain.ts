@@ -98,6 +98,17 @@ export interface TotemRecord {
   device_id: string | null
 }
 
+export interface PublicStoreRecord {
+  id: string
+  slug: string | null
+  name: string
+  rua: string | null
+  numero: string | null
+  bairro: string | null
+  cidade: string | null
+  estado: string | null
+}
+
 export interface KioskSlide {
   id: string
   image_url: string

@@ -3,6 +3,7 @@ import { UserprofileLandingComoComprar } from "@/components/userprofile/landing-
 import { UserprofileLandingFooter } from "@/components/userprofile/landing-footer"
 import { UserprofileLandingHero } from "@/components/userprofile/landing-hero"
 import { UserprofileLandingNavbar } from "@/components/userprofile/landing-navbar"
+import { UserprofileLandingOndeEstamos } from "@/components/userprofile/landing-onde-estamos"
 import { UserprofileSmoothScroll } from "@/components/userprofile/smooth-scroll"
 
 export default function UserprofilePage() {
@@ -13,6 +14,7 @@ export default function UserprofilePage() {
         <UserprofileLandingNavbar />
         <UserprofileLandingHero />
         <UserprofileLandingComoComprar />
+        <UserprofileLandingOndeEstamos />
         <UserprofileLandingAjuda />
         <UserprofileLandingFooter />
       </main>

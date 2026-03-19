@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 const navItems = [
   { label: "Início", href: "#inicio" },
   { label: "Como comprar", href: "#como-comprar" },
+  { label: "Onde estamos", href: "#onde-estamos" },
   { label: "Ajuda", href: "#ajuda" },
 ]
 
@@ -22,11 +23,11 @@ export function UserprofileLandingNavbar() {
       initial={{ y: -100, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-3xl"
+      className="fixed top-4 left-1/2 -translate-x-1/2 z-50 w-[calc(100%-2rem)] max-w-6xl"
     >
       <nav
         ref={navRef}
-        className="relative flex items-center justify-between px-4 py-3 rounded-full bg-zinc-900/40 backdrop-blur-md border border-zinc-800"
+        className="relative flex items-center justify-between rounded-full border border-zinc-800 bg-zinc-900/40 px-3 sm:px-5 py-2.5 sm:py-3 backdrop-blur-md"
       >
         <a href="#inicio" className="flex items-center gap-2">
           <img src="/LOGOMR.png" alt="Mr Smart" className="w-9 h-9 object-contain" />
@@ -36,12 +37,12 @@ export function UserprofileLandingNavbar() {
           </span>
         </a>
 
-        <div className="hidden md:flex items-center gap-1 relative">
+        <div className="hidden lg:flex items-center gap-1 lg:gap-2 relative">
           {navItems.map((item, index) => (
             <a
               key={item.label}
               href={item.href}
-              className="relative px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors"
+              className="relative whitespace-nowrap px-3 lg:px-4 py-2 text-sm text-zinc-400 hover:text-white transition-colors"
               onMouseEnter={() => setHoveredIndex(index)}
               onMouseLeave={() => setHoveredIndex(null)}
             >
@@ -58,21 +59,21 @@ export function UserprofileLandingNavbar() {
           ))}
         </div>
 
-        <div className="hidden md:flex items-center gap-3">
+        <div className="hidden lg:flex items-center gap-2">
           <Link href="/userprofile/login">
-            <Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white hover:bg-zinc-800">
+            <Button variant="ghost" size="sm" className="whitespace-nowrap text-zinc-400 hover:text-white hover:bg-zinc-800">
               Entrar
             </Button>
           </Link>
           <Link href="/userprofile/cadastro">
-            <Button size="sm" className="up-shimmer-btn bg-orange-500 text-white hover:bg-orange-600 rounded-full px-4">
+            <Button size="sm" className="up-shimmer-btn whitespace-nowrap rounded-full bg-orange-500 px-4 text-white hover:bg-orange-600">
               Cadastrar
             </Button>
           </Link>
         </div>
 
         <button
-          className="md:hidden p-2 text-zinc-400 hover:text-white"
+          className="lg:hidden p-2 text-zinc-400 hover:text-white"
           onClick={() => setMobileMenuOpen((prev) => !prev)}
           aria-label="Alternar menu"
         >
