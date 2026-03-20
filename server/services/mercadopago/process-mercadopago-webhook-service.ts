@@ -11,9 +11,15 @@ interface WebhookBody {
   }
 }
 
-export async function processMercadoPagoWebhookService(body: WebhookBody) {
+interface ProcessWebhookOptions {
+  skipDoorCommand?: boolean
+  source?: string
+}
+
+export async function processMercadoPagoWebhookService(body: WebhookBody, options: ProcessWebhookOptions = {}) {
   const action = body?.action
   const mercadopagoOrderId = body?.mercadopagoOrderId ?? body?.data?.id
+  const skipDoorCommand = options.skipDoorCommand === true
 
   if (!action || !mercadopagoOrderId) {
     return { ok: true }
@@ -71,6 +77,15 @@ export async function processMercadoPagoWebhookService(body: WebhookBody) {
     }
 
     await repositories.order.markStockProcessed(order.id)
+
+    if (skipDoorCommand) {
+      logger.info("Pedido processed reconciliado sem envio de comando de abertura", {
+        mercadopagoOrderId,
+        storeId: order.store_id,
+        source: options.source ?? "unknown",
+      })
+      return { ok: true }
+    }
 
     const lock = await repositories.storeLock.findPrimaryEnabledByStoreId(order.store_id)
     if (!lock || !lock.device_id) {

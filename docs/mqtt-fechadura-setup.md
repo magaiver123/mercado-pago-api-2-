@@ -121,6 +121,27 @@ Quando o webhook receber `order.processed`, o backend publica:
 - Topic: `devices/{deviceId}/commands`
 - Payload: `{"action":"openDoor","socketId":"<mercadopagoOrderId>",...}`
 
+### 6.2.1 Reconciliacao de pedidos antigos (quando `stock_processed=false`)
+
+Se pedidos antigos ficaram sem baixa de estoque por falha de webhook, rode:
+
+- `POST /api/orders/reconcile-processed`
+
+Requisitos:
+
+- Sessao admin valida.
+- Admin bypass ativo para a loja alvo.
+
+Payload opcional:
+
+```json
+{
+  "limit": 30
+}
+```
+
+O endpoint consulta o status no Mercado Pago para os pedidos pendentes da loja e aplica os efeitos de `processed` (baixa de estoque + comando MQTT de abertura), de forma idempotente.
+
 ### 6.3 Observabilidade MQTT
 
 No servidor do broker:

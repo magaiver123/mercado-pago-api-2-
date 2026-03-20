@@ -15,7 +15,7 @@ import {
 import { getKioskSlidesRoute } from "@/api/routes/kiosk-routes"
 import { getMenuBannerRoute, getMenuCategoriesRoute, getMenuProductsRoute } from "@/api/routes/menu-routes"
 import { createMercadoPagoOrderRoute, cancelMercadoPagoOrderRoute, getMercadoPagoOrderStatusRoute, mercadopagoWebhookRoute, refundMercadoPagoOrderRoute } from "@/api/routes/mercadopago-routes"
-import { registerOrderRoute, listUserOrdersRoute } from "@/api/routes/order-routes"
+import { registerOrderRoute, listUserOrdersRoute, reconcileProcessedOrdersRoute } from "@/api/routes/order-routes"
 import {
   activateAdminBypassRoute,
   activateTotemRoute,
@@ -44,6 +44,7 @@ const routeTable: Record<string, Handler> = {
   "POST /api/mercadopago/refund-order": refundMercadoPagoOrderRoute,
   "POST /api/mercadopago/webhook": mercadopagoWebhookRoute,
   "POST /api/orders/register": registerOrderRoute,
+  "POST /api/orders/reconcile-processed": reconcileProcessedOrdersRoute,
   "POST /api/totem/activate": activateTotemRoute,
   "POST /api/totem/status": totemStatusRoute,
   "POST /api/totem/admin-bypass/activate": activateAdminBypassRoute,

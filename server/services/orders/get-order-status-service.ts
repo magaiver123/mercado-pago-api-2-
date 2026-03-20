@@ -1,18 +1,26 @@
 import { AppError } from "@/api/utils/app-error"
 import { getRepositoryFactory } from "@/api/repositories/repository-factory"
 import { mercadoPagoApiRequest } from "@/api/services/mercadopago/mercadopago-api"
+import { processMercadoPagoWebhookService } from "@/api/services/mercadopago/process-mercadopago-webhook-service"
 import { isFinalPointOrderStatus, normalizePointOrderStatus } from "@/lib/mercadopago-point-status"
 
-export async function getOrderStatusService(orderId: string | null) {
+interface GetOrderStatusOptions {
+  processedFallbackMode?: "full" | "stock_only" | "none"
+}
+
+export async function getOrderStatusService(orderId: string | null, options: GetOrderStatusOptions = {}) {
   if (!orderId) {
     throw new AppError("Order ID is required", 400)
   }
+
+  const processedFallbackMode = options.processedFallbackMode ?? "full"
 
   const repositories = getRepositoryFactory()
   const localOrder = await repositories.order.getStatusByMercadopagoOrderId(orderId)
 
   const localStatus = normalizePointOrderStatus(localOrder?.status)
-  const shouldFetchFromMercadoPago = !localOrder || !isFinalPointOrderStatus(localStatus)
+  const requiresProcessedSideEffects = localStatus === "processed" && localOrder?.stock_processed === false
+  const shouldFetchFromMercadoPago = !localOrder || !isFinalPointOrderStatus(localStatus) || requiresProcessedSideEffects
 
   if (!shouldFetchFromMercadoPago && localOrder) {
     return {
@@ -37,6 +45,19 @@ export async function getOrderStatusService(orderId: string | null) {
 
     if (localOrder && normalizePointOrderStatus(localOrder.status) !== normalizedRemoteStatus) {
       await repositories.order.updateStatusByMercadopagoOrderId(orderId, normalizedRemoteStatus)
+    }
+
+    // Fallback de resiliencia: se webhook falhar, processa efeitos de "processed"
+    // na primeira reconciliacao do status consultado no app.
+    if (normalizedRemoteStatus === "processed" && processedFallbackMode !== "none") {
+      await processMercadoPagoWebhookService({
+        action: "order.processed",
+        mercadopagoOrderId: orderId,
+        data: { id: orderId },
+      }, {
+        skipDoorCommand: processedFallbackMode === "stock_only",
+        source: "order_status_poll",
+      })
     }
 
     return {

@@ -1,7 +1,7 @@
 import { AppError } from "@/api/utils/app-error"
 import { OrderRecord } from "@/api/types/domain"
 import { BaseSupabaseRepository } from "@/api/repositories/supabase/base-supabase-repository"
-import { OrderRepository, RegisterOrderInput, RegisterOrderResult } from "@/api/repositories/contracts/order-repository"
+import { OrderRepository, PendingStockProcessingOrder, RegisterOrderInput, RegisterOrderResult } from "@/api/repositories/contracts/order-repository"
 
 export class OrderSupabaseRepository extends BaseSupabaseRepository implements OrderRepository {
   async registerOrder(input: RegisterOrderInput): Promise<RegisterOrderResult> {
@@ -29,10 +29,31 @@ export class OrderSupabaseRepository extends BaseSupabaseRepository implements O
     }
   }
 
-  async getStatusByMercadopagoOrderId(orderId: string): Promise<{ status: string; created_at: string } | null> {
-    const { data, error } = await this.db.from("orders").select("status, created_at").eq("mercadopago_order_id", orderId).single()
+  async getStatusByMercadopagoOrderId(orderId: string): Promise<{ status: string; created_at: string; stock_processed: boolean } | null> {
+    const { data, error } = await this.db
+      .from("orders")
+      .select("status, created_at, stock_processed")
+      .eq("mercadopago_order_id", orderId)
+      .single()
     if (error || !data) return null
-    return data as { status: string; created_at: string }
+    return data as { status: string; created_at: string; stock_processed: boolean }
+  }
+
+  async listPendingStockProcessingByStoreId(storeId: string, limit: number): Promise<PendingStockProcessingOrder[]> {
+    const { data, error } = await this.db
+      .from("orders")
+      .select("id, mercadopago_order_id, status, stock_processed, created_at")
+      .eq("store_id", storeId)
+      .eq("stock_processed", false)
+      .not("mercadopago_order_id", "is", null)
+      .order("created_at", { ascending: false })
+      .limit(limit)
+
+    if (error) {
+      throw new AppError("Erro ao listar pedidos pendentes de processamento de estoque", 500)
+    }
+
+    return (data as PendingStockProcessingOrder[] | null) ?? []
   }
 
   async listByUserId(

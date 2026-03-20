@@ -7,6 +7,7 @@ import { getOrderStatusService } from "@/api/services/orders/get-order-status-se
 import { getMercadoPagoWebhookEnv } from "@/api/config/env"
 import { validateMercadoPagoWebhookSignatureService } from "@/api/services/mercadopago/validate-mercadopago-webhook-signature-service"
 import { requireStoreContextFromRequest } from "@/api/utils/store-context"
+import { logger } from "@/api/utils/logger"
 
 export async function createMercadoPagoOrderController(request: Request) {
   const storeContext = requireStoreContextFromRequest(request)
@@ -60,6 +61,11 @@ export async function mercadopagoWebhookController(request: Request) {
   })
 
   if (!isSignatureValid) {
+    logger.warn("Webhook Mercado Pago com assinatura invalida", {
+      dataIdFromQuery,
+      hasXSignature: Boolean(xSignature),
+      hasXRequestId: Boolean(xRequestId),
+    })
     return NextResponse.json({ error: "Invalid signature" }, { status: 401 })
   }
 
@@ -67,12 +73,27 @@ export async function mercadopagoWebhookController(request: Request) {
   try {
     body = await request.json()
   } catch {
+    logger.warn("Webhook Mercado Pago recebido sem body JSON valido", {
+      dataIdFromQuery,
+    })
     return NextResponse.json({ ok: true })
   }
+
+  logger.info("Webhook Mercado Pago recebido com assinatura valida", {
+    action: body?.action ?? null,
+    dataIdFromQuery,
+    dataIdFromBody: body?.data?.id ?? null,
+  })
 
   await processMercadoPagoWebhookService({
     ...body,
     mercadopagoOrderId: dataIdFromQuery ?? body?.data?.id ?? null,
   })
+
+  logger.info("Webhook Mercado Pago processado", {
+    action: body?.action ?? null,
+    mercadopagoOrderId: dataIdFromQuery ?? body?.data?.id ?? null,
+  })
+
   return NextResponse.json({ ok: true })
 }
