@@ -5,6 +5,10 @@ type EnvKey =
   | "SUPABASE_SERVICE_ROLE_KEY"
   | "STORE_CONTEXT_SECRET"
   | "ADMIN_BYPASS_ENABLED"
+  | "MQTT_URL"
+  | "MQTT_USER"
+  | "MQTT_PASS"
+  | "MQTT_CONNECT_TIMEOUT_MS"
   | "MERCADOPAGO_ACCESS_TOKEN"
   | "MERCADOPAGO_TERMINAL_ID"
   | "MERCADOPAGO_WEBHOOK_SECRET"
@@ -73,5 +77,21 @@ export function getStoreContextEnv() {
 export function getAdminBypassEnv() {
   return {
     enabled: readEnv("ADMIN_BYPASS_ENABLED") === "true",
+  }
+}
+
+function parsePositiveInt(value: string | undefined, fallback: number): number {
+  if (!value) return fallback
+  const parsed = Number.parseInt(value, 10)
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback
+  return parsed
+}
+
+export function getMqttEnv() {
+  return {
+    url: readEnv("MQTT_URL"),
+    user: readEnv("MQTT_USER"),
+    pass: readEnv("MQTT_PASS"),
+    connectTimeoutMs: parsePositiveInt(readEnv("MQTT_CONNECT_TIMEOUT_MS"), 5000),
   }
 }

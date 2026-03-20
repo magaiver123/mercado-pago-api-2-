@@ -14,6 +14,10 @@ type PublicStore = {
   city: string
   state: string
   mapsUrl: string
+  visualStatus: "normal" | "manutencao" | "inauguracao"
+  visualText: string | null
+  overlayActive: boolean
+  disableMaps: boolean
 }
 
 type ApiStoresResponse = {
@@ -23,6 +27,18 @@ type ApiStoresResponse = {
 
 const FETCH_PAGE_SIZE = 1000
 const LIST_PAGE_SIZE = 6
+
+function getVisualSashClasses(status: PublicStore["visualStatus"]) {
+  if (status === "manutencao") {
+    return "border-amber-300/70 bg-amber-400/90 text-zinc-950"
+  }
+
+  if (status === "inauguracao") {
+    return "border-emerald-300/70 bg-emerald-400/90 text-zinc-950"
+  }
+
+  return "border-zinc-600 bg-zinc-700/85 text-zinc-100"
+}
 
 export function UserprofileLandingOndeEstamos() {
   const sectionRef = useRef<HTMLElement | null>(null)
@@ -188,7 +204,24 @@ export function UserprofileLandingOndeEstamos() {
                     const absoluteIndex = (listPage - 1) * LIST_PAGE_SIZE + index + 1
 
                     return (
-                      <article key={store.id} className="rounded-2xl border border-zinc-800 bg-zinc-900/55 p-4 transition-colors hover:border-zinc-700">
+                      <article
+                        key={store.id}
+                        className="relative overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-900/55 p-4 transition-colors hover:border-zinc-700"
+                      >
+                        {store.overlayActive && store.visualText && (
+                          <div className="pointer-events-none absolute inset-0 z-20 rounded-2xl bg-zinc-950/55" aria-hidden="true">
+                            <div className="absolute left-1/2 top-1/2 w-[175%] -translate-x-1/2 -translate-y-1/2 rotate-[15deg]">
+                              <div
+                                className={`flex min-h-12 items-center justify-center border-y px-8 py-3 text-center text-xs font-bold uppercase tracking-[0.16em] shadow-[0_10px_30px_rgba(0,0,0,0.45)] sm:text-sm ${getVisualSashClasses(
+                                  store.visualStatus,
+                                )}`}
+                              >
+                                <span className="max-w-full truncate">{store.visualText}</span>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+
                         <div className="flex items-start justify-between gap-3">
                           <span className="inline-flex h-9 min-w-9 items-center justify-center rounded-xl border border-zinc-700 bg-zinc-800/80 px-2 text-sm font-semibold text-zinc-200">
                             {String(absoluteIndex).padStart(2, "0")}
@@ -204,15 +237,26 @@ export function UserprofileLandingOndeEstamos() {
                         </p>
 
                         <div className="mt-4 flex flex-wrap gap-2">
-                          <a
-                            href={store.mapsUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-2 rounded-full bg-orange-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-600"
-                          >
-                            <Navigation className="h-4 w-4" />
-                            Abrir no Maps
-                          </a>
+                          {store.disableMaps ? (
+                            <button
+                              type="button"
+                              disabled
+                              className="inline-flex items-center gap-2 rounded-full border border-zinc-700 bg-zinc-800 px-4 py-2 text-sm font-medium text-zinc-400 cursor-not-allowed"
+                            >
+                              <Navigation className="h-4 w-4" />
+                              Abrir no Maps
+                            </button>
+                          ) : (
+                            <a
+                              href={store.mapsUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-2 rounded-full bg-orange-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-600"
+                            >
+                              <Navigation className="h-4 w-4" />
+                              Abrir no Maps
+                            </a>
+                          )}
                         </div>
                       </article>
                     )

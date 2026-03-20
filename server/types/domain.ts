@@ -107,6 +107,8 @@ export interface PublicStoreRecord {
   bairro: string | null
   cidade: string | null
   estado: string | null
+  visual_status: string | null
+  visual_text: string | null
 }
 
 export interface KioskSlide {
@@ -119,4 +121,14 @@ export interface MenuBannerSlide {
   id: string
   image_url: string
   duration: number
+}
+
+export interface StoreLockRecord {
+  id: string
+  store_id: string
+  device_id: string
+  enabled: boolean
+  is_primary: boolean
+  created_at: string
+  updated_at: string
 }

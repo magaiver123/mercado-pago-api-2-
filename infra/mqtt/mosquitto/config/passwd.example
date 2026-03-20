@@ -1,0 +1,3 @@
+# Generate the real passwd file with:
+# docker run --rm -it eclipse-mosquitto:2 mosquitto_passwd -c /tmp/passwd backend_publisher
+# docker run --rm -it -v ${PWD}:/work eclipse-mosquitto:2 sh -c "cat /tmp/passwd > /work/infra/mqtt/mosquitto/config/passwd"

@@ -18,8 +18,11 @@ create table if not exists public.stores (
   bairro text null,
   cidade text null,
   estado text null,
+  visual_status text not null default 'normal',
+  visual_text text null,
   constraint stores_pkey primary key (id),
-  constraint stores_slug_key unique (slug)
+  constraint stores_slug_key unique (slug),
+  constraint stores_visual_status_check check (visual_status = any (array['normal', 'manutencao', 'inauguracao']))
 );
 
 create unique index if not exists unique_store_address

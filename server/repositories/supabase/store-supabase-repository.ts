@@ -11,7 +11,7 @@ export class StoreSupabaseRepository extends BaseSupabaseRepository implements S
   async listActivePublicStores(filters: ListPublicStoresFilters): Promise<PublicStoreRecord[]> {
     let query = this.db
       .from("stores")
-      .select("id, slug, name, rua, numero, bairro, cidade, estado")
+      .select("id, slug, name, rua, numero, bairro, cidade, estado, visual_status, visual_text")
       .eq("status", true)
       .order("cidade", { ascending: true })
       .order("name", { ascending: true })

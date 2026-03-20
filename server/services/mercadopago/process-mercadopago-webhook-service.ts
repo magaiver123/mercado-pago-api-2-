@@ -1,4 +1,5 @@
 import { getRepositoryFactory } from "@/api/repositories/repository-factory"
+import { publishOpenDoorCommandService } from "@/api/services/mqtt/publish-open-door-command-service"
 import { logger } from "@/api/utils/logger"
 import { mapWebhookActionToStatus } from "@/lib/mercadopago-point-status"
 
@@ -70,6 +71,34 @@ export async function processMercadoPagoWebhookService(body: WebhookBody) {
     }
 
     await repositories.order.markStockProcessed(order.id)
+
+    const lock = await repositories.storeLock.findPrimaryEnabledByStoreId(order.store_id)
+    if (!lock || !lock.device_id) {
+      logger.warn("Webhook processed sem fechadura configurada para a loja", {
+        mercadopagoOrderId,
+        storeId: order.store_id,
+      })
+      return { ok: true }
+    }
+
+    const publishResult = await publishOpenDoorCommandService({
+      deviceId: lock.device_id,
+      socketId: mercadopagoOrderId,
+      source: "mercadopago_webhook",
+      storeId: order.store_id,
+      mercadopagoOrderId,
+    })
+
+    if (!publishResult.ok) {
+      logger.error("Webhook processed falhou ao enviar comando MQTT de abertura", {
+        mercadopagoOrderId,
+        storeId: order.store_id,
+        deviceId: lock.device_id,
+        topic: publishResult.topic,
+        error: publishResult.error ?? "unknown_error",
+      })
+    }
+
     return { ok: true }
   }
 

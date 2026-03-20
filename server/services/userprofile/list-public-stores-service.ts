@@ -17,6 +17,10 @@ type PublicStoreResponseItem = {
   city: string
   state: string
   mapsUrl: string
+  visualStatus: "normal" | "manutencao" | "inauguracao"
+  visualText: string | null
+  overlayActive: boolean
+  disableMaps: boolean
 }
 
 const DEFAULT_PAGE = 1
@@ -71,6 +75,16 @@ function normalizeStateName(value: string | null) {
   return normalized.length > 0 ? normalized : "UF"
 }
 
+function normalizeVisualStatus(value: string | null): "normal" | "manutencao" | "inauguracao" {
+  if (value === "manutencao" || value === "inauguracao") return value
+  return "normal"
+}
+
+function normalizeVisualText(value: string | null) {
+  const normalized = value?.trim() ?? ""
+  return normalized.length > 0 ? normalized : null
+}
+
 function buildStoreSearchAddress(store: Pick<PublicStoreRecord, "rua" | "numero" | "bairro" | "cidade" | "estado" | "name">) {
   const parts = [store.rua, store.numero, store.bairro, store.cidade, store.estado, "Brasil"]
     .map((part) => (part ?? "").trim())
@@ -94,15 +108,25 @@ export async function listPublicStoresService(input: ListPublicStoresInput) {
     city: normalizeCity(input.city),
   })
 
-  const transformed: PublicStoreResponseItem[] = stores.map((store) => ({
-    id: store.id,
-    name: store.name,
-    addressLine: buildAddressLine(store),
-    neighborhood: store.bairro,
-    city: normalizeCityName(store.cidade),
-    state: normalizeStateName(store.estado),
-    mapsUrl: buildMapsUrlFromAddress(buildStoreSearchAddress(store)),
-  }))
+  const transformed: PublicStoreResponseItem[] = stores.map((store) => {
+    const visualStatus = normalizeVisualStatus(store.visual_status)
+    const visualText = normalizeVisualText(store.visual_text)
+    const overlayActive = visualStatus !== "normal" && Boolean(visualText)
+
+    return {
+      id: store.id,
+      name: store.name,
+      addressLine: buildAddressLine(store),
+      neighborhood: store.bairro,
+      city: normalizeCityName(store.cidade),
+      state: normalizeStateName(store.estado),
+      mapsUrl: buildMapsUrlFromAddress(buildStoreSearchAddress(store)),
+      visualStatus,
+      visualText,
+      overlayActive,
+      disableMaps: overlayActive,
+    }
+  })
 
   const total = transformed.length
   const totalPages = Math.max(1, Math.ceil(total / pageSize))

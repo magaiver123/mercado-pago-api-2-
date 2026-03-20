@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { testOpenLockRoute } from "@/api/routes/lock-routes"
 import {
   forgotPasswordRoute,
   loginByCpfRoute,
@@ -29,6 +30,7 @@ export const dynamic = "force-dynamic"
 type Handler = (request: Request) => Promise<NextResponse>
 
 const routeTable: Record<string, Handler> = {
+  "POST /api/locks/test-open": testOpenLockRoute,
   "POST /api/auth/login": loginByCpfRoute,
   "POST /api/auth/register": registerRoute,
   "GET /api/kiosk/slides": getKioskSlidesRoute,
