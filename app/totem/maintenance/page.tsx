@@ -24,7 +24,7 @@ export default function TotemMaintenancePage() {
         <div className="mb-14 inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-5 py-2">
           <span className="maintenance-badge-dot" />
           <span className="text-[0.7rem] font-semibold uppercase tracking-[0.3em] text-orange-500">
-            Em manutencao
+            Em manutenção
           </span>
         </div>
 
@@ -73,7 +73,7 @@ export default function TotemMaintenancePage() {
 
         <div className="max-w-2xl">
           <h1 className="text-[clamp(2.1rem,5.2vw,2.9rem)] font-bold leading-tight tracking-[-0.02em] text-zinc-900">
-            Maquina cansada,
+            Máquina cansada,
           </h1>
           <p className="mt-1 text-[clamp(2rem,5vw,2.8rem)] font-light leading-tight tracking-[-0.02em] text-zinc-900">
             voltaremos em instantes.
@@ -85,17 +85,7 @@ export default function TotemMaintenancePage() {
           <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
           <span className="h-px w-12 bg-gradient-to-l from-transparent to-orange-500" />
         </div>
-
-        <p className="mt-7 text-xs font-medium uppercase tracking-[0.2em] text-zinc-500">
-          Aguarde - o sistema esta ativo
-        </p>
       </section>
-
-      <div className="absolute bottom-12 z-10 flex items-center justify-center">
-        <div className="relative h-0.5 w-28 overflow-hidden rounded-full bg-orange-500/20">
-          <span className="loading-scanner absolute inset-y-0 left-0 w-2/5 rounded-full bg-orange-500" />
-        </div>
-      </div>
 
       <style jsx>{`
         @keyframes badge-pulse {
@@ -157,15 +147,6 @@ export default function TotemMaintenancePage() {
           100% {
             transform: scaleX(1) scaleY(1);
             opacity: 0.45;
-          }
-        }
-
-        @keyframes scanner-slide {
-          0% {
-            transform: translateX(-120%);
-          }
-          100% {
-            transform: translateX(260%);
           }
         }
 
@@ -276,9 +257,6 @@ export default function TotemMaintenancePage() {
           will-change: transform, opacity;
         }
 
-        .loading-scanner {
-          animation: scanner-slide 2.2s ease-in-out infinite;
-        }
       `}</style>
     </main>
   );
