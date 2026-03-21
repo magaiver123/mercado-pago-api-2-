@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
@@ -16,6 +16,7 @@ import { useCartStore } from "@/lib/cart-store";
 import Image from "next/image";
 import { getAuthUser } from "@/lib/auth-store";
 import { getDefaultStoreInfo, saveReceiptToSession } from "@/lib/receipt-types";
+import { getCheckoutTaxDocument } from "@/lib/checkout-context";
 
 type PaymentMethod = "credit_card" | "debit_card" | "pix";
 
@@ -33,6 +34,7 @@ export default function CheckoutPage() {
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showConflict, setShowConflict] = useState(false);
+  const checkoutSessionIdRef = useRef<string | null>(null);
   const router = useRouter();
   const { items, getTotal } = useCartStore();
 
@@ -41,7 +43,7 @@ export default function CheckoutPage() {
   useEffect(() => {
     const user = getAuthUser();
     if (!user) {
-      router.push("/tela-inicial");
+      router.push("/");
     }
   }, [router]);
 
@@ -84,14 +86,27 @@ export default function CheckoutPage() {
       setError(null);
       setShowConflict(false);
 
-      const response = await fetch("/api/mercadopago/create-order", {
+      if (!checkoutSessionIdRef.current) {
+        const startResponse = await fetch("/api/checkout/session/start", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+
+        const startData = await startResponse.json().catch(() => null);
+        if (!startResponse.ok || typeof startData?.checkoutSessionId !== "string") {
+          throw new Error("Nao foi possivel iniciar a sessao de checkout");
+        }
+
+        checkoutSessionIdRef.current = startData.checkoutSessionId;
+      }
+
+      const taxDocument = getCheckoutTaxDocument();
+      const response = await fetch("/api/checkout/session/confirm", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          userId: user.id,
-          externalReference: `ORDER-${Date.now()}`,
           description: items
             .map((item) => `${item.quantity}x ${item.name}`)
             .join(", "),
@@ -100,6 +115,8 @@ export default function CheckoutPage() {
             quantity: item.quantity,
           })),
           paymentMethodId: selectedMethod,
+          customerDocument: taxDocument?.value ?? null,
+          customerDocumentType: taxDocument?.type ?? null,
         }),
       });
 
@@ -137,6 +154,7 @@ export default function CheckoutPage() {
         orderNumber,
         createdAt: createdAtIso,
         customerName: user.name,
+        customerDocument: taxDocument?.value ?? undefined,
         items: items.map((item) => ({
           name: item.name,
           quantity: item.quantity,
@@ -156,6 +174,7 @@ export default function CheckoutPage() {
       router.push(`/payment/processing?orderId=${orderId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro desconhecido");
+      checkoutSessionIdRef.current = null;
     } finally {
       setIsCreatingOrder(false);
     }

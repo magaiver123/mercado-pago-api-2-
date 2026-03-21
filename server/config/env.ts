@@ -4,6 +4,7 @@ type EnvKey =
   | "NEXT_PUBLIC_SUPABASE_URL"
   | "SUPABASE_SERVICE_ROLE_KEY"
   | "STORE_CONTEXT_SECRET"
+  | "SESSION_CONTEXT_SECRET"
   | "ADMIN_BYPASS_ENABLED"
   | "MQTT_URL"
   | "MQTT_USER"
@@ -71,6 +72,15 @@ export function getEmailEnv() {
 export function getStoreContextEnv() {
   return {
     secret: readEnv("STORE_CONTEXT_SECRET") ?? requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
+  }
+}
+
+export function getSessionContextEnv() {
+  return {
+    secret:
+      readEnv("SESSION_CONTEXT_SECRET") ??
+      readEnv("STORE_CONTEXT_SECRET") ??
+      requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
   }
 }
 

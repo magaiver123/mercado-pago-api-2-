@@ -6,6 +6,10 @@ import { isFinalPointOrderStatus, normalizePointOrderStatus } from "@/lib/mercad
 
 interface GetOrderStatusOptions {
   processedFallbackMode?: "full" | "stock_only" | "none"
+  auth?: {
+    userId: string
+    storeId: string
+  }
 }
 
 export async function getOrderStatusService(orderId: string | null, options: GetOrderStatusOptions = {}) {
@@ -16,6 +20,20 @@ export async function getOrderStatusService(orderId: string | null, options: Get
   const processedFallbackMode = options.processedFallbackMode ?? "full"
 
   const repositories = getRepositoryFactory()
+  const accessContext = await repositories.order.getAccessContextByMercadopagoOrderId(orderId)
+  if (options.auth) {
+    if (!accessContext) {
+      throw new AppError("Order not found", 404)
+    }
+
+    if (
+      accessContext.user_id !== options.auth.userId ||
+      accessContext.store_id !== options.auth.storeId
+    ) {
+      throw new AppError("Acesso negado para este pedido", 403)
+    }
+  }
+
   const localOrder = await repositories.order.getStatusByMercadopagoOrderId(orderId)
 
   const localStatus = normalizePointOrderStatus(localOrder?.status)

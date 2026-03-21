@@ -67,7 +67,12 @@ export class UserSupabaseRepository extends BaseSupabaseRepository implements Us
   }
 
   async updateLastAccess(userId: string, isoDate: string): Promise<void> {
-    await this.db.from("users").update({ last_access_at: isoDate }).eq("id", userId)
+    const { error } = await this.db
+      .from("users")
+      .update({ last_access_at: isoDate })
+      .eq("id", userId)
+
+    if (error) throw new AppError("Erro ao atualizar ultimo acesso", 500)
   }
 
   async updateProfile(
@@ -96,7 +101,11 @@ export class UserSupabaseRepository extends BaseSupabaseRepository implements Us
   }
 
   async updatePasswordHash(userId: string, passwordHash: string): Promise<void> {
-    await this.db.from("users").update({ password_hash: passwordHash }).eq("id", userId)
+    const { error } = await this.db
+      .from("users")
+      .update({ password_hash: passwordHash })
+      .eq("id", userId)
+
+    if (error) throw new AppError("Erro ao atualizar senha", 500)
   }
 }
-

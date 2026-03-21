@@ -14,11 +14,14 @@ interface OrderItem {
 type AllowedPaymentMethodId = "pix" | "credit_card" | "debit_card"
 
 interface CreateOrderInput {
-  userId: string
-  externalReference: string
+  userId?: string
+  externalReference?: string
+  checkoutSessionId?: string
   description: string
   items: OrderItem[]
   paymentMethodId: AllowedPaymentMethodId
+  customerDocument?: string | null
+  customerDocumentType?: "CPF" | "CNPJ" | null
 }
 
 function isValidOrderRequest(body: unknown): body is CreateOrderInput {
@@ -26,9 +29,15 @@ function isValidOrderRequest(body: unknown): body is CreateOrderInput {
 
   const value = body as Partial<CreateOrderInput>
 
-  if (typeof value.userId !== "string" || !isValidUUID(value.userId)) return false
-  if (typeof value.externalReference !== "string" || value.externalReference.trim() === "") return false
-  if (!/^[a-zA-Z0-9_-]{1,64}$/.test(value.externalReference)) return false
+  if (value.userId !== undefined && (typeof value.userId !== "string" || !isValidUUID(value.userId))) return false
+  if (value.externalReference !== undefined) {
+    if (typeof value.externalReference !== "string" || value.externalReference.trim() === "") return false
+    if (!/^[a-zA-Z0-9_-]{1,64}$/.test(value.externalReference)) return false
+  }
+  if (value.checkoutSessionId !== undefined) {
+    if (typeof value.checkoutSessionId !== "string" || value.checkoutSessionId.trim() === "") return false
+    if (!/^[a-zA-Z0-9_-]{1,80}$/.test(value.checkoutSessionId)) return false
+  }
   if (typeof value.description !== "string" || value.description.trim() === "") return false
   if (!Array.isArray(value.items) || value.items.length === 0) return false
 
@@ -44,16 +53,28 @@ function isValidOrderRequest(body: unknown): body is CreateOrderInput {
   return true
 }
 
-export async function createMercadoPagoOrderService(body: unknown, storeId: string) {
+export async function createMercadoPagoOrderService(
+  body: unknown,
+  storeId: string,
+  sessionUserId: string,
+) {
   if (!isValidOrderRequest(body)) {
     throw new AppError("Invalid request payload", 400)
   }
   if (!isValidUUID(storeId)) {
     throw new AppError("Store context is invalid", 400)
   }
+  if (!isValidUUID(sessionUserId)) {
+    throw new AppError("User session is invalid", 401)
+  }
 
   const { terminalId } = getMercadoPagoPointEnv()
-  const { userId, externalReference, description, items, paymentMethodId } = body
+  const { description, items, paymentMethodId, checkoutSessionId } = body
+  const userId = sessionUserId
+  const externalReference =
+    typeof body.externalReference === "string" && body.externalReference.trim() !== ""
+      ? body.externalReference.trim()
+      : `ORDER-${Date.now()}-${userId.slice(0, 8)}`
   const repositories = getRepositoryFactory()
 
   const user = await repositories.user.findActiveById(userId)
@@ -76,6 +97,11 @@ export async function createMercadoPagoOrderService(body: unknown, storeId: stri
       quantity: item.quantity,
       price: product.price,
     })
+
+    const currentStock = await repositories.stock.getCurrentStock(storeId, product.id)
+    if (typeof currentStock !== "number" || currentStock < item.quantity) {
+      throw new AppError("Estoque insuficiente para concluir o pedido", 409)
+    }
 
     totalAmount += product.price * item.quantity
   }
@@ -106,7 +132,9 @@ export async function createMercadoPagoOrderService(body: unknown, storeId: stri
     },
   }
 
-  const idempotencyKey = `order-${externalReference}-${userId}`
+  const idempotencyKey = checkoutSessionId
+    ? `order-${storeId}-${userId}-${checkoutSessionId}`
+    : `order-${externalReference}-${userId}`
   const createResponse = await mercadoPagoApiRequest<{
     id: string
     status: string

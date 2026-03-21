@@ -16,17 +16,43 @@ import {
   setAdminSessionCookie,
 } from "@/api/utils/admin-bypass-context"
 import { clearStoreContextCookie } from "@/api/utils/store-context"
+import {
+  clearUserSessionCookie,
+  setUserSessionCookie,
+} from "@/api/utils/user-session-context"
+import { assertRateLimit } from "@/api/utils/rate-limit"
+
+function getRequestClientIp(request: Request): string {
+  const xForwardedFor = request.headers.get("x-forwarded-for")
+  if (xForwardedFor) {
+    const first = xForwardedFor.split(",")[0]?.trim()
+    if (first) return first
+  }
+
+  return request.headers.get("x-real-ip") ?? "unknown-ip"
+}
 
 export async function loginByCpfController(request: Request) {
+  const clientIp = getRequestClientIp(request)
   let body: any = null
   try {
     body = await request.json()
   } catch {
-    return NextResponse.json({ error: "CPF inválido" }, { status: 400 })
+    return NextResponse.json({ error: "CPF invalido" }, { status: 400 })
   }
 
+  const normalizedCpf = typeof body?.cpf === "string" ? body.cpf.replace(/\D/g, "") : ""
+  assertRateLimit({
+    key: `cpf-login:${clientIp}:${normalizedCpf.slice(0, 9)}`,
+    limit: 15,
+    windowMs: 60_000,
+    message: "Muitas tentativas de login. Aguarde e tente novamente.",
+  })
+
   const data = await cpfLoginService(body?.cpf)
-  return NextResponse.json(data)
+  const response = NextResponse.json(data)
+  setUserSessionCookie(response, { userId: data.id, source: "kiosk" })
+  return response
 }
 
 export async function registerController(request: Request) {
@@ -34,7 +60,7 @@ export async function registerController(request: Request) {
   try {
     body = await request.json()
   } catch {
-    return NextResponse.json({ error: "Dados inválidos" }, { status: 400 })
+    return NextResponse.json({ error: "Dados invalidos" }, { status: 400 })
   }
 
   const data = await registerService({
@@ -53,7 +79,7 @@ export async function loginByEmailController(request: Request) {
   try {
     body = await request.json()
   } catch {
-    return NextResponse.json({ error: "Dados inválidos" }, { status: 400 })
+    return NextResponse.json({ error: "Dados invalidos" }, { status: 400 })
   }
 
   const data = await emailLoginService({
@@ -70,6 +96,11 @@ export async function loginByEmailController(request: Request) {
     clearAdminBypassCookie(response)
     clearStoreContextCookie(response)
   }
+
+  setUserSessionCookie(response, {
+    userId: data.id,
+    source: "userprofile",
+  })
 
   return response
 }
@@ -105,7 +136,7 @@ export async function resetPasswordController(request: Request) {
   try {
     body = await request.json()
   } catch {
-    return NextResponse.json({ error: "Dados inválidos" }, { status: 400 })
+    return NextResponse.json({ error: "Dados invalidos" }, { status: 400 })
   }
 
   try {
@@ -128,7 +159,7 @@ export async function signupStartController(request: Request) {
   try {
     body = await request.json()
   } catch {
-    return NextResponse.json({ error: "Dados inválidos" }, { status: 400 })
+    return NextResponse.json({ error: "Dados invalidos" }, { status: 400 })
   }
 
   const data = await signupStartService({
@@ -147,7 +178,7 @@ export async function signupVerifyEmailController(request: Request) {
   try {
     body = await request.json()
   } catch {
-    return NextResponse.json({ error: "Dados inválidos" }, { status: 400 })
+    return NextResponse.json({ error: "Dados invalidos" }, { status: 400 })
   }
 
   const data = await signupVerifyEmailService({
@@ -163,7 +194,7 @@ export async function signupResendController(request: Request) {
   try {
     body = await request.json()
   } catch {
-    return NextResponse.json({ error: "Dados inválidos" }, { status: 400 })
+    return NextResponse.json({ error: "Dados invalidos" }, { status: 400 })
   }
 
   const data = await signupResendService({
@@ -179,7 +210,7 @@ export async function signupVerifyPhoneController(request: Request) {
   try {
     body = await request.json()
   } catch {
-    return NextResponse.json({ error: "Dados inválidos" }, { status: 400 })
+    return NextResponse.json({ error: "Dados invalidos" }, { status: 400 })
   }
 
   const data = await signupVerifyPhoneService({
@@ -188,4 +219,13 @@ export async function signupVerifyPhoneController(request: Request) {
   })
 
   return NextResponse.json(data)
+}
+
+export async function logoutController() {
+  const response = NextResponse.json({ success: true })
+  clearAdminSessionCookie(response)
+  clearAdminBypassCookie(response)
+  clearStoreContextCookie(response)
+  clearUserSessionCookie(response)
+  return response
 }

@@ -30,4 +30,8 @@ export function getUserprofileAuthUser(): UserprofileUser | null {
 export function clearUserprofileAuthUser() {
   if (typeof window === "undefined") return
   localStorage.removeItem(USERPROFILE_AUTH_STORAGE_KEY)
+  fetch("/api/auth/logout", {
+    method: "POST",
+    keepalive: true,
+  }).catch(() => undefined)
 }

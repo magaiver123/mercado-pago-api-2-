@@ -2,12 +2,12 @@ import { NextResponse } from "next/server"
 import { getUserProfileService } from "@/api/services/userprofile/get-user-profile-service"
 import { listPublicStoresService } from "@/api/services/userprofile/list-public-stores-service"
 import { updateUserProfileService } from "@/api/services/userprofile/update-user-profile-service"
+import { requireUserSessionFromRequest } from "@/api/utils/user-session-context"
 
 export async function getUserProfileController(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const userId = searchParams.get("userId")
+  const userSession = requireUserSessionFromRequest(request)
 
-  const data = await getUserProfileService(userId)
+  const data = await getUserProfileService(userSession.userId)
   return NextResponse.json(data)
 }
 
@@ -25,6 +25,7 @@ export async function listPublicStoresController(request: Request) {
 }
 
 export async function updateUserProfileController(request: Request) {
+  const userSession = requireUserSessionFromRequest(request)
   let body: any = null
   try {
     body = await request.json()
@@ -33,7 +34,7 @@ export async function updateUserProfileController(request: Request) {
   }
 
   const data = await updateUserProfileService({
-    userId: body?.userId,
+    userId: userSession.userId,
     name: body?.name,
     email: body?.email,
     phone: body?.phone,

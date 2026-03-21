@@ -4,6 +4,7 @@ import {
   forgotPasswordRoute,
   loginByCpfRoute,
   loginByEmailRoute,
+  logoutRoute,
   registerRoute,
   resetPasswordRoute,
   signupResendRoute,
@@ -16,6 +17,10 @@ import { getKioskSlidesRoute } from "@/api/routes/kiosk-routes"
 import { getMenuBannerRoute, getMenuCategoriesRoute, getMenuProductsRoute } from "@/api/routes/menu-routes"
 import { createMercadoPagoOrderRoute, cancelMercadoPagoOrderRoute, getMercadoPagoOrderStatusRoute, mercadopagoWebhookRoute, refundMercadoPagoOrderRoute } from "@/api/routes/mercadopago-routes"
 import { registerOrderRoute, listUserOrdersRoute, reconcileProcessedOrdersRoute } from "@/api/routes/order-routes"
+import {
+  confirmCheckoutSessionRoute,
+  startCheckoutSessionRoute,
+} from "@/api/routes/checkout-routes"
 import {
   activateAdminBypassRoute,
   activateTotemRoute,
@@ -32,6 +37,7 @@ type Handler = (request: Request) => Promise<NextResponse>
 const routeTable: Record<string, Handler> = {
   "POST /api/locks/test-open": testOpenLockRoute,
   "POST /api/auth/login": loginByCpfRoute,
+  "POST /api/auth/logout": logoutRoute,
   "POST /api/auth/register": registerRoute,
   "GET /api/kiosk/slides": getKioskSlidesRoute,
   "GET /api/menu/banner": getMenuBannerRoute,
@@ -43,6 +49,8 @@ const routeTable: Record<string, Handler> = {
   "GET /api/mercadopago/order-status": getMercadoPagoOrderStatusRoute,
   "POST /api/mercadopago/refund-order": refundMercadoPagoOrderRoute,
   "POST /api/mercadopago/webhook": mercadopagoWebhookRoute,
+  "POST /api/checkout/session/start": startCheckoutSessionRoute,
+  "POST /api/checkout/session/confirm": confirmCheckoutSessionRoute,
   "POST /api/orders/register": registerOrderRoute,
   "POST /api/orders/reconcile-processed": reconcileProcessedOrdersRoute,
   "POST /api/totem/activate": activateTotemRoute,

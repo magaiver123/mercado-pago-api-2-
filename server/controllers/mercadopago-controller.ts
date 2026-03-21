@@ -8,9 +8,12 @@ import { getMercadoPagoWebhookEnv } from "@/api/config/env"
 import { validateMercadoPagoWebhookSignatureService } from "@/api/services/mercadopago/validate-mercadopago-webhook-signature-service"
 import { requireStoreContextFromRequest } from "@/api/utils/store-context"
 import { logger } from "@/api/utils/logger"
+import { requireUserSessionFromRequest } from "@/api/utils/user-session-context"
+import { registerWebhookEventService } from "@/api/services/mercadopago/register-webhook-event-service"
 
 export async function createMercadoPagoOrderController(request: Request) {
   const storeContext = requireStoreContextFromRequest(request)
+  const userSession = requireUserSessionFromRequest(request)
 
   let body: any = null
   try {
@@ -19,30 +22,48 @@ export async function createMercadoPagoOrderController(request: Request) {
     return NextResponse.json({ error: "Invalid request payload" }, { status: 400 })
   }
 
-  const data = await createMercadoPagoOrderService(body, storeContext.storeId)
+  const data = await createMercadoPagoOrderService(body, storeContext.storeId, userSession.userId)
   return NextResponse.json(data)
 }
 
 export async function cancelMercadoPagoOrderController(request: Request) {
+  const storeContext = requireStoreContextFromRequest(request)
+  const userSession = requireUserSessionFromRequest(request)
   const { searchParams } = new URL(request.url)
   const orderId = searchParams.get("orderId")
 
-  const result = await cancelMercadoPagoOrderService(orderId)
+  const result = await cancelMercadoPagoOrderService(orderId, {
+    userId: userSession.userId,
+    storeId: storeContext.storeId,
+  })
   return NextResponse.json(result.body, { status: result.status })
 }
 
 export async function refundMercadoPagoOrderController(request: Request) {
+  const storeContext = requireStoreContextFromRequest(request)
+  const userSession = requireUserSessionFromRequest(request)
   const { searchParams } = new URL(request.url)
   const orderId = searchParams.get("orderId")
 
-  const result = await refundMercadoPagoOrderService(orderId)
+  const result = await refundMercadoPagoOrderService(orderId, {
+    userId: userSession.userId,
+    storeId: storeContext.storeId,
+  })
   return NextResponse.json(result.body, { status: result.status })
 }
 
 export async function getMercadoPagoOrderStatusController(request: Request) {
+  const storeContext = requireStoreContextFromRequest(request)
+  const userSession = requireUserSessionFromRequest(request)
   const { searchParams } = new URL(request.url)
   const orderId = searchParams.get("orderId")
-  const data = await getOrderStatusService(orderId)
+  const data = await getOrderStatusService(orderId, {
+    auth: {
+      userId: userSession.userId,
+      storeId: storeContext.storeId,
+    },
+    processedFallbackMode: "stock_only",
+  })
   return NextResponse.json(data)
 }
 
@@ -85,14 +106,34 @@ export async function mercadopagoWebhookController(request: Request) {
     dataIdFromBody: body?.data?.id ?? null,
   })
 
+  const orderId = dataIdFromQuery ?? body?.data?.id ?? null
+  const action = typeof body?.action === "string" ? body.action : null
+  const requestId = xRequestId ?? "missing-request-id"
+  const eventKey = `${requestId}:${orderId ?? "missing-order-id"}:${action ?? "unknown-action"}`
+  const webhookEvent = await registerWebhookEventService({
+    eventKey,
+    action,
+    mercadopagoOrderId: orderId,
+    payload: body,
+  })
+
+  if (webhookEvent.duplicate) {
+    logger.info("Webhook Mercado Pago duplicado ignorado por idempotencia", {
+      eventKey,
+      action,
+      mercadopagoOrderId: orderId,
+    })
+    return NextResponse.json({ ok: true, duplicate: true })
+  }
+
   await processMercadoPagoWebhookService({
     ...body,
-    mercadopagoOrderId: dataIdFromQuery ?? body?.data?.id ?? null,
+    mercadopagoOrderId: orderId,
   })
 
   logger.info("Webhook Mercado Pago processado", {
     action: body?.action ?? null,
-    mercadopagoOrderId: dataIdFromQuery ?? body?.data?.id ?? null,
+    mercadopagoOrderId: orderId,
   })
 
   return NextResponse.json({ ok: true })

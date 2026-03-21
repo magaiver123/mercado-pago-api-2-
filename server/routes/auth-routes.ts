@@ -3,6 +3,7 @@ import {
   forgotPasswordController,
   loginByCpfController,
   loginByEmailController,
+  logoutController,
   registerController,
   resetPasswordController,
   signupResendController,
@@ -22,3 +23,4 @@ export const signupStartRoute = withErrorHandler(signupStartController)
 export const signupVerifyEmailRoute = withErrorHandler(signupVerifyEmailController)
 export const signupResendRoute = withErrorHandler(signupResendController)
 export const signupVerifyPhoneRoute = withErrorHandler(signupVerifyPhoneController)
+export const logoutRoute = withErrorHandler(logoutController)

@@ -24,5 +24,9 @@ export function getAuthUser(): User | null {
 export function clearAuthUser() {
   if (typeof window !== "undefined") {
     localStorage.removeItem("auth_user")
+    fetch("/api/auth/logout", {
+      method: "POST",
+      keepalive: true,
+    }).catch(() => undefined)
   }
 }

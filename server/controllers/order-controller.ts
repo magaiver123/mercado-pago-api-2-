@@ -3,7 +3,7 @@ import { listUserOrdersService } from "@/api/services/orders/list-user-orders-se
 import { registerOrderService } from "@/api/services/orders/register-order-service"
 import { reconcileProcessedOrdersService } from "@/api/services/orders/reconcile-processed-orders-service"
 import { getAdminBypassStatusService } from "@/api/services/totem/admin-bypass-service"
-import { requireStoreContextFromRequest } from "@/api/utils/store-context"
+import { requireUserSessionFromRequest } from "@/api/utils/user-session-context"
 
 function getAdminBypassErrorStatus(reason: string): number {
   if (reason === "disabled") return 403
@@ -12,15 +12,23 @@ function getAdminBypassErrorStatus(reason: string): number {
 }
 
 export async function listUserOrdersController(request: Request) {
-  const { searchParams } = new URL(request.url)
-  const userId = searchParams.get("userId")
+  const userSession = requireUserSessionFromRequest(request)
 
-  const data = await listUserOrdersService(userId)
+  const data = await listUserOrdersService(userSession.userId)
   return NextResponse.json(data)
 }
 
 export async function registerOrderController(request: Request) {
-  const storeContext = requireStoreContextFromRequest(request)
+  const bypassStatus = await getAdminBypassStatusService(request)
+  if (!bypassStatus.allowed || !bypassStatus.storeId) {
+    return NextResponse.json(
+      {
+        error: "Acesso negado para registro manual de pedidos",
+        reason: bypassStatus.reason,
+      },
+      { status: getAdminBypassErrorStatus(bypassStatus.reason) },
+    )
+  }
 
   let body: any = null
   try {
@@ -30,7 +38,7 @@ export async function registerOrderController(request: Request) {
   }
 
   const data = await registerOrderService({
-    storeId: storeContext.storeId,
+    storeId: bypassStatus.storeId,
     userId: body?.userId,
     mercadopagoOrderId: body?.mercadopagoOrderId,
     totalAmount: body?.totalAmount,

@@ -5,7 +5,13 @@ import { CreatePasswordResetInput, PasswordResetRepository } from "@/api/reposit
 
 export class PasswordResetSupabaseRepository extends BaseSupabaseRepository implements PasswordResetRepository {
   async expireAllActiveByUserId(userId: string, usedAt: string): Promise<void> {
-    await this.db.from("password_resets").update({ used_at: usedAt }).eq("user_id", userId).is("used_at", null)
+    const { error } = await this.db
+      .from("password_resets")
+      .update({ used_at: usedAt })
+      .eq("user_id", userId)
+      .is("used_at", null)
+
+    if (error) throw new AppError("Erro ao expirar codigos anteriores", 500)
   }
 
   async create(input: CreatePasswordResetInput): Promise<void> {
@@ -49,10 +55,20 @@ export class PasswordResetSupabaseRepository extends BaseSupabaseRepository impl
   }
 
   async extendExpiration(resetId: string, expiresAt: string): Promise<void> {
-    await this.db.from("password_resets").update({ expires_at: expiresAt }).eq("id", resetId)
+    const { error } = await this.db
+      .from("password_resets")
+      .update({ expires_at: expiresAt })
+      .eq("id", resetId)
+
+    if (error) throw new AppError("Erro ao estender expiracao do codigo", 500)
   }
 
   async markUsed(resetId: string, usedAt: string): Promise<void> {
-    await this.db.from("password_resets").update({ used_at: usedAt }).eq("id", resetId)
+    const { error } = await this.db
+      .from("password_resets")
+      .update({ used_at: usedAt })
+      .eq("id", resetId)
+
+    if (error) throw new AppError("Erro ao marcar codigo como utilizado", 500)
   }
 }

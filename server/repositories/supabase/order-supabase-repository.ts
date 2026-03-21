@@ -20,6 +20,21 @@ export class OrderSupabaseRepository extends BaseSupabaseRepository implements O
       .single()
 
     if (error || !data) {
+      if (error?.code === "23505") {
+        const { data: existing, error: existingError } = await this.db
+          .from("orders")
+          .select("id, order_number")
+          .eq("mercadopago_order_id", input.mercadopagoOrderId)
+          .maybeSingle()
+
+        if (!existingError && existing) {
+          return {
+            id: existing.id as string,
+            orderNumber: (existing.order_number as number | null) ?? null,
+          }
+        }
+      }
+
       throw new AppError("Erro ao registrar pedido", 500)
     }
 
@@ -37,6 +52,17 @@ export class OrderSupabaseRepository extends BaseSupabaseRepository implements O
       .single()
     if (error || !data) return null
     return data as { status: string; created_at: string; stock_processed: boolean }
+  }
+
+  async getAccessContextByMercadopagoOrderId(orderId: string): Promise<{ user_id: string; store_id: string } | null> {
+    const { data, error } = await this.db
+      .from("orders")
+      .select("user_id, store_id")
+      .eq("mercadopago_order_id", orderId)
+      .maybeSingle()
+
+    if (error || !data) return null
+    return data as { user_id: string; store_id: string }
   }
 
   async listPendingStockProcessingByStoreId(storeId: string, limit: number): Promise<PendingStockProcessingOrder[]> {
@@ -81,17 +107,61 @@ export class OrderSupabaseRepository extends BaseSupabaseRepository implements O
     return data as Pick<OrderRecord, "id" | "store_id" | "items" | "stock_processed">
   }
 
+  async claimForProcessedHandling(
+    mercadopagoOrderId: string,
+    lockAt: string,
+  ): Promise<Pick<OrderRecord, "id" | "store_id" | "items" | "stock_processed"> | null> {
+    const { data, error } = await this.db
+      .from("orders")
+      .update({
+        processing_lock_at: lockAt,
+      })
+      .eq("mercadopago_order_id", mercadopagoOrderId)
+      .eq("stock_processed", false)
+      .is("processing_lock_at", null)
+      .select("id, store_id, items, stock_processed")
+      .maybeSingle()
+
+    if (error || !data) return null
+    return data as Pick<OrderRecord, "id" | "store_id" | "items" | "stock_processed">
+  }
+
+  async releaseProcessingLock(orderId: string): Promise<void> {
+    const { error } = await this.db
+      .from("orders")
+      .update({
+        processing_lock_at: null,
+      })
+      .eq("id", orderId)
+
+    if (error) {
+      throw new AppError("Erro ao liberar lock de processamento do pedido", 500)
+    }
+  }
+
   async updateStatusByMercadopagoOrderId(mercadopagoOrderId: string, status: string): Promise<void> {
-    await this.db.from("orders").update({ status }).eq("mercadopago_order_id", mercadopagoOrderId)
+    const { error } = await this.db
+      .from("orders")
+      .update({ status })
+      .eq("mercadopago_order_id", mercadopagoOrderId)
+
+    if (error) {
+      throw new AppError("Erro ao atualizar status do pedido", 500)
+    }
   }
 
   async markStockProcessed(orderId: string): Promise<void> {
-    await this.db
+    const { error } = await this.db
       .from("orders")
       .update({
         status: "processed",
         stock_processed: true,
+        processing_lock_at: null,
       })
       .eq("id", orderId)
+
+    if (error) {
+      throw new AppError("Erro ao marcar pedido como processado", 500)
+    }
   }
 }

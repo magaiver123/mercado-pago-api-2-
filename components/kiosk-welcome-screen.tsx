@@ -103,7 +103,43 @@ export function KioskWelcomeScreen() {
     handleStartOrder()
   }
 
-  if (!slides.length) return null
+  if (!slides.length) {
+    return (
+      <div
+        className="relative flex h-screen w-screen cursor-pointer select-none flex-col overflow-hidden bg-white text-zinc-950"
+        onClick={handleStartOrder}
+      >
+        <section className="relative min-h-0 flex-1 overflow-hidden bg-white">
+          <Image
+            src="/hot-dog-sandwich-snack-combo-meal-promotional-appe.jpg"
+            alt="Slide promocional"
+            fill
+            className="object-cover object-center"
+            priority
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-zinc-900/25 via-zinc-900/15 to-white/80" />
+        </section>
+
+        <section className="relative flex-none bg-white px-8 pb-10 pt-3">
+          <div className="pointer-events-none absolute inset-x-0 -top-14 h-14 bg-gradient-to-b from-transparent to-white" />
+          <div className="relative z-10 mx-auto flex w-full max-w-5xl flex-col items-center gap-4">
+            <button
+              onClick={handleButtonClick}
+              className={`w-full max-w-[26rem] rounded-[1.65rem] bg-orange-500 px-10 py-5 text-[1.9rem] font-bold tracking-[0.01em] text-white shadow-[0_12px_24px_rgba(249,115,22,0.22)] transition-all duration-300 hover:bg-orange-500 ${
+                isPulsing ? "scale-[1.01] shadow-[0_16px_28px_rgba(249,115,22,0.26)]" : "scale-100"
+              }`}
+            >
+              Iniciar compra
+            </button>
+
+            <p className="text-center text-sm font-medium text-zinc-600">
+              Exibindo modo de contingencia. O fluxo de compra continua disponivel.
+            </p>
+          </div>
+        </section>
+      </div>
+    )
+  }
 
   const currentSlideData = slides[currentSlide]
   const incomingSlideData = incomingSlide !== null ? slides[incomingSlide] : null

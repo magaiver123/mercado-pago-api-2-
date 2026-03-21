@@ -1,3 +1,4 @@
+import { AppError } from "@/api/utils/app-error"
 import { BaseSupabaseRepository } from "@/api/repositories/supabase/base-supabase-repository"
 import { CreateStockMovementInput, StockRepository } from "@/api/repositories/contracts/stock-repository"
 
@@ -14,7 +15,7 @@ export class StockSupabaseRepository extends BaseSupabaseRepository implements S
   }
 
   async updateStock(storeId: string, productId: string, quantity: number, updatedAt: string): Promise<void> {
-    await this.db
+    const { error } = await this.db
       .from("product_stock")
       .update({
         quantity,
@@ -22,10 +23,42 @@ export class StockSupabaseRepository extends BaseSupabaseRepository implements S
       })
       .eq("store_id", storeId)
       .eq("product_id", productId)
+
+    if (error) {
+      throw new AppError("Erro ao atualizar estoque", 500)
+    }
+  }
+
+  async decrementStockIfEnough(
+    storeId: string,
+    productId: string,
+    quantityToDecrement: number,
+    updatedAt: string,
+  ): Promise<"ok" | "insufficient" | "not_found" | "conflict"> {
+    const currentQuantity = await this.getCurrentStock(storeId, productId)
+    if (currentQuantity === null) return "not_found"
+    if (currentQuantity < quantityToDecrement) return "insufficient"
+
+    const nextQuantity = currentQuantity - quantityToDecrement
+    const { data, error } = await this.db
+      .from("product_stock")
+      .update({
+        quantity: nextQuantity,
+        updated_at: updatedAt,
+      })
+      .eq("store_id", storeId)
+      .eq("product_id", productId)
+      .eq("quantity", currentQuantity)
+      .select("quantity")
+      .maybeSingle()
+
+    if (error) return "conflict"
+    if (!data) return "conflict"
+    return "ok"
   }
 
   async createMovement(input: CreateStockMovementInput): Promise<void> {
-    await this.db.from("stock_movements").insert({
+    const { error } = await this.db.from("stock_movements").insert({
       store_id: input.storeId,
       product_id: input.productId,
       type: "saida",
@@ -34,5 +67,9 @@ export class StockSupabaseRepository extends BaseSupabaseRepository implements S
       user_id: null,
       created_at: input.createdAt,
     })
+
+    if (error) {
+      throw new AppError("Erro ao registrar movimentacao de estoque", 500)
+    }
   }
 }

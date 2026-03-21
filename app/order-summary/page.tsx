@@ -9,6 +9,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { useCartStore } from "@/lib/cart-store";
 import { getAuthUser } from "@/lib/auth-store";
 import { ShoppingBag } from "lucide-react";
+import {
+  getCheckoutTaxDocument,
+  saveCheckoutTaxDocument,
+} from "@/lib/checkout-context";
 
 type TaxIdType = "CPF" | "CNPJ";
 
@@ -19,6 +23,7 @@ export default function OrderSummaryPage() {
   const [taxIdType, setTaxIdType] = useState<TaxIdType>("CPF");
   const [taxIdValue, setTaxIdValue] = useState("");
   const [isTaxModalOpen, setIsTaxModalOpen] = useState(false);
+  const [taxError, setTaxError] = useState<string | null>(null);
 
   const total = getTotal();
   const subtotal = total;
@@ -26,9 +31,17 @@ export default function OrderSummaryPage() {
   useEffect(() => {
     const user = getAuthUser();
     if (!user) {
-      router.push("/tela-inicial");
+      router.push("/");
     }
   }, [router]);
+
+  useEffect(() => {
+    const saved = getCheckoutTaxDocument();
+    if (saved) {
+      setTaxIdType(saved.type);
+      setTaxIdValue(saved.value);
+    }
+  }, []);
 
   if (items.length === 0) {
     return (
@@ -56,6 +69,24 @@ export default function OrderSummaryPage() {
   const formattedTotal = total.toFixed(2).replace(".", ",");
 
   const handleGoToPayment = () => {
+    const normalized = taxIdValue.replace(/\D/g, "");
+
+    if (normalized.length === 0) {
+      saveCheckoutTaxDocument(null);
+      router.push("/checkout");
+      return;
+    }
+
+    const expectedLength = taxIdType === "CPF" ? 11 : 14;
+    if (normalized.length !== expectedLength) {
+      setTaxError(`${taxIdType} invalido. Confira os numeros informados.`);
+      return;
+    }
+
+    saveCheckoutTaxDocument({
+      type: taxIdType,
+      value: normalized,
+    });
     router.push("/checkout");
   };
 
@@ -95,11 +126,17 @@ export default function OrderSummaryPage() {
               <Button
                 variant="link"
                 className="text-orange-500 font-bold underline underline-offset-4"
-                onClick={() => setIsTaxModalOpen(true)}
+                onClick={() => {
+                  setTaxError(null);
+                  setIsTaxModalOpen(true);
+                }}
               >
                 {taxIdValue ? "Editar" : "Adicionar"}
               </Button>
             </div>
+            {taxError && (
+              <p className="mt-2 text-sm font-medium text-red-600">{taxError}</p>
+            )}
           </section>
         </div>
       </main>
@@ -176,7 +213,11 @@ export default function OrderSummaryPage() {
               <input
                 type="text"
                 value={taxIdValue}
-                onChange={(event) => setTaxIdValue(event.target.value)}
+                onChange={(event) => {
+                  const numeric = event.target.value.replace(/\D/g, "");
+                  setTaxError(null);
+                  setTaxIdValue(numeric);
+                }}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-black placeholder:text-black/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-1"
                 placeholder={
                   taxIdType === "CPF"
@@ -198,7 +239,19 @@ export default function OrderSummaryPage() {
               <Button
                 type="button"
                 className="bg-orange-500 hover:bg-orange-600 text-white"
-                onClick={() => setIsTaxModalOpen(false)}
+                onClick={() => {
+                  const normalized = taxIdValue.replace(/\D/g, "");
+                  const expectedLength = taxIdType === "CPF" ? 11 : 14;
+
+                  if (normalized.length > 0 && normalized.length !== expectedLength) {
+                    setTaxError(`${taxIdType} invalido. Confira os numeros informados.`);
+                    return;
+                  }
+
+                  setTaxError(null);
+                  setTaxIdValue(normalized);
+                  setIsTaxModalOpen(false);
+                }}
               >
                 Salvar
               </Button>
@@ -209,4 +262,3 @@ export default function OrderSummaryPage() {
     </div>
   );
 }
-

@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from "crypto"
 import { NextResponse } from "next/server"
-import { getStoreContextEnv } from "@/api/config/env"
+import { getSessionContextEnv } from "@/api/config/env"
 import { isValidUUID } from "@/api/utils/validators"
 
 const ADMIN_SESSION_COOKIE = "admin_session_ctx"
@@ -77,7 +77,7 @@ export function setAdminSessionCookie(
   response: NextResponse,
   input: { userId: string },
 ) {
-  const { secret } = getStoreContextEnv()
+  const { secret } = getSessionContextEnv()
   const value = encode<AdminSessionPayload>(
     {
       userId: input.userId,
@@ -103,7 +103,7 @@ export function readAdminSessionFromRequest(request: Request): AdminSessionPaylo
   const cookieValue = parseCookie(request.headers.get("cookie"), ADMIN_SESSION_COOKIE)
   if (!cookieValue) return null
 
-  const { secret } = getStoreContextEnv()
+  const { secret } = getSessionContextEnv()
   const decoded = decode(cookieValue, secret) as Partial<AdminSessionPayload> | null
 
   if (!decoded?.userId || !decoded?.issuedAt) {
@@ -129,7 +129,7 @@ export function setAdminBypassCookie(
   response: NextResponse,
   input: { userId: string; storeId: string; storeSlug: string },
 ) {
-  const { secret } = getStoreContextEnv()
+  const { secret } = getSessionContextEnv()
   const value = encode<AdminBypassPayload>(
     {
       userId: input.userId,
@@ -157,7 +157,7 @@ export function readAdminBypassFromRequest(request: Request): AdminBypassPayload
   const cookieValue = parseCookie(request.headers.get("cookie"), ADMIN_BYPASS_COOKIE)
   if (!cookieValue) return null
 
-  const { secret } = getStoreContextEnv()
+  const { secret } = getSessionContextEnv()
   const decoded = decode(cookieValue, secret) as Partial<AdminBypassPayload> | null
 
   if (!decoded?.userId || !decoded?.storeId || !decoded?.storeSlug || !decoded?.issuedAt) {

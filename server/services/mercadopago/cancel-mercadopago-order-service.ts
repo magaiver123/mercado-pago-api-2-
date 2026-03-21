@@ -3,9 +3,24 @@ import { getRepositoryFactory } from "@/api/repositories/repository-factory"
 import { mercadoPagoApiRequest } from "@/api/services/mercadopago/mercadopago-api"
 import { normalizePointOrderStatus } from "@/lib/mercadopago-point-status"
 
-export async function cancelMercadoPagoOrderService(orderId: string | null) {
+interface CancelOrderAuthContext {
+  userId: string
+  storeId: string
+}
+
+export async function cancelMercadoPagoOrderService(orderId: string | null, auth: CancelOrderAuthContext) {
   if (!orderId) {
     throw new AppError("Order ID e obrigatorio", 400)
+  }
+
+  const repositories = getRepositoryFactory()
+  const accessContext = await repositories.order.getAccessContextByMercadopagoOrderId(orderId)
+  if (!accessContext) {
+    throw new AppError("Pedido nao encontrado", 404)
+  }
+
+  if (accessContext.user_id !== auth.userId || accessContext.store_id !== auth.storeId) {
+    throw new AppError("Acesso negado para cancelar este pedido", 403)
   }
 
   const cancelResponse = await mercadoPagoApiRequest<{
@@ -28,7 +43,10 @@ export async function cancelMercadoPagoOrderService(orderId: string | null) {
     }
   }
 
-  await getRepositoryFactory().order.updateStatusByMercadopagoOrderId(orderId, normalizePointOrderStatus(cancelResponse.data?.status ?? "canceled"))
+  await repositories.order.updateStatusByMercadopagoOrderId(
+    orderId,
+    normalizePointOrderStatus(cancelResponse.data?.status ?? "canceled"),
+  )
 
   return {
     ok: true as const,

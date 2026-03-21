@@ -23,6 +23,11 @@ interface PublishOpenDoorResult {
   error?: string
 }
 
+interface OpenDoorCommandMessage {
+  topic: string
+  payload: string
+}
+
 function buildClientId(prefix: string) {
   const random = Math.random().toString(16).slice(2, 10)
   return `${prefix}-${Date.now()}-${random}`
@@ -108,7 +113,7 @@ async function publishMessageService(input: PublishMessageInput): Promise<void> 
   })
 }
 
-export async function publishOpenDoorCommandService(input: PublishOpenDoorInput): Promise<PublishOpenDoorResult> {
+export function buildOpenDoorCommandMessage(input: PublishOpenDoorInput): OpenDoorCommandMessage {
   const deviceId = sanitizeString(input.deviceId)
   const socketId = sanitizeString(input.socketId)
   const source = sanitizeString(input.source)
@@ -123,6 +128,17 @@ export async function publishOpenDoorCommandService(input: PublishOpenDoorInput)
     ...(storeId ? { storeId } : {}),
     ...(mercadopagoOrderId ? { mercadopagoOrderId } : {}),
   })
+
+  return { topic, payload }
+}
+
+export async function publishOpenDoorCommandService(input: PublishOpenDoorInput): Promise<PublishOpenDoorResult> {
+  const deviceId = sanitizeString(input.deviceId)
+  const socketId = sanitizeString(input.socketId)
+  const storeId = sanitizeString(input.storeId)
+  const mercadopagoOrderId = sanitizeString(input.mercadopagoOrderId)
+  const source = sanitizeString(input.source)
+  const { topic, payload } = buildOpenDoorCommandMessage(input)
 
   const mqttEnv = getMqttEnv()
   if (!mqttEnv.url) {

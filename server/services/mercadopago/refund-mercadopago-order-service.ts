@@ -3,9 +3,24 @@ import { getRepositoryFactory } from "@/api/repositories/repository-factory"
 import { mercadoPagoApiRequest } from "@/api/services/mercadopago/mercadopago-api"
 import { normalizePointOrderStatus } from "@/lib/mercadopago-point-status"
 
-export async function refundMercadoPagoOrderService(orderId: string | null) {
+interface RefundOrderAuthContext {
+  userId: string
+  storeId: string
+}
+
+export async function refundMercadoPagoOrderService(orderId: string | null, auth: RefundOrderAuthContext) {
   if (!orderId) {
     throw new AppError("Order ID e obrigatorio", 400)
+  }
+
+  const repositories = getRepositoryFactory()
+  const accessContext = await repositories.order.getAccessContextByMercadopagoOrderId(orderId)
+  if (!accessContext) {
+    throw new AppError("Pedido nao encontrado", 404)
+  }
+
+  if (accessContext.user_id !== auth.userId || accessContext.store_id !== auth.storeId) {
+    throw new AppError("Acesso negado para reembolsar este pedido", 403)
   }
 
   const refundResponse = await mercadoPagoApiRequest<{
@@ -29,7 +44,7 @@ export async function refundMercadoPagoOrderService(orderId: string | null) {
   }
 
   const status = normalizePointOrderStatus(refundResponse.data?.status ?? "refunded")
-  await getRepositoryFactory().order.updateStatusByMercadopagoOrderId(orderId, status)
+  await repositories.order.updateStatusByMercadopagoOrderId(orderId, status)
 
   return {
     ok: true as const,
@@ -41,4 +56,3 @@ export async function refundMercadoPagoOrderService(orderId: string | null) {
     },
   }
 }
-
