@@ -1,127 +1,283 @@
 "use client";
 
+const BREATHING_LINE_HEIGHTS = [6, 8, 10, 13, 16, 13, 10, 8, 6];
+const FLOATING_ZS = [
+  { left: "67%", size: "2.4rem", delay: "0s" },
+  { left: "76%", size: "1.8rem", delay: "1s" },
+  { left: "84%", size: "1.2rem", delay: "2s" },
+];
+
 export default function TotemMaintenancePage() {
   return (
-    <main className="relative min-h-screen overflow-hidden bg-black text-white">
-      <div className="pointer-events-none absolute -left-32 top-[-6rem] h-80 w-80 rounded-full bg-orange-500/35 blur-3xl" />
-      <div className="pointer-events-none absolute -right-36 bottom-[-8rem] h-96 w-96 rounded-full bg-orange-400/25 blur-3xl" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(249,115,22,0.35),transparent_55%)]" />
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-white px-6 py-10 text-zinc-900">
+      <div className="maintenance-dot-grid pointer-events-none absolute inset-0" />
 
-      <section className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 py-10 text-center">
-        <div className="w-full max-w-3xl space-y-8">
-          <div className="relative mx-auto flex h-44 w-44 items-center justify-center rounded-full border-2 border-orange-500/80 bg-orange-500/10 shadow-[0_0_55px_rgba(249,115,22,0.35)] sm:h-52 sm:w-52">
-            <span className="maintenance-emoji text-[4.8rem] leading-none sm:text-[5.6rem]" aria-hidden>
-              {"\u{1F634}"}
-            </span>
-            <span className="maintenance-zzz absolute -right-3 top-7 text-xl font-black uppercase tracking-[0.3em] text-orange-300 sm:-right-4 sm:top-8 sm:text-2xl">
-              zzz
-            </span>
-          </div>
+      <div className="maintenance-arc maintenance-arc-top pointer-events-none" />
+      <div className="maintenance-arc maintenance-arc-top-large pointer-events-none" />
+      <div className="maintenance-arc maintenance-arc-bottom pointer-events-none" />
+      <div className="maintenance-arc maintenance-arc-bottom-large pointer-events-none" />
 
-          <div className="space-y-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.45em] text-orange-300/90">
-              Modo manutencao
-            </p>
-            <h1 className="text-balance text-3xl font-black leading-tight text-white sm:text-5xl">
-              A maquina tirou uma pausa rapida para recarregar as energias.
-            </h1>
-            <p className="mx-auto max-w-2xl text-pretty text-base leading-relaxed text-white/80 sm:text-lg">
-              Estamos ajustando os ultimos detalhes para sua experiencia voltar
-              ainda mais redonda. Daqui a pouco, esse totem abre os olhos e
-              volta com tudo.
-            </p>
-          </div>
+      <div className="pointer-events-none absolute top-0 left-1/2 h-[3px] w-72 -translate-x-1/2 bg-gradient-to-r from-transparent via-orange-500 to-transparent opacity-55" />
+      <div className="pointer-events-none absolute bottom-0 left-1/2 h-[3px] w-72 -translate-x-1/2 bg-gradient-to-r from-transparent via-orange-500 to-transparent opacity-55" />
 
-          <div className="mx-auto inline-flex items-center gap-3 rounded-full border border-white/20 bg-white/5 px-5 py-2.5 text-sm font-medium text-white/90 backdrop-blur-sm">
-            <span className="maintenance-dot" />
-            <span className="maintenance-dot maintenance-dot-delay-1" />
-            <span className="maintenance-dot maintenance-dot-delay-2" />
-            <span>Atualizamos esta tela automaticamente assim que terminar.</span>
-          </div>
+      <section className="relative z-10 flex w-full max-w-3xl flex-col items-center text-center">
+        <div className="mb-14 inline-flex items-center gap-2 rounded-full border border-orange-500/30 bg-orange-500/10 px-5 py-2">
+          <span className="maintenance-badge-dot" />
+          <span className="text-[0.7rem] font-semibold uppercase tracking-[0.3em] text-orange-500">
+            Em manutencao
+          </span>
         </div>
+
+        <div className="relative mb-12 flex h-64 w-64 items-center justify-center sm:h-72 sm:w-72">
+          <span className="maintenance-ring maintenance-ring-1" />
+          <span className="maintenance-ring maintenance-ring-2" />
+          <span className="maintenance-ring maintenance-ring-3" />
+
+          <span className="pointer-events-none absolute h-52 w-52 rounded-full bg-[radial-gradient(circle,rgba(249,115,22,0.16)_0%,transparent_70%)] sm:h-60 sm:w-60" />
+
+          {FLOATING_ZS.map((item) => (
+            <span
+              key={item.delay}
+              className="floating-z absolute top-10 font-extrabold lowercase text-orange-500"
+              style={{
+                left: item.left,
+                fontSize: item.size,
+                animationDelay: item.delay,
+              }}
+            >
+              z
+            </span>
+          ))}
+
+          <span className="sleepy-emoji relative block leading-none" aria-hidden>
+            {"\u{1F634}"}
+          </span>
+        </div>
+
+        <div className="mb-12 flex items-end gap-2">
+          {BREATHING_LINE_HEIGHTS.map((height, index) => (
+            <span
+              key={index}
+              className={`maintenance-wave-node ${
+                index === Math.floor(BREATHING_LINE_HEIGHTS.length / 2)
+                  ? "bg-orange-500"
+                  : "bg-orange-300"
+              }`}
+              style={{
+                height,
+                animationDelay: `${index * 0.13}s`,
+              }}
+            />
+          ))}
+        </div>
+
+        <div className="max-w-2xl">
+          <h1 className="text-[clamp(2.1rem,5.2vw,2.9rem)] font-bold leading-tight tracking-[-0.02em] text-zinc-900">
+            Maquina cansada,
+          </h1>
+          <p className="mt-1 text-[clamp(2rem,5vw,2.8rem)] font-light leading-tight tracking-[-0.02em] text-zinc-900">
+            voltaremos em instantes.
+          </p>
+        </div>
+
+        <div className="mt-10 flex items-center gap-3">
+          <span className="h-px w-12 bg-gradient-to-r from-transparent to-orange-500" />
+          <span className="h-1.5 w-1.5 rounded-full bg-orange-500" />
+          <span className="h-px w-12 bg-gradient-to-l from-transparent to-orange-500" />
+        </div>
+
+        <p className="mt-7 text-xs font-medium uppercase tracking-[0.2em] text-zinc-500">
+          Aguarde - o sistema esta ativo
+        </p>
       </section>
 
-      <div className="maintenance-progress pointer-events-none absolute inset-x-0 bottom-0 h-1.5 bg-gradient-to-r from-orange-500 via-orange-300 to-orange-500" />
+      <div className="absolute bottom-12 z-10 flex items-center justify-center">
+        <div className="relative h-0.5 w-28 overflow-hidden rounded-full bg-orange-500/20">
+          <span className="loading-scanner absolute inset-y-0 left-0 w-2/5 rounded-full bg-orange-500" />
+        </div>
+      </div>
 
       <style jsx>{`
-        @keyframes sleepy-float {
+        @keyframes badge-pulse {
           0%,
           100% {
-            transform: translateY(0) rotate(0deg);
+            opacity: 1;
           }
           50% {
-            transform: translateY(8px) rotate(-4deg);
+            opacity: 0.25;
           }
         }
 
-        @keyframes sleepy-zzz {
+        @keyframes ring-breathe {
           0%,
           100% {
-            transform: translateY(0);
+            transform: scale(1);
             opacity: 0.35;
           }
-          45% {
-            opacity: 1;
+          50% {
+            transform: scale(1.25);
+            opacity: 0;
           }
-          60% {
-            transform: translateY(-12px);
+        }
+
+        @keyframes emoji-breathe {
+          0%,
+          100% {
+            transform: translateY(0) scale(1);
+          }
+          50% {
+            transform: translateY(-14px) scale(1.04);
+          }
+        }
+
+        @keyframes float-z {
+          0%,
+          100% {
+            transform: translateY(0) translateX(0) scale(0.6);
+            opacity: 0;
+          }
+          30% {
             opacity: 0.9;
           }
+          100% {
+            transform: translateY(-110px) translateX(28px) scale(0.5);
+            opacity: 0;
+          }
         }
 
-        @keyframes dot-pulse {
-          0%,
-          100% {
-            transform: scale(0.8);
-            opacity: 0.35;
+        @keyframes wave-node {
+          0% {
+            transform: scaleX(1) scaleY(1);
+            opacity: 0.45;
           }
           50% {
-            transform: scale(1);
+            transform: scaleX(0.65) scaleY(1.8);
             opacity: 1;
           }
+          100% {
+            transform: scaleX(1) scaleY(1);
+            opacity: 0.45;
+          }
         }
 
-        @keyframes progress-slide {
+        @keyframes scanner-slide {
           0% {
-            background-position: 0% 50%;
+            transform: translateX(-120%);
           }
           100% {
-            background-position: 200% 50%;
+            transform: translateX(260%);
           }
         }
 
-        .maintenance-emoji {
-          display: inline-block;
-          animation: sleepy-float 2.9s ease-in-out infinite;
+        .maintenance-dot-grid {
+          opacity: 0.3;
+          background-image: radial-gradient(
+            circle,
+            rgba(249, 115, 22, 0.25) 1.2px,
+            transparent 1.2px
+          );
+          background-size: 48px 48px;
+          background-position: center;
+        }
+
+        .maintenance-arc {
+          position: absolute;
+          border-radius: 9999px;
+          border: 1.5px solid rgba(249, 115, 22, 0.12);
+        }
+
+        .maintenance-arc-top {
+          top: -180px;
+          right: -180px;
+          width: 520px;
+          height: 520px;
+        }
+
+        .maintenance-arc-top-large {
+          top: -240px;
+          right: -240px;
+          width: 680px;
+          height: 680px;
+          border-width: 1px;
+          border-color: rgba(249, 115, 22, 0.06);
+        }
+
+        .maintenance-arc-bottom {
+          bottom: -180px;
+          left: -180px;
+          width: 520px;
+          height: 520px;
+        }
+
+        .maintenance-arc-bottom-large {
+          bottom: -240px;
+          left: -240px;
+          width: 680px;
+          height: 680px;
+          border-width: 1px;
+          border-color: rgba(249, 115, 22, 0.06);
+        }
+
+        .maintenance-badge-dot {
+          width: 7px;
+          height: 7px;
+          border-radius: 9999px;
+          background: #f97316;
+          animation: badge-pulse 1.8s ease-in-out infinite;
+        }
+
+        .maintenance-ring {
+          position: absolute;
+          border-radius: 9999px;
+          border: 1px solid rgba(249, 115, 22, 0.35);
+          animation: ring-breathe 4s ease-in-out infinite;
+          will-change: transform, opacity;
+        }
+
+        .maintenance-ring-1 {
+          width: 180px;
+          height: 180px;
+        }
+
+        .maintenance-ring-2 {
+          width: 250px;
+          height: 250px;
+          border-color: rgba(249, 115, 22, 0.2);
+          animation-delay: 0.6s;
+        }
+
+        .maintenance-ring-3 {
+          width: 320px;
+          height: 320px;
+          border-color: rgba(249, 115, 22, 0.1);
+          animation-delay: 1.2s;
+        }
+
+        .sleepy-emoji {
+          font-size: clamp(5.8rem, 18vw, 9.2rem);
+          user-select: none;
+          animation: emoji-breathe 4.5s ease-in-out infinite;
           will-change: transform;
         }
 
-        .maintenance-zzz {
-          animation: sleepy-zzz 2.3s ease-in-out infinite;
+        .floating-z {
+          line-height: 1;
+          user-select: none;
+          pointer-events: none;
+          animation: float-z 3.5s ease-out infinite;
           will-change: transform, opacity;
         }
 
-        .maintenance-dot {
-          height: 0.5rem;
-          width: 0.5rem;
-          flex: 0 0 auto;
+        .maintenance-wave-node {
+          width: 6px;
           border-radius: 9999px;
-          background: #fb923c;
-          animation: dot-pulse 1.3s ease-in-out infinite;
+          animation: wave-node 2.4s ease-in-out infinite;
+          transform-origin: center;
           will-change: transform, opacity;
         }
 
-        .maintenance-dot-delay-1 {
-          animation-delay: 0.2s;
-        }
-
-        .maintenance-dot-delay-2 {
-          animation-delay: 0.4s;
-        }
-
-        .maintenance-progress {
-          background-size: 220% 100%;
-          animation: progress-slide 2.8s linear infinite;
+        .loading-scanner {
+          animation: scanner-slide 2.2s ease-in-out infinite;
         }
       `}</style>
     </main>
