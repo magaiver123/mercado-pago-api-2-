@@ -40,7 +40,7 @@ export async function reconcileProcessedOrdersService(input: ReconcileProcessedO
   for (const order of pendingOrders) {
     try {
       const statusResult = await getOrderStatusService(order.mercadopago_order_id, {
-        processedFallbackMode: "stock_only",
+        processedFallbackMode: "full",
       })
       const refreshed = await repositories.order.findForStockProcessing(order.mercadopago_order_id)
       const isProcessed = refreshed?.stock_processed === true

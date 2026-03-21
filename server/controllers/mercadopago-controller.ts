@@ -62,7 +62,6 @@ export async function getMercadoPagoOrderStatusController(request: Request) {
       userId: userSession.userId,
       storeId: storeContext.storeId,
     },
-    processedFallbackMode: "stock_only",
   })
   return NextResponse.json(data)
 }

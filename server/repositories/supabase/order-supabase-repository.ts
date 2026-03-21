@@ -122,7 +122,17 @@ export class OrderSupabaseRepository extends BaseSupabaseRepository implements O
       .select("id, store_id, items, stock_processed")
       .maybeSingle()
 
-    if (error || !data) return null
+    if (error) {
+      // Backward compatibility: environments sem migration 012 (sem processing_lock_at).
+      if (error.code === "42703") {
+        const legacyOrder = await this.findForStockProcessing(mercadopagoOrderId)
+        if (!legacyOrder || legacyOrder.stock_processed) return null
+        return legacyOrder
+      }
+      throw new AppError("Erro ao bloquear processamento de pedido", 500)
+    }
+
+    if (!data) return null
     return data as Pick<OrderRecord, "id" | "store_id" | "items" | "stock_processed">
   }
 
@@ -135,6 +145,7 @@ export class OrderSupabaseRepository extends BaseSupabaseRepository implements O
       .eq("id", orderId)
 
     if (error) {
+      if (error.code === "42703") return
       throw new AppError("Erro ao liberar lock de processamento do pedido", 500)
     }
   }
@@ -161,6 +172,17 @@ export class OrderSupabaseRepository extends BaseSupabaseRepository implements O
       .eq("id", orderId)
 
     if (error) {
+      if (error.code === "42703") {
+        const { error: fallbackError } = await this.db
+          .from("orders")
+          .update({
+            status: "processed",
+            stock_processed: true,
+          })
+          .eq("id", orderId)
+
+        if (!fallbackError) return
+      }
       throw new AppError("Erro ao marcar pedido como processado", 500)
     }
   }
