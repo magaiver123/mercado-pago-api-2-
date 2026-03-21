@@ -5,13 +5,29 @@ import { usePathname, useRouter } from "next/navigation";
 import { getFullyDeviceId } from "@/lib/totem-device";
 
 const ACTIVATION_PATH = "/totem/activation";
+const MAINTENANCE_PATH = "/totem/maintenance";
 const USERPROFILE_PREFIX = "/userprofile";
+const POLLING_INTERVAL_MS = 15_000;
+
+type GateReason =
+  | "active"
+  | "inactive"
+  | "maintenance"
+  | "not_found"
+  | "missing_store"
+  | "unknown"
+  | null;
 
 type GateState = {
   isLoading: boolean;
   allowed: boolean;
   hasDevice: boolean;
+  reason: GateReason;
 };
+
+function getBlockedPath(reason: GateReason) {
+  return reason === "maintenance" ? MAINTENANCE_PATH : ACTIVATION_PATH;
+}
 
 export function TotemActivationGate({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -22,15 +38,22 @@ export function TotemActivationGate({ children }: { children: ReactNode }) {
     isLoading: true,
     allowed: false,
     hasDevice: false,
+    reason: null,
   });
 
   useEffect(() => {
     let isCancelled = false;
+    let intervalId: ReturnType<typeof setInterval> | null = null;
 
     async function validateTotem() {
       if (isUserprofileRoute) {
         if (!isCancelled) {
-          setState({ isLoading: false, allowed: true, hasDevice: true });
+          setState({
+            isLoading: false,
+            allowed: true,
+            hasDevice: true,
+            reason: null,
+          });
         }
         return;
       }
@@ -48,10 +71,10 @@ export function TotemActivationGate({ children }: { children: ReactNode }) {
           const allowed = data?.allowed === true;
 
           if (!isCancelled) {
-            setState({ isLoading: false, allowed, hasDevice: allowed });
+            setState({ isLoading: false, allowed, hasDevice: allowed, reason: null });
           }
 
-          if (allowed && pathname === ACTIVATION_PATH) {
+          if (allowed && (pathname === ACTIVATION_PATH || pathname === MAINTENANCE_PATH)) {
             router.replace("/");
             return;
           }
@@ -61,7 +84,7 @@ export function TotemActivationGate({ children }: { children: ReactNode }) {
           }
         } catch {
           if (!isCancelled) {
-            setState({ isLoading: false, allowed: false, hasDevice: false });
+            setState({ isLoading: false, allowed: false, hasDevice: false, reason: null });
           }
 
           router.replace(USERPROFILE_PREFIX);
@@ -81,7 +104,12 @@ export function TotemActivationGate({ children }: { children: ReactNode }) {
 
         if (!response.ok) {
           if (!isCancelled) {
-            setState({ isLoading: false, allowed: false, hasDevice: true });
+            setState({
+              isLoading: false,
+              allowed: false,
+              hasDevice: true,
+              reason: "unknown",
+            });
           }
 
           if (pathname !== ACTIVATION_PATH) {
@@ -91,30 +119,54 @@ export function TotemActivationGate({ children }: { children: ReactNode }) {
         }
 
         const allowed = data?.allowed === true;
+        const reason =
+          typeof data?.reason === "string" ? (data.reason as GateReason) : null;
+        const blockedPath = getBlockedPath(reason);
 
         if (!isCancelled) {
-          setState({ isLoading: false, allowed, hasDevice: true });
+          setState({
+            isLoading: false,
+            allowed,
+            hasDevice: true,
+            reason: allowed ? null : reason ?? "unknown",
+          });
         }
 
-        if (allowed && pathname === ACTIVATION_PATH) {
-          router.replace("/");
+        if (allowed) {
+          if (pathname === ACTIVATION_PATH || pathname === MAINTENANCE_PATH) {
+            router.replace("/");
+          }
           return;
         }
 
-        if (!allowed && pathname !== ACTIVATION_PATH) {
-          router.replace(ACTIVATION_PATH);
+        if (pathname !== blockedPath) {
+          router.replace(blockedPath);
         }
       } catch {
         if (!isCancelled) {
-          setState({ isLoading: false, allowed: false, hasDevice: true });
+          setState({
+            isLoading: false,
+            allowed: false,
+            hasDevice: true,
+            reason: "unknown",
+          });
         }
       }
     }
 
     validateTotem();
 
+    if (!isUserprofileRoute) {
+      intervalId = setInterval(() => {
+        validateTotem();
+      }, POLLING_INTERVAL_MS);
+    }
+
     return () => {
       isCancelled = true;
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
     };
   }, [isUserprofileRoute, pathname, router]);
 
@@ -130,11 +182,14 @@ export function TotemActivationGate({ children }: { children: ReactNode }) {
     return null;
   }
 
-  if (!state.allowed && pathname !== ACTIVATION_PATH) {
+  if (!state.allowed && pathname !== getBlockedPath(state.reason)) {
     return null;
   }
 
-  if (state.allowed && pathname === ACTIVATION_PATH) {
+  if (
+    state.allowed &&
+    (pathname === ACTIVATION_PATH || pathname === MAINTENANCE_PATH)
+  ) {
     return null;
   }
 

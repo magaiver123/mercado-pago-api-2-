@@ -15,6 +15,10 @@ export async function validateTotemStatusService(deviceIdValue: unknown) {
     return { allowed: false, reason: "not_found" as const }
   }
 
+  if (totem.maintenance_mode === true) {
+    return { allowed: false, reason: "maintenance" as const }
+  }
+
   if (totem.status !== "active") {
     return { allowed: false, reason: "inactive" as const }
   }

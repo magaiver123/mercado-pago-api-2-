@@ -94,6 +94,7 @@ export interface TotemRecord {
   id: string
   store_id: string
   status: string
+  maintenance_mode: boolean
   activation_code: string | null
   device_id: string | null
 }
