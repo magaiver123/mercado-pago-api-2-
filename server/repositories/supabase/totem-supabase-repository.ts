@@ -4,6 +4,41 @@ import { ActivateTotemInput, TotemRepository } from "@/api/repositories/contract
 import { TotemRecord } from "@/api/types/domain"
 
 export class TotemSupabaseRepository extends BaseSupabaseRepository implements TotemRepository {
+  async findById(
+    totemId: string,
+  ): Promise<Pick<TotemRecord, "id" | "store_id" | "status" | "device_id" | "maintenance_mode"> | null> {
+    const { data, error } = await this.db
+      .from("totems")
+      .select("id, store_id, status, device_id, maintenance_mode")
+      .eq("id", totemId)
+      .maybeSingle()
+
+    if (error) throw new AppError("Erro ao carregar totem", 500)
+    return (
+      (data as Pick<
+        TotemRecord,
+        "id" | "store_id" | "status" | "device_id" | "maintenance_mode"
+      > | null) ?? null
+    )
+  }
+
+  async listByStoreId(
+    storeId: string,
+  ): Promise<Array<Pick<TotemRecord, "id" | "store_id" | "status" | "device_id" | "maintenance_mode">>> {
+    const { data, error } = await this.db
+      .from("totems")
+      .select("id, store_id, status, device_id, maintenance_mode")
+      .eq("store_id", storeId)
+      .order("id", { ascending: true })
+
+    if (error) throw new AppError("Erro ao listar totens", 500)
+    return (
+      (data as Array<
+        Pick<TotemRecord, "id" | "store_id" | "status" | "device_id" | "maintenance_mode">
+      > | null) ?? []
+    )
+  }
+
   async findByDeviceId(
     deviceId: string
   ): Promise<

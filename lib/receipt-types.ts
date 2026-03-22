@@ -71,14 +71,39 @@ export function getDefaultStoreInfo() {
   }
 }
 
-// Hook para futura impressao avancada via backend/servico local.
-// Quando houver suporte, esta funcao pode enviar o `receipt` para um endpoint
-// como POST /api/print-receipt, que entao delega a impressao para o servico correto.
-export async function printReceiptViaBackend(_receipt: ReceiptData) {
-  // Implementacao futura:
-  // await fetch("/api/print-receipt", {
-  //   method: "POST",
-  //   headers: { "Content-Type": "application/json" },
-  //   body: JSON.stringify(receipt),
-  // })
+export interface PrintReceiptBackendResponse {
+  success: boolean
+  result?: "queued" | "already_queued" | "already_printed" | "failed_previous"
+  jobId?: string
+  jobStatus?: string
+  error?: string
+}
+
+export async function printReceiptViaBackend(
+  receipt: ReceiptData,
+): Promise<PrintReceiptBackendResponse> {
+  const response = await fetch("/api/print/receipt", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      orderId: receipt.orderId,
+      receipt,
+    }),
+  })
+
+  const data = (await response.json().catch(() => null)) as PrintReceiptBackendResponse | null
+
+  if (!response.ok) {
+    return {
+      success: false,
+      error: data?.error ?? "Falha ao enviar comprovante para a fila de impressao",
+    }
+  }
+
+  return {
+    success: data?.success === true,
+    result: data?.result,
+    jobId: data?.jobId,
+    jobStatus: data?.jobStatus,
+  }
 }

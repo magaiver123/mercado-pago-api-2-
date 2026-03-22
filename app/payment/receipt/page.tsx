@@ -9,6 +9,7 @@ import { ReceiptPreview } from "@/components/ReceiptPreview"
 import {
   clearReceiptFromSession,
   getReceiptFromSession,
+  printReceiptViaBackend,
 } from "@/lib/receipt-types"
 import { clearAuthUser } from "@/lib/auth-store"
 import { formatOrderNumberOrFallback } from "@/lib/order-number"
@@ -22,6 +23,7 @@ export default function ReceiptPage() {
   const [isPrinting, setIsPrinting] = useState(false)
   const [receiptLoaded, setReceiptLoaded] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [printFeedback, setPrintFeedback] = useState<string | null>(null)
 
   const [receipt] = useState(() => getReceiptFromSession())
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -68,12 +70,40 @@ export default function ReceiptPage() {
     setIsModalOpen(false)
   }
 
-  const handlePrint = () => {
+  const handlePrint = async () => {
     if (!receipt || isPrinting) return
     setIsPrinting(true)
+    setPrintFeedback(null)
 
     try {
-      window.print()
+      const result = await printReceiptViaBackend(receipt)
+      if (!result.success) {
+        setPrintFeedback(result.error ?? "Nao foi possivel enviar para impressao")
+        return
+      }
+
+      if (result.result === "already_printed") {
+        setPrintFeedback("Este comprovante ja foi impresso neste totem.")
+        return
+      }
+
+      if (result.result === "failed_previous") {
+        setPrintFeedback(
+          "A impressao anterior falhou. Um novo envio foi solicitado para o agente local.",
+        )
+        return
+      }
+
+      if (result.result === "already_queued") {
+        setPrintFeedback(
+          "Comprovante ja estava na fila de impressao. Aguarde a impressora do totem.",
+        )
+        return
+      }
+
+      setPrintFeedback("Comprovante enviado para a impressora do totem.")
+    } catch {
+      setPrintFeedback("Erro de conexao ao enviar comprovante para impressao.")
     } finally {
       setTimeout(() => {
         setIsPrinting(false)
@@ -174,6 +204,12 @@ export default function ReceiptPage() {
         {error && (
           <div className="mx-auto mt-4 w-full max-w-2xl rounded-lg border border-red-300 bg-red-50 p-4 text-center text-sm text-red-700">
             {error}
+          </div>
+        )}
+
+        {printFeedback && (
+          <div className="mx-auto mt-4 w-full max-w-2xl rounded-lg border border-orange-300 bg-orange-50 p-4 text-center text-sm text-orange-700">
+            {printFeedback}
           </div>
         )}
       </div>

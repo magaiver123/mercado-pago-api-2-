@@ -8,6 +8,8 @@ import { UserRepository } from "@/api/repositories/contracts/user-repository"
 import { KioskSlideRepository } from "@/api/repositories/contracts/kiosk-slide-repository"
 import { StoreRepository } from "@/api/repositories/contracts/store-repository"
 import { StoreLockRepository } from "@/api/repositories/contracts/store-lock-repository"
+import { TotemPrinterRepository } from "@/api/repositories/contracts/totem-printer-repository"
+import { PrintJobRepository } from "@/api/repositories/contracts/print-job-repository"
 import { KioskSlideSupabaseRepository } from "@/api/repositories/supabase/kiosk-slide-supabase-repository"
 import { MenuSupabaseRepository } from "@/api/repositories/supabase/menu-supabase-repository"
 import { OrderSupabaseRepository } from "@/api/repositories/supabase/order-supabase-repository"
@@ -18,6 +20,8 @@ import { StockSupabaseRepository } from "@/api/repositories/supabase/stock-supab
 import { StoreSupabaseRepository } from "@/api/repositories/supabase/store-supabase-repository"
 import { TotemSupabaseRepository } from "@/api/repositories/supabase/totem-supabase-repository"
 import { UserSupabaseRepository } from "@/api/repositories/supabase/user-supabase-repository"
+import { TotemPrinterSupabaseRepository } from "@/api/repositories/supabase/totem-printer-supabase-repository"
+import { PrintJobSupabaseRepository } from "@/api/repositories/supabase/print-job-supabase-repository"
 
 export interface RepositoryFactory {
   user: UserRepository
@@ -30,6 +34,8 @@ export interface RepositoryFactory {
   stock: StockRepository
   store: StoreRepository
   storeLock: StoreLockRepository
+  totemPrinter: TotemPrinterRepository
+  printJob: PrintJobRepository
 }
 
 let cachedFactory: RepositoryFactory | null = null
@@ -47,6 +53,8 @@ export function getRepositoryFactory(): RepositoryFactory {
       stock: new StockSupabaseRepository(),
       store: new StoreSupabaseRepository(),
       storeLock: new StoreLockSupabaseRepository(),
+      totemPrinter: new TotemPrinterSupabaseRepository(),
+      printJob: new PrintJobSupabaseRepository(),
     }
   }
 

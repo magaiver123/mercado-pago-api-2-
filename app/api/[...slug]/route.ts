@@ -18,6 +18,17 @@ import { getMenuBannerRoute, getMenuCategoriesRoute, getMenuProductsRoute } from
 import { createMercadoPagoOrderRoute, cancelMercadoPagoOrderRoute, getMercadoPagoOrderStatusRoute, mercadopagoWebhookRoute, refundMercadoPagoOrderRoute } from "@/api/routes/mercadopago-routes"
 import { registerOrderRoute, listUserOrdersRoute, reconcileProcessedOrdersRoute } from "@/api/routes/order-routes"
 import {
+  createReceiptPrintJobRoute,
+  createTestPrintJobRoute,
+  listRecentPrintJobsRoute,
+  listTotemPrinterConfigsRoute,
+  printAgentAckFailureRoute,
+  printAgentAckSuccessRoute,
+  printAgentClaimNextJobRoute,
+  printAgentHeartbeatRoute,
+  upsertTotemPrinterConfigRoute,
+} from "@/api/routes/print-routes"
+import {
   confirmCheckoutSessionRoute,
   startCheckoutSessionRoute,
 } from "@/api/routes/checkout-routes"
@@ -53,6 +64,15 @@ const routeTable: Record<string, Handler> = {
   "POST /api/checkout/session/confirm": confirmCheckoutSessionRoute,
   "POST /api/orders/register": registerOrderRoute,
   "POST /api/orders/reconcile-processed": reconcileProcessedOrdersRoute,
+  "POST /api/print/receipt": createReceiptPrintJobRoute,
+  "GET /api/print/admin/totem-printers": listTotemPrinterConfigsRoute,
+  "PUT /api/print/admin/totem-printers": upsertTotemPrinterConfigRoute,
+  "POST /api/print/admin/test-print": createTestPrintJobRoute,
+  "GET /api/print/admin/jobs": listRecentPrintJobsRoute,
+  "POST /api/print/agent/heartbeat": printAgentHeartbeatRoute,
+  "POST /api/print/agent/claim-next-job": printAgentClaimNextJobRoute,
+  "POST /api/print/agent/ack-success": printAgentAckSuccessRoute,
+  "POST /api/print/agent/ack-failure": printAgentAckFailureRoute,
   "POST /api/totem/activate": activateTotemRoute,
   "POST /api/totem/status": totemStatusRoute,
   "POST /api/totem/admin-bypass/activate": activateAdminBypassRoute,

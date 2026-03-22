@@ -97,6 +97,8 @@ export interface TotemRecord {
   maintenance_mode: boolean
   activation_code: string | null
   device_id: string | null
+  activated_at?: string | null
+  last_seen_at?: string | null
 }
 
 export interface PublicStoreRecord {
@@ -130,6 +132,49 @@ export interface StoreLockRecord {
   device_id: string
   enabled: boolean
   is_primary: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface TotemPrinterRecord {
+  id: string
+  totem_id: string
+  store_id: string
+  connection_type: "tcp" | string
+  ip: string
+  port: number
+  model: string
+  escpos_profile: string
+  paper_width_mm: number
+  is_active: boolean
+  last_heartbeat_at: string | null
+  last_status: string | null
+  last_error: string | null
+  agent_version: string | null
+  created_at: string
+  updated_at: string
+}
+
+export type PrintJobStatus =
+  | "pending"
+  | "claimed"
+  | "printed"
+  | "failed"
+  | "canceled"
+
+export interface PrintJobRecord {
+  id: string
+  totem_id: string
+  store_id: string
+  order_id: string
+  action: string
+  payload: unknown
+  status: PrintJobStatus | string
+  attempts: number
+  claimed_at: string | null
+  claimed_by: string | null
+  printed_at: string | null
+  last_error: string | null
   created_at: string
   updated_at: string
 }

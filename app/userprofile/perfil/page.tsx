@@ -4,7 +4,7 @@ import { useEffect, useState, type ReactNode } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
-import { ChevronRight, ClipboardList, Headphones, Mail, Phone, UserCog } from "lucide-react"
+import { ChevronRight, ClipboardList, Headphones, Mail, Phone, Printer, UserCog } from "lucide-react"
 import {
   clearUserprofileAuthUser,
   getUserprofileAuthUser,
@@ -88,6 +88,20 @@ export default function PerfilPage() {
 
   if (isLoading && !user) return null
 
+  const visibleMenuItems =
+    user?.role === "admin"
+      ? [
+          ...menuItems,
+          {
+            title: "Impressoras dos Totens",
+            description:
+              "Vincule impressoras termicas por totem e acompanhe jobs de impressao.",
+            href: "/userprofile/perfil/impressoras",
+            icon: Printer,
+          },
+        ]
+      : menuItems
+
   return (
     <UserprofilePerfilShell
       title={`Olá${user?.name ? `, ${user.name}` : ""}`}
@@ -114,7 +128,7 @@ export default function PerfilPage() {
         transition={{ duration: 0.45, delay: 0.12 }}
         className="grid gap-4 lg:grid-cols-3"
       >
-        {menuItems.map((item, index) => (
+        {visibleMenuItems.map((item, index) => (
           <motion.div
             key={item.href}
             initial={{ opacity: 0, y: 16 }}
