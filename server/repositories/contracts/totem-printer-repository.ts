@@ -27,5 +27,6 @@ export interface TotemPrinterRepository {
   findByTotemId(totemId: string): Promise<TotemPrinterRecord | null>
   findActiveByTotemId(totemId: string): Promise<TotemPrinterRecord | null>
   listByStoreId(storeId: string): Promise<TotemPrinterRecord[]>
+  listAll(limit: number): Promise<TotemPrinterRecord[]>
   updateHeartbeat(input: UpdateTotemPrinterHeartbeatInput): Promise<void>
 }

@@ -2,12 +2,15 @@ import { withErrorHandler } from "@/api/middlewares/with-error-handler"
 import {
   createReceiptPrintJobController,
   createTestPrintJobController,
+  getPrintGlobalSettingsController,
+  listGlobalPrinterStatusController,
   listRecentPrintJobsController,
   listTotemPrinterConfigsController,
   printAgentAckFailureController,
   printAgentAckSuccessController,
   printAgentClaimNextJobController,
   printAgentHeartbeatController,
+  updatePrintGlobalSettingsController,
   upsertTotemPrinterConfigController,
 } from "@/api/controllers/print-controller"
 
@@ -17,6 +20,9 @@ export const listTotemPrinterConfigsRoute = withErrorHandler(listTotemPrinterCon
 export const upsertTotemPrinterConfigRoute = withErrorHandler(upsertTotemPrinterConfigController)
 export const createTestPrintJobRoute = withErrorHandler(createTestPrintJobController)
 export const listRecentPrintJobsRoute = withErrorHandler(listRecentPrintJobsController)
+export const getPrintGlobalSettingsRoute = withErrorHandler(getPrintGlobalSettingsController)
+export const updatePrintGlobalSettingsRoute = withErrorHandler(updatePrintGlobalSettingsController)
+export const listGlobalPrinterStatusRoute = withErrorHandler(listGlobalPrinterStatusController)
 
 export const printAgentHeartbeatRoute = withErrorHandler(printAgentHeartbeatController)
 export const printAgentClaimNextJobRoute = withErrorHandler(printAgentClaimNextJobController)

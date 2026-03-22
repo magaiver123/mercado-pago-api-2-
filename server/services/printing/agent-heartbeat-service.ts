@@ -10,12 +10,14 @@ interface AgentHeartbeatInput {
 }
 
 export async function agentHeartbeatService(input: AgentHeartbeatInput) {
+  const repositories = getRepositoryFactory()
   const { totem, printer } = await resolveTotemPrintContextService(input.deviceId, {
     requireActivePrinter: false,
   })
+  const globalSettings = await repositories.printGlobalSettings.getDefault()
 
   if (printer) {
-    await getRepositoryFactory().totemPrinter.updateHeartbeat({
+    await repositories.totemPrinter.updateHeartbeat({
       totemId: totem.id,
       heartbeatAt: new Date().toISOString(),
       status: sanitizeString(input.status),
@@ -26,7 +28,7 @@ export async function agentHeartbeatService(input: AgentHeartbeatInput) {
 
   return {
     success: true,
-    pollIntervalMs: 2500,
+    pollIntervalMs: globalSettings.queue_claim_interval_ms,
     printerConfigured: Boolean(printer),
     totemId: totem.id,
   }

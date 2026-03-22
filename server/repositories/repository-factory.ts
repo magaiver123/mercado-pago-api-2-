@@ -10,6 +10,7 @@ import { StoreRepository } from "@/api/repositories/contracts/store-repository"
 import { StoreLockRepository } from "@/api/repositories/contracts/store-lock-repository"
 import { TotemPrinterRepository } from "@/api/repositories/contracts/totem-printer-repository"
 import { PrintJobRepository } from "@/api/repositories/contracts/print-job-repository"
+import { PrintGlobalSettingsRepository } from "@/api/repositories/contracts/print-global-settings-repository"
 import { KioskSlideSupabaseRepository } from "@/api/repositories/supabase/kiosk-slide-supabase-repository"
 import { MenuSupabaseRepository } from "@/api/repositories/supabase/menu-supabase-repository"
 import { OrderSupabaseRepository } from "@/api/repositories/supabase/order-supabase-repository"
@@ -22,6 +23,7 @@ import { TotemSupabaseRepository } from "@/api/repositories/supabase/totem-supab
 import { UserSupabaseRepository } from "@/api/repositories/supabase/user-supabase-repository"
 import { TotemPrinterSupabaseRepository } from "@/api/repositories/supabase/totem-printer-supabase-repository"
 import { PrintJobSupabaseRepository } from "@/api/repositories/supabase/print-job-supabase-repository"
+import { PrintGlobalSettingsSupabaseRepository } from "@/api/repositories/supabase/print-global-settings-supabase-repository"
 
 export interface RepositoryFactory {
   user: UserRepository
@@ -36,6 +38,7 @@ export interface RepositoryFactory {
   storeLock: StoreLockRepository
   totemPrinter: TotemPrinterRepository
   printJob: PrintJobRepository
+  printGlobalSettings: PrintGlobalSettingsRepository
 }
 
 let cachedFactory: RepositoryFactory | null = null
@@ -55,6 +58,7 @@ export function getRepositoryFactory(): RepositoryFactory {
       storeLock: new StoreLockSupabaseRepository(),
       totemPrinter: new TotemPrinterSupabaseRepository(),
       printJob: new PrintJobSupabaseRepository(),
+      printGlobalSettings: new PrintGlobalSettingsSupabaseRepository(),
     }
   }
 

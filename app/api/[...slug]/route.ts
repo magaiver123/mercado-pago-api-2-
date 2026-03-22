@@ -20,12 +20,15 @@ import { registerOrderRoute, listUserOrdersRoute, reconcileProcessedOrdersRoute 
 import {
   createReceiptPrintJobRoute,
   createTestPrintJobRoute,
+  getPrintGlobalSettingsRoute,
+  listGlobalPrinterStatusRoute,
   listRecentPrintJobsRoute,
   listTotemPrinterConfigsRoute,
   printAgentAckFailureRoute,
   printAgentAckSuccessRoute,
   printAgentClaimNextJobRoute,
   printAgentHeartbeatRoute,
+  updatePrintGlobalSettingsRoute,
   upsertTotemPrinterConfigRoute,
 } from "@/api/routes/print-routes"
 import {
@@ -69,6 +72,9 @@ const routeTable: Record<string, Handler> = {
   "PUT /api/print/admin/totem-printers": upsertTotemPrinterConfigRoute,
   "POST /api/print/admin/test-print": createTestPrintJobRoute,
   "GET /api/print/admin/jobs": listRecentPrintJobsRoute,
+  "GET /api/print/admin/global-settings": getPrintGlobalSettingsRoute,
+  "PUT /api/print/admin/global-settings": updatePrintGlobalSettingsRoute,
+  "GET /api/print/admin/global-status": listGlobalPrinterStatusRoute,
   "POST /api/print/agent/heartbeat": printAgentHeartbeatRoute,
   "POST /api/print/agent/claim-next-job": printAgentClaimNextJobRoute,
   "POST /api/print/agent/ack-success": printAgentAckSuccessRoute,

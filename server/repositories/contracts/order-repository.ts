@@ -23,9 +23,16 @@ export interface PendingStockProcessingOrder {
   created_at: string
 }
 
+export interface OrderReceiptMetadata {
+  order_number: number | null
+  created_at: string
+  payment_method: string | null
+}
+
 export interface OrderRepository {
   registerOrder(input: RegisterOrderInput): Promise<RegisterOrderResult>
   getStatusByMercadopagoOrderId(orderId: string): Promise<{ status: string; created_at: string; stock_processed: boolean } | null>
+  getReceiptMetadataByMercadopagoOrderId(orderId: string): Promise<OrderReceiptMetadata | null>
   getAccessContextByMercadopagoOrderId(
     orderId: string,
   ): Promise<{ user_id: string; store_id: string } | null>

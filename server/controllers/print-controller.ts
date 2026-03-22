@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { AppError } from "@/api/utils/app-error"
 import { getAdminBypassStatusService } from "@/api/services/totem/admin-bypass-service"
+import { requireActiveAdminSessionService } from "@/api/services/auth/require-active-admin-session-service"
 import { requireStoreContextFromRequest } from "@/api/utils/store-context"
 import { requireUserSessionFromRequest } from "@/api/utils/user-session-context"
 import { upsertTotemPrinterConfigService } from "@/api/services/printing/upsert-totem-printer-config-service"
@@ -14,6 +15,9 @@ import {
   agentAckPrintJobFailureService,
   agentAckPrintJobSuccessService,
 } from "@/api/services/printing/agent-ack-print-job-service"
+import { getPrintGlobalSettingsService } from "@/api/services/printing/get-print-global-settings-service"
+import { updatePrintGlobalSettingsService } from "@/api/services/printing/update-print-global-settings-service"
+import { listGlobalPrinterStatusService } from "@/api/services/printing/list-global-printer-status-service"
 
 function getAdminBypassErrorStatus(reason: string): number {
   if (reason === "disabled") return 403
@@ -33,6 +37,10 @@ async function requireAdminStoreIdFromBypass(request: Request): Promise<string> 
   return bypassStatus.storeId
 }
 
+async function requireGlobalAdminAccess(request: Request) {
+  await requireActiveAdminSessionService(request)
+}
+
 async function safeParseJson(request: Request): Promise<any> {
   try {
     return await request.json()
@@ -44,6 +52,40 @@ async function safeParseJson(request: Request): Promise<any> {
 export async function listTotemPrinterConfigsController(request: Request) {
   const storeId = await requireAdminStoreIdFromBypass(request)
   const data = await listTotemPrinterConfigsService({ storeId })
+  return NextResponse.json(data)
+}
+
+export async function getPrintGlobalSettingsController(request: Request) {
+  await requireGlobalAdminAccess(request)
+  const data = await getPrintGlobalSettingsService()
+  return NextResponse.json(data)
+}
+
+export async function updatePrintGlobalSettingsController(request: Request) {
+  await requireGlobalAdminAccess(request)
+  const body = await safeParseJson(request)
+  if (!body) {
+    return NextResponse.json({ error: "Payload invalido" }, { status: 400 })
+  }
+
+  const data = await updatePrintGlobalSettingsService({
+    defaultConnectionType: body?.defaultConnectionType,
+    defaultPort: body?.defaultPort,
+    defaultEscposProfile: body?.defaultEscposProfile,
+    defaultPaperWidthMm: body?.defaultPaperWidthMm,
+    queueClaimIntervalMs: body?.queueClaimIntervalMs,
+    heartbeatIntervalMs: body?.heartbeatIntervalMs,
+    maxRetryAttempts: body?.maxRetryAttempts,
+  })
+  return NextResponse.json(data)
+}
+
+export async function listGlobalPrinterStatusController(request: Request) {
+  await requireGlobalAdminAccess(request)
+  const { searchParams } = new URL(request.url)
+  const data = await listGlobalPrinterStatusService({
+    limit: searchParams.get("limit"),
+  })
   return NextResponse.json(data)
 }
 

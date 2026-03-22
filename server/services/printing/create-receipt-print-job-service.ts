@@ -3,6 +3,7 @@ import { sanitizeString } from "@/api/utils/sanitize"
 import { getRepositoryFactory } from "@/api/repositories/repository-factory"
 import { buildReceiptPrintPayload } from "@/api/services/printing/receipt-print-payload"
 import { resolveTotemPrintContextService } from "@/api/services/printing/resolve-totem-print-context-service"
+import { resolveStoreReceiptInfoService } from "@/api/services/printing/resolve-store-receipt-info-service"
 
 interface CreateReceiptPrintJobInput {
   storeId: string
@@ -35,6 +36,31 @@ export async function createReceiptPrintJobService(input: CreateReceiptPrintJobI
   }
 
   const repositories = getRepositoryFactory()
+  const [orderMetadata, storeReceiptInfo] = await Promise.all([
+    repositories.order.getReceiptMetadataByMercadopagoOrderId(orderId),
+    resolveStoreReceiptInfoService(input.storeId),
+  ])
+
+  if (orderMetadata) {
+    payload.receipt.orderNumber = orderMetadata.order_number ?? payload.receipt.orderNumber ?? null
+    payload.receipt.createdAt = orderMetadata.created_at || payload.receipt.createdAt
+    if (
+      (!payload.receipt.paymentMethod || payload.receipt.paymentMethod === "Nao informado") &&
+      orderMetadata.payment_method
+    ) {
+      payload.receipt.paymentMethod = orderMetadata.payment_method
+    }
+  }
+
+  if (storeReceiptInfo) {
+    payload.receipt.storeName = storeReceiptInfo.storeName
+    payload.receipt.storeAddress = storeReceiptInfo.storeAddress
+    payload.receipt.storeLegalName = storeReceiptInfo.storeLegalName ?? payload.receipt.storeLegalName
+    payload.receipt.storeTaxId = storeReceiptInfo.storeTaxId ?? payload.receipt.storeTaxId
+    payload.receipt.storePhone = storeReceiptInfo.storePhone ?? payload.receipt.storePhone
+    payload.receipt.storeLogoPath = storeReceiptInfo.storeLogoPath ?? payload.receipt.storeLogoPath
+  }
+
   const queueResult = await repositories.printJob.createOrGetByIdempotency({
     totemId: totem.id,
     storeId: input.storeId,

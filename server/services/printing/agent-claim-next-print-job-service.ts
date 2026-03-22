@@ -11,6 +11,7 @@ interface AgentClaimNextPrintJobInput {
 export async function agentClaimNextPrintJobService(input: AgentClaimNextPrintJobInput) {
   const { totem, printer } = await resolveTotemPrintContextService(input.deviceId)
   const repositories = getRepositoryFactory()
+  const globalSettings = await repositories.printGlobalSettings.getDefault()
   const now = new Date().toISOString()
 
   await repositories.totemPrinter.updateHeartbeat({
@@ -31,14 +32,14 @@ export async function agentClaimNextPrintJobService(input: AgentClaimNextPrintJo
     return {
       success: true,
       hasJob: false,
-      pollIntervalMs: 2500,
+      pollIntervalMs: globalSettings.queue_claim_interval_ms,
     }
   }
 
   return {
     success: true,
     hasJob: true,
-    pollIntervalMs: 1000,
+    pollIntervalMs: Math.max(500, Math.floor(globalSettings.queue_claim_interval_ms / 2)),
     job: {
       id: job.id,
       orderId: job.order_id,

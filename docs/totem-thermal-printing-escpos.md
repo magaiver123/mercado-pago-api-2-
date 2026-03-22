@@ -51,6 +51,12 @@ Regras principais:
 - `POST /api/print/admin/test-print`
 - `GET /api/print/admin/jobs?limit=30`
 
+### Admin global (exigem sessao admin valida)
+
+- `GET /api/print/admin/global-settings`
+- `PUT /api/print/admin/global-settings`
+- `GET /api/print/admin/global-status`
+
 ### Runtime (totem)
 
 - `POST /api/print/receipt`

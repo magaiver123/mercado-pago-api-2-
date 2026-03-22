@@ -82,6 +82,22 @@ export class TotemPrinterSupabaseRepository
     return (data as TotemPrinterRecord[] | null) ?? []
   }
 
+  async listAll(limit: number): Promise<TotemPrinterRecord[]> {
+    const safeLimit =
+      Number.isInteger(limit) && limit > 0 ? Math.min(limit, 500) : 200
+
+    const { data, error } = await this.db
+      .from("totem_printers")
+      .select(
+        "id, totem_id, store_id, connection_type, ip, port, model, escpos_profile, paper_width_mm, is_active, last_heartbeat_at, last_status, last_error, agent_version, created_at, updated_at",
+      )
+      .order("updated_at", { ascending: false })
+      .limit(safeLimit)
+
+    if (error) throw new AppError("Erro ao listar status global das impressoras", 500)
+    return (data as TotemPrinterRecord[] | null) ?? []
+  }
+
   async updateHeartbeat(input: UpdateTotemPrinterHeartbeatInput): Promise<void> {
     const { error } = await this.db
       .from("totem_printers")

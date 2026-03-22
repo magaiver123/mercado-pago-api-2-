@@ -1,7 +1,13 @@
 import { AppError } from "@/api/utils/app-error"
 import { OrderRecord } from "@/api/types/domain"
 import { BaseSupabaseRepository } from "@/api/repositories/supabase/base-supabase-repository"
-import { OrderRepository, PendingStockProcessingOrder, RegisterOrderInput, RegisterOrderResult } from "@/api/repositories/contracts/order-repository"
+import {
+  OrderReceiptMetadata,
+  OrderRepository,
+  PendingStockProcessingOrder,
+  RegisterOrderInput,
+  RegisterOrderResult,
+} from "@/api/repositories/contracts/order-repository"
 
 export class OrderSupabaseRepository extends BaseSupabaseRepository implements OrderRepository {
   async registerOrder(input: RegisterOrderInput): Promise<RegisterOrderResult> {
@@ -52,6 +58,17 @@ export class OrderSupabaseRepository extends BaseSupabaseRepository implements O
       .single()
     if (error || !data) return null
     return data as { status: string; created_at: string; stock_processed: boolean }
+  }
+
+  async getReceiptMetadataByMercadopagoOrderId(orderId: string): Promise<OrderReceiptMetadata | null> {
+    const { data, error } = await this.db
+      .from("orders")
+      .select("order_number, created_at, payment_method")
+      .eq("mercadopago_order_id", orderId)
+      .maybeSingle()
+
+    if (error || !data) return null
+    return data as OrderReceiptMetadata
   }
 
   async getAccessContextByMercadopagoOrderId(orderId: string): Promise<{ user_id: string; store_id: string } | null> {

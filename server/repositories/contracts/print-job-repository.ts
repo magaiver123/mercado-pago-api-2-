@@ -30,4 +30,5 @@ export interface PrintJobRepository {
   markFailure(input: MarkPrintJobFailureInput): Promise<PrintJobRecord | null>
   requeueFailed(jobId: string, totemId: string): Promise<PrintJobRecord | null>
   listRecentByStoreId(storeId: string, limit: number): Promise<PrintJobRecord[]>
+  listRecentGlobal(limit: number): Promise<PrintJobRecord[]>
 }

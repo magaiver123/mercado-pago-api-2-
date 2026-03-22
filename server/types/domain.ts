@@ -155,6 +155,19 @@ export interface TotemPrinterRecord {
   updated_at: string
 }
 
+export interface PrintGlobalSettingsRecord {
+  id: string
+  default_connection_type: "tcp" | string
+  default_port: number
+  default_escpos_profile: string
+  default_paper_width_mm: number
+  queue_claim_interval_ms: number
+  heartbeat_interval_ms: number
+  max_retry_attempts: number
+  created_at: string
+  updated_at: string
+}
+
 export type PrintJobStatus =
   | "pending"
   | "claimed"

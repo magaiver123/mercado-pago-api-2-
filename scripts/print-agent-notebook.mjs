@@ -21,6 +21,7 @@
 
 import net from "node:net";
 import fs from "node:fs/promises";
+import { buildReceiptBytes } from "./receipt-print-layout.mjs";
 
 const API_BASE_URL = process.env.API_BASE_URL || "http://localhost:3000";
 const DEVICE_ID = process.env.DEVICE_ID;
@@ -43,93 +44,6 @@ if (!DEVICE_ID) {
 
 function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function toAscii(value) {
-  const text = String(value ?? "");
-  return text
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^\x20-\x7E\n]/g, "?");
-}
-
-function formatCurrency(value) {
-  const amount = typeof value === "number" && Number.isFinite(value) ? value : 0;
-  return `R$ ${amount.toFixed(2).replace(".", ",")}`;
-}
-
-function escInit() {
-  return Buffer.from([0x1b, 0x40]);
-}
-
-function escAlign(mode) {
-  const n = mode === "center" ? 1 : mode === "right" ? 2 : 0;
-  return Buffer.from([0x1b, 0x61, n]);
-}
-
-function escBold(enabled) {
-  return Buffer.from([0x1b, 0x45, enabled ? 1 : 0]);
-}
-
-function escCutPartial() {
-  return Buffer.from([0x1d, 0x56, 0x42, 0x00]);
-}
-
-function textLine(value = "") {
-  return Buffer.from(`${toAscii(value)}\n`, "ascii");
-}
-
-function buildReceiptBytes(payload, printer) {
-  const receipt = payload?.receipt ?? {};
-  const items = Array.isArray(receipt.items) ? receipt.items : [];
-  const parts = [];
-
-  parts.push(escInit());
-  parts.push(escAlign("center"));
-  parts.push(escBold(true));
-  parts.push(textLine(receipt.storeName || "AUTOATENDIMENTO"));
-  parts.push(escBold(false));
-  parts.push(textLine(receipt.storeAddress || ""));
-  parts.push(textLine(receipt.storeTaxId || ""));
-  parts.push(textLine("--------------------------------"));
-
-  parts.push(escAlign("left"));
-  parts.push(textLine(`Pedido: ${receipt.orderId || payload?.orderId || "-"}`));
-  parts.push(textLine(`Data: ${receipt.createdAt || new Date().toISOString()}`));
-  parts.push(textLine(`Pagamento: ${receipt.paymentMethod || "Nao informado"}`));
-  parts.push(textLine("--------------------------------"));
-
-  for (const item of items) {
-    const quantity =
-      typeof item?.quantity === "number" && Number.isFinite(item.quantity)
-        ? item.quantity
-        : 1;
-    const unitPrice =
-      typeof item?.unitPrice === "number" && Number.isFinite(item.unitPrice)
-        ? item.unitPrice
-        : 0;
-    const name = item?.name || "Item";
-    parts.push(textLine(`${quantity}x ${name}`));
-    parts.push(textLine(`  ${formatCurrency(unitPrice)} cada`));
-  }
-
-  parts.push(textLine("--------------------------------"));
-  parts.push(escBold(true));
-  parts.push(textLine(`TOTAL: ${formatCurrency(receipt.total)}`));
-  parts.push(escBold(false));
-  parts.push(textLine(""));
-  parts.push(textLine(receipt.additionalMessage || "Obrigado pela preferencia!"));
-  parts.push(textLine(""));
-
-  parts.push(escAlign("center"));
-  parts.push(textLine(`Perfil ESC/POS: ${printer?.escposProfile || "generic"}`));
-  parts.push(textLine(`Largura: ${printer?.paperWidthMm || 80}mm`));
-  parts.push(textLine(""));
-  parts.push(textLine(""));
-  parts.push(textLine(""));
-  parts.push(escCutPartial());
-
-  return Buffer.concat(parts);
 }
 
 async function postJson(path, body) {
@@ -247,11 +161,18 @@ async function processJob(job, printer) {
 async function main() {
   console.log(`[agent] started device=${DEVICE_ID} api=${API_BASE_URL} dryRun=${DRY_RUN}`);
 
-  await sendHeartbeat("online", null);
+  let dynamicPollIntervalMs = CLAIM_INTERVAL_MS;
+  const firstHeartbeat = await sendHeartbeat("online", null);
+  if (typeof firstHeartbeat?.pollIntervalMs === "number") {
+    dynamicPollIntervalMs = firstHeartbeat.pollIntervalMs;
+  }
 
   setInterval(async () => {
     try {
-      await sendHeartbeat("online", null);
+      const heartbeat = await sendHeartbeat("online", null);
+      if (typeof heartbeat?.pollIntervalMs === "number") {
+        dynamicPollIntervalMs = heartbeat.pollIntervalMs;
+      }
     } catch (error) {
       console.error("[agent] heartbeat error:", error.message);
     }
@@ -261,7 +182,11 @@ async function main() {
     try {
       const claim = await claimNextJob();
       if (!claim?.hasJob || !claim?.job) {
-        await sleep(CLAIM_INTERVAL_MS);
+        const nextPoll =
+          typeof claim?.pollIntervalMs === "number"
+            ? claim.pollIntervalMs
+            : dynamicPollIntervalMs;
+        await sleep(nextPoll);
         continue;
       }
 
@@ -284,7 +209,7 @@ async function main() {
     } catch (loopError) {
       const message = loopError instanceof Error ? loopError.message : "loop_error";
       console.error(`[agent] loop error: ${message}`);
-      await sleep(CLAIM_INTERVAL_MS);
+      await sleep(dynamicPollIntervalMs);
     }
   }
 }

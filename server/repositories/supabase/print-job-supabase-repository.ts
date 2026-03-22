@@ -203,4 +203,21 @@ export class PrintJobSupabaseRepository
 
     return (data as PrintJobRecord[] | null) ?? []
   }
+
+  async listRecentGlobal(limit: number): Promise<PrintJobRecord[]> {
+    const safeLimit =
+      Number.isInteger(limit) && limit > 0 ? Math.min(limit, 500) : 200
+
+    const { data, error } = await this.db
+      .from("print_jobs")
+      .select(PRINT_JOB_SELECT)
+      .order("created_at", { ascending: false })
+      .limit(safeLimit)
+
+    if (error) {
+      throw new AppError("Erro ao listar jobs globais de impressao", 500)
+    }
+
+    return (data as PrintJobRecord[] | null) ?? []
+  }
 }
