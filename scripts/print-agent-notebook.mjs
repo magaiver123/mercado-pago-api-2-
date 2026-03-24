@@ -213,6 +213,79 @@ function classifyPrintError(error) {
   return { message, retryable: true, errorCode: "API_UNAVAILABLE" }
 }
 
+function isMp4200FamilyPrinter(printer) {
+  const model = String(printer?.model || "").toLowerCase()
+  const profile = String(printer?.escposProfile || "").toLowerCase()
+  const probe = `${model} ${profile}`
+  const compactProbe = probe.replace(/[^a-z0-9]/g, "")
+  return (
+    compactProbe.includes("mp4200") ||
+    compactProbe.includes("4200th") ||
+    probe.includes("mp-4200") ||
+    probe.includes("mp 4200")
+  )
+}
+
+function stripTrailingCutCommands(input) {
+  let bytes = input
+
+  while (bytes.length >= 3) {
+    const len = bytes.length
+    const b3 = bytes[len - 3]
+    const b2 = bytes[len - 2]
+    const b1 = bytes[len - 1]
+
+    // GS V m n
+    if (
+      len >= 4 &&
+      bytes[len - 4] === 0x1d &&
+      bytes[len - 3] === 0x56 &&
+      bytes[len - 2] === 0x42
+    ) {
+      bytes = bytes.subarray(0, len - 4)
+      continue
+    }
+
+    // GS V m
+    if (
+      b3 === 0x1d &&
+      b2 === 0x56 &&
+      (b1 === 0x00 || b1 === 0x01 || b1 === 0x30 || b1 === 0x31)
+    ) {
+      bytes = bytes.subarray(0, len - 3)
+      continue
+    }
+
+    // ESC d n
+    if (b3 === 0x1b && b2 === 0x64) {
+      bytes = bytes.subarray(0, len - 3)
+      continue
+    }
+
+    break
+  }
+
+  return bytes
+}
+
+function injectEscPosModeAfterInit(bytes) {
+  const modeEscPos = Buffer.from([0x1d, 0xf9, 0x20, 0x01])
+  if (bytes.length >= 2 && bytes[0] === 0x1b && bytes[1] === 0x40) {
+    return Buffer.concat([bytes.subarray(0, 2), modeEscPos, bytes.subarray(2)])
+  }
+
+  return Buffer.concat([Buffer.from([0x1b, 0x40]), modeEscPos, bytes])
+}
+
+function ensureMp4200AutomaticCut(bytes, printer) {
+  if (!isMp4200FamilyPrinter(printer)) return bytes
+
+  const sanitized = stripTrailingCutCommands(bytes)
+  const withEscPosMode = injectEscPosModeAfterInit(sanitized)
+  const feedAndCut = Buffer.from([0x1b, 0x64, 0x03, 0x1d, 0x56, 0x42, 0x03])
+  return Buffer.concat([withEscPosMode, feedAndCut])
+}
+
 function validateTcpTarget(host, port) {
   if (!host || typeof host !== "string" || host.trim() === "") {
     throw new Error("Printer host is missing.")
@@ -260,7 +333,8 @@ async function processJob(job, printer) {
     throw new Error(`Unsupported connection type: ${printer.connectionType}`)
   }
 
-  const bytes = buildReceiptBytes(job?.payload, printer)
+  const baseBytes = buildReceiptBytes(job?.payload, printer)
+  const bytes = ensureMp4200AutomaticCut(baseBytes, printer)
   if (!Buffer.isBuffer(bytes) || bytes.length === 0) {
     throw new Error("Invalid ESC/POS payload bytes.")
   }
