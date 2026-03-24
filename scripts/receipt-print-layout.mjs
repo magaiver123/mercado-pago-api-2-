@@ -7,9 +7,10 @@ function supportsAccent(profile) {
   return normalized.includes("bematech")
 }
 
-function getPaperProfile(paperWidthMm) {
+function getPaperProfile(paperWidthMm, escposProfile) {
   const mm = Number.isFinite(paperWidthMm) ? Number(paperWidthMm) : 80
-  const width = mm <= 58 ? 32 : 48
+  const useWideLayout = supportsAccent(escposProfile)
+  const width = mm <= 58 ? 32 : useWideLayout ? 48 : 42
   const compact = width <= 32
   const qtyWidth = compact ? 3 : 4
   const unitWidth = compact ? 7 : 10
@@ -444,7 +445,7 @@ function renderFooter(parts, profile, options) {
 
 export function buildReceiptBytes(payload, printer) {
   const receipt = payload?.receipt ?? {}
-  const profile = getPaperProfile(printer?.paperWidthMm ?? 80)
+  const profile = getPaperProfile(printer?.paperWidthMm ?? 80, printer?.escposProfile)
   const preserveAccents = supportsAccent(printer?.escposProfile)
   const options = { preserveAccents }
   const parts = []

@@ -74,7 +74,8 @@ const genericBytes = buildReceiptBytes(payload, {
 })
 const genericRaw = asLatin1(genericBytes)
 assert.match(genericRaw, /mercado-centro/)
-assert.match(genericRaw, /Mr Smart Autoatendimento/)
+assert.match(genericRaw, /Mr Smart/)
+assert.match(genericRaw, /Autoatendimento/)
 assert.match(genericRaw, /CNPJ: 51\.397\.705\/0001-25/)
 assert.match(genericRaw, /Telefone: 51995881730/)
 assert.match(genericRaw, /COMPROVANTE DE COMPRA/)
@@ -97,7 +98,7 @@ assert.match(genericRaw, /COMPRA FINALIZADA/)
 assert.match(genericRaw, /Guarde este comprovante/)
 
 const genericLines = toPrintableLines(genericBytes)
-assertNoLineOverflow(genericLines, 48)
+assertNoLineOverflow(genericLines, 42)
 
 const compactBytes = buildReceiptBytes(payload, {
   escposProfile: "generic",
