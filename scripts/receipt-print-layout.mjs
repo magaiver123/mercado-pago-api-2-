@@ -3,6 +3,13 @@ function supportsAccent(profile) {
   return normalized.includes("bematech")
 }
 
+function isMp4200FamilyPrinter(printer) {
+  const model = String(printer?.model || "").toLowerCase()
+  const profile = String(printer?.escposProfile || "").toLowerCase()
+  const probe = `${model} ${profile}`
+  return probe.includes("mp-4200") || probe.includes("mp4200")
+}
+
 function getPaperWidthChars(paperWidthMm) {
   const width = Number.isFinite(paperWidthMm) ? Number(paperWidthMm) : 80
   if (width <= 58) return 32
@@ -58,6 +65,11 @@ function escInit() {
   return Buffer.from([0x1b, 0x40])
 }
 
+function escSelectEscPosModeTemporary() {
+  // GS F9 20 01: switch to ESC/POS without saving to printer memory (MP-4200 TH manual).
+  return Buffer.from([0x1d, 0xf9, 0x20, 0x01])
+}
+
 function escCodePage(profile) {
   if (supportsAccent(profile)) {
     return Buffer.from([0x1b, 0x74, 0x02])
@@ -95,6 +107,12 @@ function escCut(mode = "full") {
     return Buffer.from([0x1d, 0x56, 0x01])
   }
   return Buffer.from([0x1d, 0x56, 0x00])
+}
+
+function escCutAndFeed(lines = 3) {
+  // GS V 66 n: feed and cut, useful on some MP-4200 TH firmware revisions.
+  const normalized = Math.max(0, Math.min(10, Math.trunc(lines)))
+  return Buffer.from([0x1d, 0x56, 0x42, normalized])
 }
 
 function textLine(value, options) {
@@ -331,7 +349,14 @@ function renderFooter(parts, width, options) {
 
 function appendFeedAndCut(parts, printer) {
   const cutMode = normalizeCutMode(printer?.cutMode)
-  parts.push(escFeedLines(3))
+  const feedLines = 3
+
+  if (isMp4200FamilyPrinter(printer) && cutMode === "full") {
+    parts.push(escCutAndFeed(feedLines))
+    return
+  }
+
+  parts.push(escFeedLines(feedLines))
   parts.push(escCut(cutMode))
 }
 
@@ -342,6 +367,9 @@ export function buildReceiptBytes(payload, printer) {
   const options = { preserveAccents }
   const parts = []
 
+  if (isMp4200FamilyPrinter(printer)) {
+    parts.push(escSelectEscPosModeTemporary())
+  }
   parts.push(escInit())
   const codePage = escCodePage(printer?.escposProfile)
   if (codePage) parts.push(codePage)

@@ -70,11 +70,11 @@ const accentPayload = {
   receipt: {
     orderId: "O-1",
     createdAt: "2026-03-22T06:44:16.887Z",
-    paymentMethod: "Débito",
+    paymentMethod: "Debito",
     total: 5,
     subtotal: 5,
-    storeName: "São João",
-    items: [{ name: "Pão de queijo", quantity: 1, unitPrice: 5 }],
+    storeName: "Sao Joao",
+    items: [{ name: "Pao de queijo", quantity: 1, unitPrice: 5 }],
   },
 }
 const genericAccentRaw = asLatin1(
@@ -85,13 +85,20 @@ const genericAccentRaw = asLatin1(
 )
 assert.match(genericAccentRaw, /Sao Joao/)
 
-const bematechAccentRaw = asLatin1(
-  buildReceiptBytes(accentPayload, {
-    escposProfile: "bematech-mp4200",
-    paperWidthMm: 80,
-  }),
+const bematechAccentBytes = buildReceiptBytes(accentPayload, {
+  escposProfile: "bematech-mp4200",
+  paperWidthMm: 80,
+})
+const bematechAccentRaw = asLatin1(bematechAccentBytes)
+assert.match(bematechAccentRaw, /Sao Joao/)
+assert.deepEqual(
+  [...bematechAccentBytes.slice(0, 4)],
+  [0x1d, 0xf9, 0x20, 0x01],
 )
-assert.match(bematechAccentRaw, /São João/)
+assert.deepEqual(
+  [...bematechAccentBytes.slice(-4)],
+  [0x1d, 0x56, 0x42, 0x03],
+)
 
 const partialCutBytes = buildReceiptBytes(payload, {
   escposProfile: "generic",
