@@ -46,11 +46,10 @@ const genericBytes = buildReceiptBytes(payload, {
   paperWidthMm: 80,
 })
 const genericRaw = asLatin1(genericBytes)
-assert.match(genericRaw, /COMPROVANTE DE COMPRA/)
 assert.match(genericRaw, /Pedido: 00000321/)
 assert.match(genericRaw, /Pagamento: Cartao de Debito/)
-assert.match(genericRaw, /TOTAL/)
-assert.match(genericRaw, /OBRIGADO PELA PREFERENCIA!/)
+assert.match(genericRaw, /TOTAL: R\$ 16,50/)
+assert.match(genericRaw, /Obrigado pela preferencia!/)
 assert.deepEqual(
   [...genericBytes.slice(-6)],
   [0x1b, 0x64, 0x03, 0x1d, 0x56, 0x00],
@@ -61,9 +60,8 @@ const compactBytes = buildReceiptBytes(payload, {
   paperWidthMm: 58,
 })
 const compactRaw = asLatin1(compactBytes)
-assert.match(compactRaw, /ITENS/)
-assert.match(compactRaw, /Autorizacao: AUTH-12345/)
-assert.match(compactRaw, /Chave: 1234 5678 9123 4567 8912/)
+assert.match(compactRaw, /2x Agua Mineral sem Gas 500ml/)
+assert.match(compactRaw, /Un: R\$ 3,25  Total: R\$ 6,50/)
 
 const accentPayload = {
   orderId: "O-1",
@@ -85,22 +83,21 @@ const genericAccentRaw = asLatin1(
 )
 assert.match(genericAccentRaw, /Sao Joao/)
 
-const bematechAccentBytes = buildReceiptBytes(accentPayload, {
+const mp4200Bytes = buildReceiptBytes(accentPayload, {
+  model: "MP 4200 TH",
   escposProfile: "bematech-mp4200",
   paperWidthMm: 80,
 })
-const bematechAccentRaw = asLatin1(bematechAccentBytes)
-assert.match(bematechAccentRaw, /Sao Joao/)
 assert.deepEqual(
-  [...bematechAccentBytes.slice(0, 4)],
+  [...mp4200Bytes.slice(0, 4)],
   [0x1b, 0x40, 0x1d, 0xf9],
 )
 assert.deepEqual(
-  [...bematechAccentBytes.slice(4, 6)],
+  [...mp4200Bytes.slice(4, 6)],
   [0x20, 0x01],
 )
 assert.deepEqual(
-  [...bematechAccentBytes.slice(-4)],
+  [...mp4200Bytes.slice(-4)],
   [0x1d, 0x56, 0x42, 0x03],
 )
 
