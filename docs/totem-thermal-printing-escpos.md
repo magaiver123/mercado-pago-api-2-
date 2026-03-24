@@ -35,12 +35,13 @@ Regras principais:
 
 ### 2.2 Fluxo do agente local (Android ou notebook)
 
-1. Heartbeat: `POST /api/print/agent/heartbeat`
-2. Poll: `POST /api/print/agent/claim-next-job`
-3. Se houver job:
+1. Enrollment (1x por dispositivo): gerar QR assinado em `POST /api/print/agent/enrollment/create` e ativar no app em `POST /api/print/agent/enrollment/activate`
+2. Heartbeat: `POST /api/print/agent/heartbeat`
+3. Poll: `POST /api/print/agent/claim-next-job`
+4. Se houver job:
    - Imprimir via ESC/POS (TCP) com a config retornada
-4. Ack sucesso: `POST /api/print/agent/ack-success`
-5. Ack falha: `POST /api/print/agent/ack-failure`
+5. Ack sucesso: `POST /api/print/agent/ack-success`
+6. Ack falha: `POST /api/print/agent/ack-failure`
 
 ## 3) Endpoints
 
@@ -63,6 +64,10 @@ Regras principais:
 
 ### Agent
 
+- `GET /api/print/admin/agent-devices`
+- `POST /api/print/agent/enrollment/create`
+- `POST /api/print/agent/enrollment/activate`
+- `POST /api/print/agent/enrollment/revoke`
 - `POST /api/print/agent/heartbeat`
 - `POST /api/print/agent/claim-next-job`
 - `POST /api/print/agent/ack-success`
@@ -198,6 +203,7 @@ No painel admin:
 - `last_heartbeat_at`
 - `last_status`
 - `last_error`
+- `print_agent_devices` (status, versao, ultima conexao e chave ativa)
 - Jobs recentes por totem
 
 Sinais de alerta:

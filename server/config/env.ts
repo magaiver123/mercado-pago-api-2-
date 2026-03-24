@@ -9,6 +9,7 @@ type EnvKey =
   | "SESSION_CONTEXT_PREVIOUS_SECRET"
   | "PRINT_AGENT_HMAC_SECRET"
   | "PRINT_AGENT_AUTH_ALLOW_LEGACY"
+  | "PRINT_AGENT_AUTH_ALLOW_GLOBAL_FALLBACK"
   | "PRINT_AGENT_SIGNATURE_MAX_SKEW_MS"
   | "PRINT_ADMIN_API_TOKEN"
   | "ADMIN_BYPASS_ENABLED"
@@ -120,6 +121,7 @@ export function getPrintAgentAuthEnv() {
   return {
     hmacSecret: requireEnv("PRINT_AGENT_HMAC_SECRET"),
     allowLegacyUnsigned: parseBoolean(readEnv("PRINT_AGENT_AUTH_ALLOW_LEGACY"), true),
+    allowGlobalFallback: parseBoolean(readEnv("PRINT_AGENT_AUTH_ALLOW_GLOBAL_FALLBACK"), true),
     signatureMaxSkewMs: parseIntInRange(
       readEnv("PRINT_AGENT_SIGNATURE_MAX_SKEW_MS"),
       60_000,

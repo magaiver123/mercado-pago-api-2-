@@ -21,6 +21,10 @@ import { getPrintGlobalSettingsService } from "@/api/services/printing/get-print
 import { updatePrintGlobalSettingsService } from "@/api/services/printing/update-print-global-settings-service"
 import { listGlobalPrinterStatusService } from "@/api/services/printing/list-global-printer-status-service"
 import { authenticatePrintAgentRequest } from "@/api/services/printing/agent-auth-service"
+import { createPrintAgentEnrollmentService } from "@/api/services/printing/create-print-agent-enrollment-service"
+import { activatePrintAgentEnrollmentService } from "@/api/services/printing/activate-print-agent-enrollment-service"
+import { revokePrintAgentDeviceService } from "@/api/services/printing/revoke-print-agent-device-service"
+import { listPrintAgentDevicesService } from "@/api/services/printing/list-print-agent-devices-service"
 
 function getAdminBypassErrorStatus(reason: string): number {
   if (reason === "disabled") return 403
@@ -148,6 +152,58 @@ export async function listGlobalPrinterStatusController(request: Request) {
   return NextResponse.json(data)
 }
 
+export async function listPrintAgentDevicesController(request: Request) {
+  await requirePrintingGlobalAdminAccess(request)
+  const { searchParams } = new URL(request.url)
+  const data = await listPrintAgentDevicesService({
+    limit: searchParams.get("limit"),
+  })
+  return NextResponse.json(data)
+}
+
+export async function createPrintAgentEnrollmentController(request: Request) {
+  await requirePrintingGlobalAdminAccess(request)
+  const parsed = await parseJsonOrThrow(request)
+  const body = parsed.body
+
+  const data = await createPrintAgentEnrollmentService({
+    deviceId: body?.deviceId ?? body?.device_id,
+    agentId: body?.agentId ?? body?.agent_id,
+    apiBaseUrl: body?.apiBaseUrl ?? body?.api_base_url,
+    ttlMinutes: body?.ttlMinutes ?? body?.ttl_minutes,
+  })
+
+  return NextResponse.json(data)
+}
+
+export async function activatePrintAgentEnrollmentController(request: Request) {
+  const parsed = await parseJsonOrThrow(request)
+  const body = parsed.body
+
+  const data = await activatePrintAgentEnrollmentService({
+    token: body?.token,
+    deviceId: body?.deviceId ?? body?.device_id,
+    agentId: body?.agentId ?? body?.agent_id,
+    apiBaseUrl: body?.apiBaseUrl ?? body?.api_base_url,
+    signature: body?.signature,
+    agentVersion: body?.agentVersion ?? body?.agent_version,
+  })
+
+  return NextResponse.json(data)
+}
+
+export async function revokePrintAgentDeviceController(request: Request) {
+  await requirePrintingGlobalAdminAccess(request)
+  const parsed = await parseJsonOrThrow(request)
+  const body = parsed.body
+
+  const data = await revokePrintAgentDeviceService({
+    deviceId: body?.deviceId ?? body?.device_id,
+  })
+
+  return NextResponse.json(data)
+}
+
 export async function upsertTotemPrinterConfigController(request: Request) {
   const parsed = await parseJsonOrThrow(request)
   const body = parsed.body
@@ -221,7 +277,7 @@ export async function createReceiptPrintJobController(request: Request) {
 
 export async function printAgentHeartbeatController(request: Request) {
   const parsed = await parseJsonOrThrow(request, "RECEIPT_PAYLOAD_INVALID")
-  const auth = authenticatePrintAgentRequest({
+  const auth = await authenticatePrintAgentRequest({
     request,
     bodyText: parsed.raw,
     body: parsed.body,
@@ -241,7 +297,7 @@ export async function printAgentHeartbeatController(request: Request) {
 
 export async function printAgentClaimNextJobController(request: Request) {
   const parsed = await parseJsonOrThrow(request, "RECEIPT_PAYLOAD_INVALID")
-  const auth = authenticatePrintAgentRequest({
+  const auth = await authenticatePrintAgentRequest({
     request,
     bodyText: parsed.raw,
     body: parsed.body,
@@ -259,7 +315,7 @@ export async function printAgentClaimNextJobController(request: Request) {
 
 export async function printAgentAckSuccessController(request: Request) {
   const parsed = await parseJsonOrThrow(request, "RECEIPT_PAYLOAD_INVALID")
-  const auth = authenticatePrintAgentRequest({
+  const auth = await authenticatePrintAgentRequest({
     request,
     bodyText: parsed.raw,
     body: parsed.body,
@@ -277,7 +333,7 @@ export async function printAgentAckSuccessController(request: Request) {
 
 export async function printAgentAckFailureController(request: Request) {
   const parsed = await parseJsonOrThrow(request, "RECEIPT_PAYLOAD_INVALID")
-  const auth = authenticatePrintAgentRequest({
+  const auth = await authenticatePrintAgentRequest({
     request,
     bodyText: parsed.raw,
     body: parsed.body,

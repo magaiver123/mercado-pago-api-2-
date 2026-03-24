@@ -18,9 +18,12 @@ import { getMenuBannerRoute, getMenuCategoriesRoute, getMenuProductsRoute } from
 import { createMercadoPagoOrderRoute, cancelMercadoPagoOrderRoute, getMercadoPagoOrderStatusRoute, mercadopagoWebhookRoute, refundMercadoPagoOrderRoute } from "@/api/routes/mercadopago-routes"
 import { registerOrderRoute, listUserOrdersRoute, reconcileProcessedOrdersRoute } from "@/api/routes/order-routes"
 import {
+  activatePrintAgentEnrollmentRoute,
+  createPrintAgentEnrollmentRoute,
   createReceiptPrintJobRoute,
   createTestPrintJobRoute,
   getPrintGlobalSettingsRoute,
+  listPrintAgentDevicesRoute,
   listGlobalPrinterStatusRoute,
   listRecentPrintJobsRoute,
   listTotemPrinterConfigsRoute,
@@ -28,6 +31,7 @@ import {
   printAgentAckSuccessRoute,
   printAgentClaimNextJobRoute,
   printAgentHeartbeatRoute,
+  revokePrintAgentDeviceRoute,
   updatePrintGlobalSettingsRoute,
   upsertTotemPrinterConfigRoute,
 } from "@/api/routes/print-routes"
@@ -75,6 +79,10 @@ const routeTable: Record<string, Handler> = {
   "GET /api/print/admin/global-settings": getPrintGlobalSettingsRoute,
   "PUT /api/print/admin/global-settings": updatePrintGlobalSettingsRoute,
   "GET /api/print/admin/global-status": listGlobalPrinterStatusRoute,
+  "GET /api/print/admin/agent-devices": listPrintAgentDevicesRoute,
+  "POST /api/print/agent/enrollment/create": createPrintAgentEnrollmentRoute,
+  "POST /api/print/agent/enrollment/activate": activatePrintAgentEnrollmentRoute,
+  "POST /api/print/agent/enrollment/revoke": revokePrintAgentDeviceRoute,
   "POST /api/print/agent/heartbeat": printAgentHeartbeatRoute,
   "POST /api/print/agent/claim-next-job": printAgentClaimNextJobRoute,
   "POST /api/print/agent/ack-success": printAgentAckSuccessRoute,

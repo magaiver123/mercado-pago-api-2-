@@ -3,11 +3,17 @@ import { AppError } from "@/api/utils/app-error"
 import { getPrintAgentAuthEnv } from "@/api/config/env"
 import { sanitizeString } from "@/api/utils/sanitize"
 import { logger } from "@/api/utils/logger"
+import { getRepositoryFactory } from "@/api/repositories/repository-factory"
+import {
+  decryptDeviceSecret,
+  sha256Hex as sha256HexSafe,
+} from "@/api/services/printing/agent-device-crypto"
 
 const HEADER_AGENT_ID = "x-print-agent-id"
 const HEADER_AGENT_VERSION = "x-print-agent-version"
 const HEADER_TIMESTAMP = "x-print-agent-ts"
 const HEADER_SIGNATURE = "x-print-agent-signature"
+const HEADER_KEY_ID = "x-print-agent-key-id"
 
 function sha256Hex(value: string) {
   return createHash("sha256").update(value).digest("hex")
@@ -47,13 +53,15 @@ export interface AuthenticatedPrintAgent {
   agentId: string | null
   agentVersion: string | null
   authenticated: boolean
+  authMode: "legacy-unsigned" | "global-secret" | "device-secret"
+  keyId: string | null
 }
 
-export function authenticatePrintAgentRequest(input: {
+export async function authenticatePrintAgentRequest(input: {
   request: Request
   bodyText: string
   body: unknown
-}): AuthenticatedPrintAgent {
+}): Promise<AuthenticatedPrintAgent> {
   const body = (input.body ?? {}) as Record<string, unknown>
   const deviceId = sanitizeString(body?.deviceId)
   if (!deviceId) {
@@ -65,6 +73,7 @@ export function authenticatePrintAgentRequest(input: {
   const timestamp = input.request.headers.get(HEADER_TIMESTAMP)
   const agentIdHeader = sanitizeString(input.request.headers.get(HEADER_AGENT_ID))
   const agentVersionHeader = sanitizeString(input.request.headers.get(HEADER_AGENT_VERSION))
+  const keyIdHeader = sanitizeString(input.request.headers.get(HEADER_KEY_ID))
 
   if (!signature || !timestamp) {
     if (!env.allowLegacyUnsigned) {
@@ -87,6 +96,8 @@ export function authenticatePrintAgentRequest(input: {
       agentId: agentIdHeader ?? sanitizeString(body?.agentId) ?? null,
       agentVersion: agentVersionHeader ?? sanitizeString(body?.agentVersion) ?? null,
       authenticated: false,
+      authMode: "legacy-unsigned",
+      keyId: null,
     }
   }
 
@@ -108,9 +119,48 @@ export function authenticatePrintAgentRequest(input: {
     pathname,
     bodyHash,
   })
-  const expectedSignature = signMessage(env.hmacSecret, message)
+  const normalizedSignature = signature.toLowerCase()
+  const repositories = getRepositoryFactory()
+  const device = await repositories.printAgentDevice.findDeviceByDeviceId(deviceId)
+  if (device) {
+    if (device.status !== "active" || device.revoked_at) {
+      throw new AppError("Dispositivo de impressao revogado ou inativo", 401, "AGENT_AUTH_INVALID", true, false)
+    }
+    if (keyIdHeader && keyIdHeader !== device.key_id) {
+      throw new AppError("Chave do agente invalida", 401, "AGENT_AUTH_INVALID", true, false)
+    }
 
-  if (!isValidSignature(expectedSignature, signature.toLowerCase())) {
+    let decryptedSecret = ""
+    try {
+      decryptedSecret = decryptDeviceSecret(device.hmac_secret_ciphertext, env.hmacSecret)
+    } catch {
+      throw new AppError("Credencial de agente corrompida", 401, "AGENT_AUTH_INVALID", true, false)
+    }
+
+    if (sha256HexSafe(decryptedSecret) !== device.hmac_secret_hash) {
+      throw new AppError("Integridade de credencial invalida", 401, "AGENT_AUTH_INVALID", true, false)
+    }
+
+    const expectedDeviceSignature = signMessage(decryptedSecret, message)
+    if (isValidSignature(expectedDeviceSignature, normalizedSignature)) {
+      return {
+        deviceId,
+        agentId: agentIdHeader ?? sanitizeString(body?.agentId) ?? device.agent_id,
+        agentVersion: agentVersionHeader ?? sanitizeString(body?.agentVersion) ?? null,
+        authenticated: true,
+        authMode: "device-secret",
+        keyId: device.key_id,
+      }
+    }
+  }
+
+  if (!env.allowGlobalFallback) {
+    throw new AppError("Assinatura de agente invalida", 401, "AGENT_AUTH_INVALID", true, false)
+  }
+
+  const expectedGlobalSignature = signMessage(env.hmacSecret, message)
+
+  if (!isValidSignature(expectedGlobalSignature, normalizedSignature)) {
     throw new AppError("Assinatura de agente invalida", 401, "AGENT_AUTH_INVALID", true, false)
   }
 
@@ -119,6 +169,7 @@ export function authenticatePrintAgentRequest(input: {
     agentId: agentIdHeader ?? sanitizeString(body?.agentId) ?? null,
     agentVersion: agentVersionHeader ?? sanitizeString(body?.agentVersion) ?? null,
     authenticated: true,
+    authMode: "global-secret",
+    keyId: keyIdHeader ?? null,
   }
 }
-

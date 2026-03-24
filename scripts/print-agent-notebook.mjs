@@ -10,6 +10,7 @@
  * Optional env:
  * - API_BASE_URL=http://localhost:3000
  * - AGENT_ID=notebook-agent-01
+ * - AGENT_KEY_ID=<chave emitida no enrollment>
  * - AGENT_VERSION=notebook-2.0.0
  * - CLAIM_INTERVAL_MS=2500
  * - HEARTBEAT_INTERVAL_MS=10000
@@ -63,6 +64,7 @@ try {
 const DEVICE_ID = process.env.DEVICE_ID
 const AGENT_SECRET = process.env.PRINT_AGENT_HMAC_SECRET
 const AGENT_ID = process.env.AGENT_ID || `notebook-${os.hostname().replace(/[^\w-]/g, "")}`
+const AGENT_KEY_ID = process.env.AGENT_KEY_ID || ""
 const AGENT_VERSION = process.env.AGENT_VERSION || "notebook-2.0.0"
 const CLAIM_INTERVAL_MS = parsePositiveInt(process.env.CLAIM_INTERVAL_MS, 2500, 300, 60000)
 const HEARTBEAT_INTERVAL_MS = parsePositiveInt(process.env.HEARTBEAT_INTERVAL_MS, 10000, 500, 120000)
@@ -119,13 +121,18 @@ function buildAgentHeaders(path, method, bodyString) {
     bodyString,
   })
 
-  return {
+  const headers = {
     "Content-Type": "application/json",
     "x-print-agent-id": AGENT_ID,
     "x-print-agent-version": AGENT_VERSION,
     "x-print-agent-ts": timestamp,
     "x-print-agent-signature": signature,
   }
+  if (AGENT_KEY_ID) {
+    headers["x-print-agent-key-id"] = AGENT_KEY_ID
+  }
+
+  return headers
 }
 
 async function postJson(path, body) {

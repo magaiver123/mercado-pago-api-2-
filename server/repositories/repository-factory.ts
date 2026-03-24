@@ -11,6 +11,7 @@ import { StoreLockRepository } from "@/api/repositories/contracts/store-lock-rep
 import { TotemPrinterRepository } from "@/api/repositories/contracts/totem-printer-repository"
 import { PrintJobRepository } from "@/api/repositories/contracts/print-job-repository"
 import { PrintGlobalSettingsRepository } from "@/api/repositories/contracts/print-global-settings-repository"
+import { PrintAgentDeviceRepository } from "@/api/repositories/contracts/print-agent-device-repository"
 import { KioskSlideSupabaseRepository } from "@/api/repositories/supabase/kiosk-slide-supabase-repository"
 import { MenuSupabaseRepository } from "@/api/repositories/supabase/menu-supabase-repository"
 import { OrderSupabaseRepository } from "@/api/repositories/supabase/order-supabase-repository"
@@ -24,6 +25,7 @@ import { UserSupabaseRepository } from "@/api/repositories/supabase/user-supabas
 import { TotemPrinterSupabaseRepository } from "@/api/repositories/supabase/totem-printer-supabase-repository"
 import { PrintJobSupabaseRepository } from "@/api/repositories/supabase/print-job-supabase-repository"
 import { PrintGlobalSettingsSupabaseRepository } from "@/api/repositories/supabase/print-global-settings-supabase-repository"
+import { PrintAgentDeviceSupabaseRepository } from "@/api/repositories/supabase/print-agent-device-supabase-repository"
 
 export interface RepositoryFactory {
   user: UserRepository
@@ -39,6 +41,7 @@ export interface RepositoryFactory {
   totemPrinter: TotemPrinterRepository
   printJob: PrintJobRepository
   printGlobalSettings: PrintGlobalSettingsRepository
+  printAgentDevice: PrintAgentDeviceRepository
 }
 
 let cachedFactory: RepositoryFactory | null = null
@@ -59,6 +62,7 @@ export function getRepositoryFactory(): RepositoryFactory {
       totemPrinter: new TotemPrinterSupabaseRepository(),
       printJob: new PrintJobSupabaseRepository(),
       printGlobalSettings: new PrintGlobalSettingsSupabaseRepository(),
+      printAgentDevice: new PrintAgentDeviceSupabaseRepository(),
     }
   }
 

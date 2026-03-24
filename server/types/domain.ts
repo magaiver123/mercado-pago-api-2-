@@ -197,3 +197,37 @@ export interface PrintJobRecord {
   created_at: string
   updated_at: string
 }
+
+export type PrintAgentDeviceStatus = "active" | "disabled" | "revoked"
+
+export interface PrintAgentDeviceRecord {
+  id: string
+  device_id: string
+  agent_id: string
+  key_id: string
+  hmac_secret_hash: string
+  hmac_secret_ciphertext: string
+  status: PrintAgentDeviceStatus | string
+  min_supported_version: string | null
+  last_seen_at: string | null
+  last_status: string | null
+  last_error: string | null
+  last_agent_version: string | null
+  revoked_at: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface PrintAgentEnrollmentRecord {
+  id: string
+  device_id: string
+  agent_id: string
+  token_hash: string
+  qr_signature: string
+  api_base_url: string
+  expires_at: string
+  consumed_at: string | null
+  revoked_at: string | null
+  created_at: string
+  updated_at: string
+}

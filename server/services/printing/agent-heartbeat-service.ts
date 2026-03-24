@@ -21,11 +21,21 @@ export async function agentHeartbeatService(input: AgentHeartbeatInput) {
   const normalizedStatus = sanitizeString(input.status)
   const normalizedError = sanitizeString(input.error)
   const normalizedAgentId = normalizeAgentId(input.agentId, `agent:${totem.id}`)
+  const runtimeDeviceId = sanitizeString(input.deviceId)
 
   if (printer) {
     await repositories.totemPrinter.updateHeartbeat({
       totemId: totem.id,
       heartbeatAt: now,
+      status: normalizedStatus,
+      error: normalizedError,
+      agentVersion: sanitizeString(input.agentVersion),
+    })
+  }
+  if (runtimeDeviceId) {
+    await repositories.printAgentDevice.updateRuntimeStatus({
+      deviceId: runtimeDeviceId,
+      seenAt: now,
       status: normalizedStatus,
       error: normalizedError,
       agentVersion: sanitizeString(input.agentVersion),
