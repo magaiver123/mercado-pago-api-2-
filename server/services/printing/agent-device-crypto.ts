@@ -15,7 +15,12 @@ export function signPrintAgentEnrollment(input: {
   expiresAt: string
   apiBaseUrl: string
 }): string {
-  const message = `${input.deviceId}\n${input.token}\n${input.expiresAt}\n${input.apiBaseUrl}`
+  const expiresAtCanonical = (() => {
+    const parsed = new Date(input.expiresAt)
+    if (!Number.isFinite(parsed.getTime())) return String(input.expiresAt).trim()
+    return parsed.toISOString()
+  })()
+  const message = `${input.deviceId}\n${input.token}\n${expiresAtCanonical}\n${input.apiBaseUrl}`
   return createHmac("sha256", input.secret).update(message).digest("hex")
 }
 
