@@ -93,7 +93,11 @@ const bematechAccentRaw = asLatin1(bematechAccentBytes)
 assert.match(bematechAccentRaw, /Sao Joao/)
 assert.deepEqual(
   [...bematechAccentBytes.slice(0, 4)],
-  [0x1d, 0xf9, 0x20, 0x01],
+  [0x1b, 0x40, 0x1d, 0xf9],
+)
+assert.deepEqual(
+  [...bematechAccentBytes.slice(4, 6)],
+  [0x20, 0x01],
 )
 assert.deepEqual(
   [...bematechAccentBytes.slice(-4)],

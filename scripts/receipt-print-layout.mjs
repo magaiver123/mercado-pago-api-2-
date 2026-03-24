@@ -367,10 +367,10 @@ export function buildReceiptBytes(payload, printer) {
   const options = { preserveAccents }
   const parts = []
 
+  parts.push(escInit())
   if (isMp4200FamilyPrinter(printer)) {
     parts.push(escSelectEscPosModeTemporary())
   }
-  parts.push(escInit())
   const codePage = escCodePage(printer?.escposProfile)
   if (codePage) parts.push(codePage)
 
