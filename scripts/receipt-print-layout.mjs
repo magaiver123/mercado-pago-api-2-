@@ -7,7 +7,13 @@ function isMp4200FamilyPrinter(printer) {
   const model = String(printer?.model || "").toLowerCase()
   const profile = String(printer?.escposProfile || "").toLowerCase()
   const probe = `${model} ${profile}`
-  return probe.includes("mp-4200") || probe.includes("mp4200")
+  const compactProbe = probe.replace(/[^a-z0-9]/g, "")
+  return (
+    compactProbe.includes("mp4200") ||
+    compactProbe.includes("4200th") ||
+    probe.includes("mp-4200") ||
+    probe.includes("mp 4200")
+  )
 }
 
 function getPaperWidthChars(paperWidthMm) {
