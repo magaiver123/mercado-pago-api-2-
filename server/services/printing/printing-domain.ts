@@ -40,6 +40,8 @@ export type PrintErrorCode =
   | "ESCPOS_RENDER_ERROR"
   | "AGENT_AUTH_INVALID"
   | "AGENT_AUTH_REQUIRED"
+  | "DEVICE_NOT_BOUND"
+  | "DEVICE_CONTEXT_MISMATCH"
 
 export function normalizePort(value: unknown, fallback = 9100): number {
   const raw =

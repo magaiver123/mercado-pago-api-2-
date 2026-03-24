@@ -168,6 +168,8 @@ export async function createPrintAgentEnrollmentController(request: Request) {
 
   const data = await createPrintAgentEnrollmentService({
     deviceId: body?.deviceId ?? body?.device_id,
+    totemId: body?.totemId ?? body?.totem_id,
+    storeId: body?.storeId ?? body?.store_id,
     agentId: body?.agentId ?? body?.agent_id,
     apiBaseUrl: body?.apiBaseUrl ?? body?.api_base_url,
     ttlMinutes: body?.ttlMinutes ?? body?.ttl_minutes,
