@@ -81,8 +81,20 @@ function escTextSize(width = 1, height = 1) {
   return Buffer.from([0x1d, 0x21, n])
 }
 
-function escCutPartial() {
-  return Buffer.from([0x1d, 0x56, 0x42, 0x00])
+function escFeedLines(lines = 3) {
+  const normalized = Math.max(0, Math.min(10, Math.trunc(lines)))
+  return Buffer.from([0x1b, 0x64, normalized])
+}
+
+function normalizeCutMode(value) {
+  return String(value || "").toLowerCase() === "partial" ? "partial" : "full"
+}
+
+function escCut(mode = "full") {
+  if (mode === "partial") {
+    return Buffer.from([0x1d, 0x56, 0x01])
+  }
+  return Buffer.from([0x1d, 0x56, 0x00])
 }
 
 function textLine(value, options) {
@@ -315,8 +327,12 @@ function renderFooter(parts, width, options) {
   parts.push(textLine("OBRIGADO PELA PREFERENCIA!", options))
   parts.push(escBold(false))
   parts.push(textLine("Retorne sempre.", options))
-  parts.push(textLine("", options))
-  parts.push(textLine("", options))
+}
+
+function appendFeedAndCut(parts, printer) {
+  const cutMode = normalizeCutMode(printer?.cutMode)
+  parts.push(escFeedLines(3))
+  parts.push(escCut(cutMode))
 }
 
 export function buildReceiptBytes(payload, printer) {
@@ -336,7 +352,7 @@ export function buildReceiptBytes(payload, printer) {
   renderTotals(parts, receipt, width, options)
   renderExtraInfo(parts, receipt, width, options)
   renderFooter(parts, width, options)
+  appendFeedAndCut(parts, printer)
 
-  parts.push(escCutPartial())
   return Buffer.concat(parts)
 }

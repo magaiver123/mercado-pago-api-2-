@@ -51,6 +51,10 @@ assert.match(genericRaw, /Pedido: 00000321/)
 assert.match(genericRaw, /Pagamento: Cartao de Debito/)
 assert.match(genericRaw, /TOTAL/)
 assert.match(genericRaw, /OBRIGADO PELA PREFERENCIA!/)
+assert.deepEqual(
+  [...genericBytes.slice(-6)],
+  [0x1b, 0x64, 0x03, 0x1d, 0x56, 0x00],
+)
 
 const compactBytes = buildReceiptBytes(payload, {
   escposProfile: "generic",
@@ -88,5 +92,15 @@ const bematechAccentRaw = asLatin1(
   }),
 )
 assert.match(bematechAccentRaw, /São João/)
+
+const partialCutBytes = buildReceiptBytes(payload, {
+  escposProfile: "generic",
+  paperWidthMm: 80,
+  cutMode: "partial",
+})
+assert.deepEqual(
+  [...partialCutBytes.slice(-6)],
+  [0x1b, 0x64, 0x03, 0x1d, 0x56, 0x01],
+)
 
 console.log("receipt-print-layout tests passed")
