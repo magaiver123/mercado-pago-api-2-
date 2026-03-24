@@ -2,6 +2,7 @@ import { getSupabaseAdminClient } from "@/api/config/database"
 import { sanitizeString } from "@/api/utils/sanitize"
 
 type StoreBaseRow = {
+  slug: string | null
   name: string | null
   rua: string | null
   numero: string | null
@@ -11,6 +12,7 @@ type StoreBaseRow = {
 }
 
 export interface StoreReceiptInfo {
+  storeSlug?: string
   storeName: string
   storeAddress: string
   storeLegalName?: string
@@ -86,7 +88,7 @@ export async function resolveStoreReceiptInfoService(
   const db = getSupabaseAdminClient()
   const { data, error } = await db
     .from("stores")
-    .select("name, rua, numero, bairro, cidade, estado")
+    .select("slug, name, rua, numero, bairro, cidade, estado")
     .eq("id", storeId)
     .maybeSingle()
 
@@ -95,6 +97,7 @@ export async function resolveStoreReceiptInfoService(
   }
 
   const base = data as StoreBaseRow
+  const storeSlug = normalizeNullable(base.slug) ?? undefined
   const storeName = normalizeNullable(base.name) ?? "Autoatendimento"
   const storeAddress = buildStoreAddress(base)
 
@@ -116,6 +119,7 @@ export async function resolveStoreReceiptInfoService(
   ])
 
   return {
+    storeSlug,
     storeName,
     storeAddress,
     storeLegalName: storeLegalName ?? undefined,

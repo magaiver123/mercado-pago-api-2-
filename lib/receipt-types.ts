@@ -15,6 +15,7 @@ export interface ReceiptData {
   subtotal: number
   discounts?: number
   total: number
+  storeSlug?: string
   storeName: string
   storeLegalName?: string
   storeAddress?: string

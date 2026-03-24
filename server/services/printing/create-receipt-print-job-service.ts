@@ -76,6 +76,7 @@ export async function createReceiptPrintJobService(input: CreateReceiptPrintJobI
   }
 
   if (storeReceiptInfo) {
+    payload.receipt.storeSlug = storeReceiptInfo.storeSlug ?? payload.receipt.storeSlug
     payload.receipt.storeName = storeReceiptInfo.storeName
     payload.receipt.storeAddress = storeReceiptInfo.storeAddress
     payload.receipt.storeLegalName = storeReceiptInfo.storeLegalName ?? payload.receipt.storeLegalName

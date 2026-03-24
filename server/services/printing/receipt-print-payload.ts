@@ -63,6 +63,7 @@ function sanitizeReceiptData(value: unknown, orderId: string): ReceiptData | nul
     subtotal: normalizedSubtotal,
     discounts: normalizedDiscounts,
     total: normalizedTotal,
+    storeSlug: sanitizeText(raw.storeSlug ?? null, 120) ?? undefined,
     storeName: sanitizeText(raw.storeName, 120) ?? "Autoatendimento",
     storeLegalName: sanitizeText(raw.storeLegalName ?? null, 120) ?? undefined,
     storeAddress: sanitizeText(raw.storeAddress ?? null, 180) ?? undefined,

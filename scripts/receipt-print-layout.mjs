@@ -1,16 +1,46 @@
+const FIXED_BUSINESS_NAME = "Mr Smart Autoatendimento"
+const FIXED_CNPJ = "51.397.705/0001-25"
+const FIXED_PHONE = "51995881730"
+
 function supportsAccent(profile) {
   const normalized = String(profile || "").toLowerCase()
   return normalized.includes("bematech")
 }
 
-function getPaperWidthChars(paperWidthMm) {
-  const width = Number.isFinite(paperWidthMm) ? Number(paperWidthMm) : 80
-  if (width <= 58) return 32
-  return 48
+function getPaperProfile(paperWidthMm) {
+  const mm = Number.isFinite(paperWidthMm) ? Number(paperWidthMm) : 80
+  const width = mm <= 58 ? 32 : 48
+  const compact = width <= 32
+  const qtyWidth = compact ? 3 : 4
+  const unitWidth = compact ? 7 : 10
+  const totalWidth = compact ? 8 : 10
+  const descWidth = Math.max(8, width - qtyWidth - unitWidth - totalWidth - 3)
+
+  return {
+    width,
+    compact,
+    majorSeparator: "=".repeat(width),
+    minorSeparator: "-".repeat(width),
+    itemColumns: {
+      qty: qtyWidth,
+      desc: descWidth,
+      unit: unitWidth,
+      total: totalWidth,
+    },
+  }
 }
 
 function normalizePrintableText(value, preserveAccents) {
-  const text = String(value ?? "").replace(/\r/g, "").replace(/\t/g, " ")
+  const text = String(value ?? "")
+    .replace(/\r/g, "")
+    .replace(/\t/g, " ")
+    .replace(/\u00a0/g, " ")
+    .replace(/[‐‑‒–—]/g, "-")
+    .replace(/[“”«»]/g, "\"")
+    .replace(/[‘’]/g, "'")
+    .replace(/…/g, "...")
+    .replace(/[\x00-\x08\x0B-\x1F\x7F]/g, "")
+
   if (preserveAccents) {
     return text.replace(/[^\x20-\xFF\n]/g, "?")
   }
@@ -21,9 +51,24 @@ function normalizePrintableText(value, preserveAccents) {
     .replace(/[^\x20-\x7E\n]/g, "?")
 }
 
-function formatCurrency(value) {
+function formatMoney(value) {
   const amount = typeof value === "number" && Number.isFinite(value) ? value : 0
-  return `R$ ${amount.toFixed(2).replace(".", ",")}`
+  const absolute = Math.abs(amount)
+  const formatted = absolute.toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+  return `${amount < 0 ? "-" : ""}R$ ${formatted}`
+}
+
+function formatMoneyCompact(value) {
+  const amount = typeof value === "number" && Number.isFinite(value) ? value : 0
+  const absolute = Math.abs(amount)
+  const formatted = absolute.toLocaleString("pt-BR", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })
+  return `${amount < 0 ? "-" : ""}${formatted}`
 }
 
 function formatOrderNumber(orderNumber) {
@@ -90,20 +135,23 @@ function textLine(value, options) {
   return Buffer.from(`${text}\n`, options.preserveAccents ? "latin1" : "ascii")
 }
 
-function separatorLine(width, options) {
-  return textLine("-".repeat(width), options)
+function separatorLine(value, options) {
+  return textLine(value, options)
 }
 
 function truncateText(value, width) {
   const raw = String(value ?? "")
+  if (width <= 0) return ""
   if (raw.length <= width) return raw
-  if (width <= 1) return raw.slice(0, width)
+  if (width === 1) return raw.slice(0, 1)
   return `${raw.slice(0, width - 1)}~`
 }
 
 function wrapText(value, width) {
   const clean = String(value ?? "").trim()
   if (!clean) return [""]
+  if (width <= 0) return [""]
+
   const words = clean.split(/\s+/)
   const lines = []
   let current = ""
@@ -161,68 +209,117 @@ function alignLeftRight(left, right, width) {
   return `${truncateText(l, allowedLeft)} ${r}`
 }
 
-function renderStoreHeader(parts, receipt, width, options) {
-  const fantasyName = String(receipt.storeName || receipt.storeLegalName || "AUTOATENDIMENTO").trim()
+function fitLeft(value, width) {
+  const text = truncateText(value, width)
+  return text.padEnd(width, " ")
+}
+
+function fitRight(value, width) {
+  const text = String(value ?? "")
+  if (text.length >= width) return text.slice(text.length - width)
+  return text.padStart(width, " ")
+}
+
+function renderLabelValue(parts, label, value, profile, options) {
+  const cleanValue = String(value ?? "").trim()
+  if (!cleanValue) return
+
+  const prefix = `${label}: `
+  const firstLineWidth = profile.width - prefix.length
+  if (firstLineWidth < 8) {
+    for (const line of wrapText(`${prefix}${cleanValue}`, profile.width)) {
+      parts.push(textLine(line, options))
+    }
+    return
+  }
+
+  const wrapped = wrapText(cleanValue, firstLineWidth)
+  parts.push(textLine(`${prefix}${wrapped[0]}`, options))
+  for (const line of wrapped.slice(1)) {
+    parts.push(textLine(`  ${line}`, options))
+  }
+}
+
+function renderHeader(parts, receipt, profile, options) {
+  const slug = String(receipt.storeSlug || receipt.storeName || "loja").trim() || "loja"
   const legalName = String(receipt.storeLegalName || "").trim()
-  const taxId = String(receipt.storeTaxId || "").trim()
   const address = String(receipt.storeAddress || "").trim()
-  const phone = String(receipt.storePhone || "").trim()
 
   parts.push(escAlign("center"))
+  for (const line of wrapText(slug, profile.width)) {
+    parts.push(textLine(line, options))
+  }
+
+  const titleWidth = profile.compact ? profile.width : Math.max(12, Math.floor(profile.width / 2))
   parts.push(escBold(true))
-  parts.push(escTextSize(2, 2))
-  parts.push(textLine(fantasyName || "AUTOATENDIMENTO", options))
+  parts.push(escTextSize(profile.compact ? 1 : 2, 2))
+  for (const line of wrapText(FIXED_BUSINESS_NAME, titleWidth)) {
+    parts.push(textLine(line, options))
+  }
   parts.push(escTextSize(1, 1))
   parts.push(escBold(false))
 
-  if (legalName && legalName !== fantasyName) {
-    for (const line of wrapText(legalName, width)) {
-      parts.push(textLine(line, options))
-    }
-  }
-  if (taxId) parts.push(textLine(`CNPJ: ${taxId}`, options))
-  if (address) {
-    for (const line of wrapText(address, width)) {
-      parts.push(textLine(line, options))
-    }
-  }
-  if (phone) parts.push(textLine(`Tel: ${phone}`, options))
+  parts.push(textLine(`CNPJ: ${FIXED_CNPJ}`, options))
+  parts.push(textLine(`Telefone: ${FIXED_PHONE}`, options))
+
+  parts.push(escAlign("left"))
+  if (legalName) renderLabelValue(parts, "Razao Social", legalName, profile, options)
+  if (address) renderLabelValue(parts, "Endereco", address, profile, options)
 }
 
-function renderOrderInfo(parts, receipt, payload, width, options) {
+function renderReceiptIdentity(parts, receipt, payload, profile, options) {
   const orderDisplayNumber = formatOrderNumberOrFallback(
     receipt.orderNumber,
     receipt.orderId || payload?.orderId || "-",
   )
 
-  parts.push(separatorLine(width, options))
+  parts.push(separatorLine(profile.majorSeparator, options))
   parts.push(escAlign("center"))
   parts.push(escBold(true))
   parts.push(textLine("COMPROVANTE DE COMPRA", options))
   parts.push(escBold(false))
-  parts.push(separatorLine(width, options))
+  parts.push(separatorLine(profile.minorSeparator, options))
+
   parts.push(escAlign("left"))
-  parts.push(textLine(`Pedido: ${orderDisplayNumber}`, options))
-  parts.push(textLine(`Data/Hora: ${formatReceiptDateTime(receipt.createdAt)}`, options))
-  parts.push(textLine(`Pagamento: ${receipt.paymentMethod || "Nao informado"}`, options))
+  parts.push(textLine(alignLeftRight("Pedido", orderDisplayNumber, profile.width), options))
+  parts.push(textLine(alignLeftRight("Data/Hora", formatReceiptDateTime(receipt.createdAt), profile.width), options))
+  renderLabelValue(parts, "Pagamento", receipt.paymentMethod || "Nao informado", profile, options)
 
   if (receipt.customerName) {
-    for (const line of wrapText(`Cliente: ${receipt.customerName}`, width)) {
-      parts.push(textLine(line, options))
-    }
+    renderLabelValue(parts, "Cliente", receipt.customerName, profile, options)
   }
 
   if (receipt.customerDocument) {
-    parts.push(textLine(`CPF/CNPJ: ${receipt.customerDocument}`, options))
+    renderLabelValue(parts, "CPF/CNPJ", receipt.customerDocument, profile, options)
   }
 }
 
-function renderItems(parts, receipt, width, options) {
-  const items = Array.isArray(receipt.items) ? receipt.items : []
+function formatItemRow(values, profile) {
+  const { qty, desc, unit, total } = profile.itemColumns
+  return `${fitRight(values.qty, qty)} ${fitLeft(values.desc, desc)} ${fitRight(values.unit, unit)} ${fitRight(values.total, total)}`
+}
 
-  parts.push(separatorLine(width, options))
+function renderItemsTable(parts, receipt, profile, options) {
+  const items = Array.isArray(receipt.items) ? receipt.items : []
+  const hasItems = items.length > 0
+
+  parts.push(separatorLine(profile.majorSeparator, options))
+  parts.push(escBold(true))
   parts.push(textLine("ITENS", options))
-  parts.push(separatorLine(width, options))
+  parts.push(escBold(false))
+  parts.push(separatorLine(profile.minorSeparator, options))
+  parts.push(
+    textLine(
+      formatItemRow({ qty: "QTD", desc: "DESCRICAO", unit: "UN", total: "TOTAL" }, profile),
+      options,
+    ),
+  )
+  parts.push(separatorLine(profile.minorSeparator, options))
+
+  if (!hasItems) {
+    parts.push(textLine("Sem itens para exibir.", options))
+    return
+  }
 
   for (const item of items) {
     const quantity =
@@ -235,28 +332,53 @@ function renderItems(parts, receipt, width, options) {
         : 0
     const itemTotal = quantity * unitPrice
     const itemName = String(item?.name || "Item")
+    const descLines = wrapText(itemName, profile.itemColumns.desc)
 
-    for (const line of wrapText(itemName, width)) {
-      parts.push(textLine(line, options))
+    parts.push(
+      textLine(
+        formatItemRow(
+          {
+            qty: String(quantity),
+            desc: descLines[0] || "",
+            unit: formatMoneyCompact(unitPrice),
+            total: formatMoneyCompact(itemTotal),
+          },
+          profile,
+        ),
+        options,
+      ),
+    )
+
+    for (const continuation of descLines.slice(1)) {
+      parts.push(
+        textLine(
+          formatItemRow(
+            {
+              qty: "",
+              desc: continuation,
+              unit: "",
+              total: "",
+            },
+            profile,
+          ),
+          options,
+        ),
+      )
     }
-
-    const qtyUnit = `${quantity} x ${formatCurrency(unitPrice)}`
-    const totalValue = formatCurrency(itemTotal)
-    parts.push(textLine(alignLeftRight(`  ${qtyUnit}`, totalValue, width), options))
   }
 }
 
-function renderTotals(parts, receipt, width, options) {
+function resolveTotals(receipt) {
   const itemsTotal = Array.isArray(receipt.items)
     ? receipt.items.reduce((sum, item) => {
       const quantity =
-          typeof item?.quantity === "number" && Number.isFinite(item.quantity)
-            ? Math.max(1, item.quantity)
-            : 1
+        typeof item?.quantity === "number" && Number.isFinite(item.quantity)
+          ? Math.max(1, item.quantity)
+          : 1
       const unitPrice =
-          typeof item?.unitPrice === "number" && Number.isFinite(item.unitPrice)
-            ? Math.max(0, item.unitPrice)
-            : 0
+        typeof item?.unitPrice === "number" && Number.isFinite(item.unitPrice)
+          ? Math.max(0, item.unitPrice)
+          : 0
       return sum + quantity * unitPrice
     }, 0)
     : 0
@@ -274,54 +396,55 @@ function renderTotals(parts, receipt, width, options) {
       ? Math.max(0, receipt.total)
       : Math.max(0, subtotal - discounts)
 
-  parts.push(separatorLine(width, options))
-  parts.push(textLine(alignLeftRight("Subtotal", formatCurrency(subtotal), width), options))
-  parts.push(textLine(alignLeftRight("Descontos", `- ${formatCurrency(discounts)}`, width), options))
+  return { subtotal, discounts, total }
+}
+
+function renderTotals(parts, receipt, profile, options) {
+  const totals = resolveTotals(receipt)
+
+  parts.push(separatorLine(profile.majorSeparator, options))
+  parts.push(textLine(alignLeftRight("Subtotal", formatMoney(totals.subtotal), profile.width), options))
+  parts.push(textLine(alignLeftRight("Descontos", `- ${formatMoney(totals.discounts)}`, profile.width), options))
+  parts.push(separatorLine(profile.minorSeparator, options))
   parts.push(escBold(true))
-  parts.push(textLine(alignLeftRight("TOTAL", formatCurrency(total), width), options))
+  parts.push(escTextSize(1, 2))
+  parts.push(textLine(alignLeftRight("TOTAL FINAL", formatMoney(totals.total), profile.width), options))
+  parts.push(escTextSize(1, 1))
   parts.push(escBold(false))
 }
 
-function renderExtraInfo(parts, receipt, width, options) {
+function renderOptionalMeta(parts, receipt, profile, options) {
   const authCode = String(receipt.authorizationCode || "").trim()
   const accessKey = String(receipt.accessKey || "").trim()
   const message = String(receipt.additionalMessage || "").trim()
 
   if (!authCode && !accessKey && !message) return
 
-  parts.push(separatorLine(width, options))
+  parts.push(separatorLine(profile.majorSeparator, options))
+  parts.push(escBold(true))
+  parts.push(textLine("DADOS ADICIONAIS", options))
+  parts.push(escBold(false))
 
-  if (authCode) {
-    for (const line of wrapText(`Autorizacao: ${authCode}`, width)) {
-      parts.push(textLine(line, options))
-    }
-  }
-  if (accessKey) {
-    for (const line of wrapText(`Chave: ${accessKey}`, width)) {
-      parts.push(textLine(line, options))
-    }
-  }
-  if (message) {
-    for (const line of wrapText(`Obs: ${message}`, width)) {
-      parts.push(textLine(line, options))
-    }
-  }
+  if (authCode) renderLabelValue(parts, "Autorizacao", authCode, profile, options)
+  if (accessKey) renderLabelValue(parts, "Chave", accessKey, profile, options)
+  if (message) renderLabelValue(parts, "Obs", message, profile, options)
 }
 
-function renderFooter(parts, width, options) {
-  parts.push(separatorLine(width, options))
+function renderFooter(parts, profile, options) {
+  parts.push(separatorLine(profile.majorSeparator, options))
   parts.push(escAlign("center"))
   parts.push(escBold(true))
-  parts.push(textLine("OBRIGADO PELA PREFERENCIA!", options))
+  parts.push(textLine("COMPRA FINALIZADA", options))
   parts.push(escBold(false))
-  parts.push(textLine("Retorne sempre.", options))
+  parts.push(textLine("Guarde este comprovante.", options))
+  parts.push(textLine("Obrigado pela preferencia!", options))
   parts.push(textLine("", options))
   parts.push(textLine("", options))
 }
 
 export function buildReceiptBytes(payload, printer) {
   const receipt = payload?.receipt ?? {}
-  const width = getPaperWidthChars(printer?.paperWidthMm ?? 80)
+  const profile = getPaperProfile(printer?.paperWidthMm ?? 80)
   const preserveAccents = supportsAccent(printer?.escposProfile)
   const options = { preserveAccents }
   const parts = []
@@ -330,12 +453,12 @@ export function buildReceiptBytes(payload, printer) {
   const codePage = escCodePage(printer?.escposProfile)
   if (codePage) parts.push(codePage)
 
-  renderStoreHeader(parts, receipt, width, options)
-  renderOrderInfo(parts, receipt, payload, width, options)
-  renderItems(parts, receipt, width, options)
-  renderTotals(parts, receipt, width, options)
-  renderExtraInfo(parts, receipt, width, options)
-  renderFooter(parts, width, options)
+  renderHeader(parts, receipt, profile, options)
+  renderReceiptIdentity(parts, receipt, payload, profile, options)
+  renderItemsTable(parts, receipt, profile, options)
+  renderTotals(parts, receipt, profile, options)
+  renderOptionalMeta(parts, receipt, profile, options)
+  renderFooter(parts, profile, options)
 
   parts.push(escCutPartial())
   return Buffer.concat(parts)
