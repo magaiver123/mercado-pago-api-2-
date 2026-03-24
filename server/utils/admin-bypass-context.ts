@@ -7,13 +7,16 @@ const ADMIN_SESSION_COOKIE = "admin_session_ctx"
 const ADMIN_BYPASS_COOKIE = "admin_bypass_ctx"
 const ADMIN_BYPASS_MAX_AGE_SECONDS = 60 * 60 * 12
 const ADMIN_BYPASS_DEVICE_PREFIX = "admin-bypass"
+const ADMIN_CONTEXT_VERSION = 2
 
 type AdminSessionPayload = {
+  v: number
   userId: string
   issuedAt: number
 }
 
 type AdminBypassPayload = {
+  v: number
   userId: string
   storeId: string
   storeSlug: string
@@ -80,6 +83,7 @@ export function setAdminSessionCookie(
   const { secret } = getSessionContextEnv()
   const value = encode<AdminSessionPayload>(
     {
+      v: ADMIN_CONTEXT_VERSION,
       userId: input.userId,
       issuedAt: Date.now(),
     },
@@ -103,8 +107,12 @@ export function readAdminSessionFromRequest(request: Request): AdminSessionPaylo
   const cookieValue = parseCookie(request.headers.get("cookie"), ADMIN_SESSION_COOKIE)
   if (!cookieValue) return null
 
-  const { secret } = getSessionContextEnv()
-  const decoded = decode(cookieValue, secret) as Partial<AdminSessionPayload> | null
+  const { secret, previousSecret } = getSessionContextEnv()
+  const decoded =
+    (decode(cookieValue, secret) as Partial<AdminSessionPayload> | null) ??
+    (previousSecret
+      ? (decode(cookieValue, previousSecret) as Partial<AdminSessionPayload> | null)
+      : null)
 
   if (!decoded?.userId || !decoded?.issuedAt) {
     return null
@@ -120,6 +128,7 @@ export function readAdminSessionFromRequest(request: Request): AdminSessionPaylo
   }
 
   return {
+    v: typeof decoded.v === "number" ? decoded.v : 1,
     userId: decoded.userId,
     issuedAt: decoded.issuedAt,
   }
@@ -132,6 +141,7 @@ export function setAdminBypassCookie(
   const { secret } = getSessionContextEnv()
   const value = encode<AdminBypassPayload>(
     {
+      v: ADMIN_CONTEXT_VERSION,
       userId: input.userId,
       storeId: input.storeId,
       storeSlug: input.storeSlug,
@@ -157,8 +167,12 @@ export function readAdminBypassFromRequest(request: Request): AdminBypassPayload
   const cookieValue = parseCookie(request.headers.get("cookie"), ADMIN_BYPASS_COOKIE)
   if (!cookieValue) return null
 
-  const { secret } = getSessionContextEnv()
-  const decoded = decode(cookieValue, secret) as Partial<AdminBypassPayload> | null
+  const { secret, previousSecret } = getSessionContextEnv()
+  const decoded =
+    (decode(cookieValue, secret) as Partial<AdminBypassPayload> | null) ??
+    (previousSecret
+      ? (decode(cookieValue, previousSecret) as Partial<AdminBypassPayload> | null)
+      : null)
 
   if (!decoded?.userId || !decoded?.storeId || !decoded?.storeSlug || !decoded?.issuedAt) {
     return null
@@ -180,6 +194,7 @@ export function readAdminBypassFromRequest(request: Request): AdminBypassPayload
   }
 
   return {
+    v: typeof decoded.v === "number" ? decoded.v : 1,
     userId: decoded.userId,
     storeId: decoded.storeId,
     storeSlug: decoded.storeSlug,

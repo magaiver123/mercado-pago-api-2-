@@ -3,6 +3,11 @@ import { sanitizeString } from "@/api/utils/sanitize"
 import { isValidUUID } from "@/api/utils/validators"
 import { getRepositoryFactory } from "@/api/repositories/repository-factory"
 import { isValidEscPosProfile, suggestEscPosProfile } from "@/api/services/printing/escpos-profiles"
+import {
+  PRINT_CONNECTION_TYPE_TCP,
+  normalizePaperWidth,
+  normalizePort,
+} from "@/api/services/printing/printing-domain"
 
 interface UpsertTotemPrinterConfigInput {
   storeId: string
@@ -16,38 +21,17 @@ interface UpsertTotemPrinterConfigInput {
   isActive: unknown
 }
 
-function normalizePort(value: unknown): number {
-  if (typeof value === "number" && Number.isInteger(value) && value >= 1 && value <= 65535) {
-    return value
-  }
-
-  if (typeof value === "string") {
-    const parsed = Number.parseInt(value, 10)
-    if (Number.isInteger(parsed) && parsed >= 1 && parsed <= 65535) {
-      return parsed
-    }
-  }
-
-  return 9100
-}
-
-function normalizePaperWidth(value: unknown): number {
-  if (typeof value === "number" && [58, 76, 80, 82].includes(value)) {
-    return value
-  }
-  if (typeof value === "string") {
-    const parsed = Number.parseInt(value, 10)
-    if ([58, 76, 80, 82].includes(parsed)) {
-      return parsed
-    }
-  }
-  return 80
-}
-
 function normalizeConnectionType(value: unknown): "tcp" {
   const normalized = sanitizeString(value)?.toLowerCase()
-  if (!normalized || normalized === "tcp") return "tcp"
+  if (!normalized || normalized === PRINT_CONNECTION_TYPE_TCP) return PRINT_CONNECTION_TYPE_TCP
   throw new AppError("Tipo de conexao nao suportado. Use TCP", 400)
+}
+
+function isValidPrinterAddress(value: string): boolean {
+  const ipPattern =
+    /^(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)$/
+  const hostPattern = /^(?=.{1,253}$)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)*[a-z0-9-]{1,63}$/i
+  return ipPattern.test(value) || hostPattern.test(value)
 }
 
 export async function upsertTotemPrinterConfigService(
@@ -58,25 +42,41 @@ export async function upsertTotemPrinterConfigService(
   const model = sanitizeString(input.model)
 
   if (!totemId || !isValidUUID(totemId)) {
-    throw new AppError("totemId invalido", 400)
+    throw new AppError("totemId invalido", 400, "TOTEM_CONTEXT_MISSING", true, false)
   }
 
   if (!ip) {
-    throw new AppError("IP da impressora e obrigatorio", 400)
+    throw new AppError("IP da impressora e obrigatorio", 400, "PRINTER_NOT_CONFIGURED", true, false)
+  }
+
+  if (!isValidPrinterAddress(ip)) {
+    throw new AppError("IP/host da impressora invalido", 400, "RECEIPT_PAYLOAD_INVALID", true, false)
   }
 
   if (!model) {
-    throw new AppError("Modelo da impressora e obrigatorio", 400)
+    throw new AppError(
+      "Modelo da impressora e obrigatorio",
+      400,
+      "PRINTER_NOT_CONFIGURED",
+      true,
+      false,
+    )
   }
 
   const repositories = getRepositoryFactory()
   const totem = await repositories.totem.findById(totemId)
   if (!totem) {
-    throw new AppError("Totem nao encontrado", 404)
+    throw new AppError("Totem nao encontrado", 404, "TOTEM_CONTEXT_MISSING", true, false)
   }
 
   if (totem.store_id !== input.storeId) {
-    throw new AppError("Totem nao pertence a loja selecionada", 403)
+    throw new AppError(
+      "Totem nao pertence a loja selecionada",
+      403,
+      "STORE_CONTEXT_MISMATCH",
+      true,
+      false,
+    )
   }
 
   const providedProfile = sanitizeString(input.escposProfile)

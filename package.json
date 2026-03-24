@@ -10,6 +10,7 @@
     "dev": "next dev",
     "lint": "next lint",
     "start": "next start",
+    "print:layout:test": "node scripts/receipt-print-layout.test.mjs",
     "print:agent:mock": "node scripts/print-agent-mock.mjs",
     "print:agent:notebook": "node scripts/print-agent-notebook.mjs"
   },

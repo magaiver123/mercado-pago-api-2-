@@ -10,6 +10,7 @@ export interface ActivateTotemInput {
 export interface TotemRepository {
   findById(totemId: string): Promise<Pick<TotemRecord, "id" | "store_id" | "status" | "device_id" | "maintenance_mode"> | null>
   listByStoreId(storeId: string): Promise<Array<Pick<TotemRecord, "id" | "store_id" | "status" | "device_id" | "maintenance_mode">>>
+  listAll(limit: number): Promise<Array<Pick<TotemRecord, "id" | "store_id" | "status" | "device_id" | "maintenance_mode">>>
   findByDeviceId(
     deviceId: string
   ): Promise<

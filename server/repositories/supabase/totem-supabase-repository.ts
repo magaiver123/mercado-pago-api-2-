@@ -39,6 +39,25 @@ export class TotemSupabaseRepository extends BaseSupabaseRepository implements T
     )
   }
 
+  async listAll(
+    limit: number,
+  ): Promise<Array<Pick<TotemRecord, "id" | "store_id" | "status" | "device_id" | "maintenance_mode">>> {
+    const safeLimit = Number.isInteger(limit) && limit > 0 ? Math.min(limit, 1000) : 500
+
+    const { data, error } = await this.db
+      .from("totems")
+      .select("id, store_id, status, device_id, maintenance_mode")
+      .order("id", { ascending: true })
+      .limit(safeLimit)
+
+    if (error) throw new AppError("Erro ao listar totens", 500)
+    return (
+      (data as Array<
+        Pick<TotemRecord, "id" | "store_id" | "status" | "device_id" | "maintenance_mode">
+      > | null) ?? []
+    )
+  }
+
   async findByDeviceId(
     deviceId: string
   ): Promise<

@@ -10,10 +10,24 @@ export function withErrorHandler(handler: (request: Request) => Promise<NextResp
       if (isAppError(error)) {
         if (!error.expose) {
           logger.error(error.message)
-          return NextResponse.json({ error: "Internal server error" }, { status: error.statusCode })
+          return NextResponse.json(
+            {
+              error: "Internal server error",
+              code: error.code,
+              retryable: error.retryable,
+            },
+            { status: error.statusCode },
+          )
         }
 
-        return NextResponse.json({ error: error.message }, { status: error.statusCode })
+        return NextResponse.json(
+          {
+            error: error.message,
+            code: error.code,
+            retryable: error.retryable,
+          },
+          { status: error.statusCode },
+        )
       }
 
       if (error instanceof Error) {
@@ -22,7 +36,10 @@ export function withErrorHandler(handler: (request: Request) => Promise<NextResp
         logger.error("Unknown error", error)
       }
 
-      return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+      return NextResponse.json(
+        { error: "Internal server error", code: "INTERNAL_ERROR", retryable: true },
+        { status: 500 },
+      )
     }
   }
 }
@@ -32,4 +49,3 @@ export function ensure(value: unknown, message: string, statusCode = 400): asser
     throw new AppError(message, statusCode)
   }
 }
-

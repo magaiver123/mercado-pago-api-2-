@@ -14,6 +14,39 @@ import {
 import { clearAuthUser } from "@/lib/auth-store"
 import { formatOrderNumberOrFallback } from "@/lib/order-number"
 
+function mapPrintFeedback(input: { code?: string; result?: string }) {
+  const code = input.code ?? ""
+  if (code === "ORDER_ALREADY_PRINTED" || input.result === "already_printed") {
+    return {
+      message: "Este comprovante ja foi impresso neste totem.",
+      lockRequest: true,
+    }
+  }
+  if (code === "ORDER_ALREADY_QUEUED" || input.result === "already_queued") {
+    return {
+      message: "Comprovante ja estava na fila de impressao. Aguarde a impressora do totem.",
+      lockRequest: true,
+    }
+  }
+  if (code === "FAILED_PREVIOUS_REQUEUED") {
+    return {
+      message: "A impressao anterior falhou e foi reenfileirada para o agente local.",
+      lockRequest: true,
+    }
+  }
+  if (code === "REQUEUE_NOT_ALLOWED" || input.result === "failed_previous") {
+    return {
+      message: "A impressao anterior falhou e nao pode ser reenfileirada automaticamente.",
+      lockRequest: false,
+    }
+  }
+
+  return {
+    message: "Comprovante enviado para a impressora do totem.",
+    lockRequest: true,
+  }
+}
+
 export default function ReceiptPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -21,6 +54,7 @@ export default function ReceiptPage() {
 
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [isPrinting, setIsPrinting] = useState(false)
+  const [hasPrintRequest, setHasPrintRequest] = useState(false)
   const [receiptLoaded, setReceiptLoaded] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [printFeedback, setPrintFeedback] = useState<string | null>(null)
@@ -30,7 +64,7 @@ export default function ReceiptPage() {
 
   useEffect(() => {
     if (!receipt) {
-      setError("Não encontramos os dados do comprovante deste pedido.")
+      setError("Nao encontramos os dados do comprovante deste pedido.")
       const id = setTimeout(() => {
         router.push("/payment/success")
       }, 4000)
@@ -38,9 +72,7 @@ export default function ReceiptPage() {
     }
 
     if (urlOrderId && receipt.orderId !== urlOrderId) {
-      console.warn(
-        "[receipt] orderId from URL does not match stored receipt orderId",
-      )
+      console.warn("[receipt] orderId from URL does not match stored receipt orderId")
     }
 
     setReceiptLoaded(true)
@@ -71,7 +103,7 @@ export default function ReceiptPage() {
   }
 
   const handlePrint = async () => {
-    if (!receipt || isPrinting) return
+    if (!receipt || isPrinting || hasPrintRequest) return
     setIsPrinting(true)
     setPrintFeedback(null)
 
@@ -82,32 +114,18 @@ export default function ReceiptPage() {
         return
       }
 
-      if (result.result === "already_printed") {
-        setPrintFeedback("Este comprovante ja foi impresso neste totem.")
-        return
+      const feedback = mapPrintFeedback({
+        code: result.code,
+        result: result.result,
+      })
+      setPrintFeedback(feedback.message)
+      if (feedback.lockRequest) {
+        setHasPrintRequest(true)
       }
-
-      if (result.result === "failed_previous") {
-        setPrintFeedback(
-          "A impressao anterior falhou. Um novo envio foi solicitado para o agente local.",
-        )
-        return
-      }
-
-      if (result.result === "already_queued") {
-        setPrintFeedback(
-          "Comprovante ja estava na fila de impressao. Aguarde a impressora do totem.",
-        )
-        return
-      }
-
-      setPrintFeedback("Comprovante enviado para a impressora do totem.")
     } catch {
       setPrintFeedback("Erro de conexao ao enviar comprovante para impressao.")
     } finally {
-      setTimeout(() => {
-        setIsPrinting(false)
-      }, 4000)
+      setIsPrinting(false)
     }
   }
 
@@ -145,7 +163,7 @@ export default function ReceiptPage() {
             <span className="block">
               Pronto{receipt?.customerName ? `, ${receipt.customerName}!` : "!"}
             </span>
-            <span className="block">Aqui está o seu comprovante.</span>
+            <span className="block">Aqui esta o seu comprovante.</span>
           </h1>
           {displayOrderNumber && (
             <p className="mt-8 text-xl font-black text-orange-500 sm:text-2xl">
@@ -182,7 +200,8 @@ export default function ReceiptPage() {
           <button
             type="button"
             onClick={handlePrint}
-            className="group flex aspect-square w-full flex-col items-center justify-center gap-3 rounded-[28px] border-2 border-black bg-orange-500 p-5 text-center shadow-[0_14px_36px_rgba(0,0,0,0.2)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_44px_rgba(0,0,0,0.24)]"
+            disabled={isPrinting || hasPrintRequest}
+            className="group flex aspect-square w-full flex-col items-center justify-center gap-3 rounded-[28px] border-2 border-black bg-orange-500 p-5 text-center shadow-[0_14px_36px_rgba(0,0,0,0.2)] transition hover:-translate-y-0.5 hover:shadow-[0_18px_44px_rgba(0,0,0,0.24)] disabled:opacity-80"
           >
             <div className="relative h-20 w-20 rounded-2xl bg-white/90 p-2 sm:h-24 sm:w-24">
               <Image
@@ -196,7 +215,11 @@ export default function ReceiptPage() {
               Imprimir Nota
             </h2>
             <div className="text-xs font-semibold text-white/90 sm:text-sm">
-              {isPrinting ? "Enviando para impressão..." : "Toque para imprimir"}
+              {isPrinting
+                ? "Enviando para impressao..."
+                : hasPrintRequest
+                  ? "Solicitacao registrada"
+                  : "Toque para imprimir"}
             </div>
           </button>
         </div>
@@ -212,13 +235,6 @@ export default function ReceiptPage() {
             {printFeedback}
           </div>
         )}
-      </div>
-
-      <div
-        id="printable-receipt"
-        className="pointer-events-none fixed inset-0 z-[-1] flex items-center justify-center p-4"
-      >
-        {receipt && <ReceiptPreview receipt={receipt} />}
       </div>
 
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>

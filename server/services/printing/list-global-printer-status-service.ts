@@ -1,4 +1,6 @@
 import { getRepositoryFactory } from "@/api/repositories/repository-factory"
+import { getHeartbeatWindows } from "@/api/services/printing/printing-domain"
+import { getSupabaseAdminClient } from "@/api/config/database"
 
 interface ListGlobalPrinterStatusInput {
   limit: unknown
@@ -17,38 +19,42 @@ function normalizeLimit(value: unknown) {
   return 200
 }
 
-function classifyPrinterStatus(input: {
-  isActive: boolean
-  lastHeartbeatAt: string | null
-  lastStatus: string | null
-  lastError: string | null
-}) {
-  if (!input.isActive) return "disabled" as const
-  if (input.lastError) return "error" as const
-  if (!input.lastHeartbeatAt) return "unknown" as const
-
-  const heartbeatTs = new Date(input.lastHeartbeatAt).getTime()
-  if (!Number.isFinite(heartbeatTs)) return "unknown" as const
-
-  const ageMs = Date.now() - heartbeatTs
-  if (ageMs <= 90_000) {
-    if (input.lastStatus === "retrying") return "degraded" as const
-    return "online" as const
-  }
-
-  return "offline" as const
-}
-
 export async function listGlobalPrinterStatusService(input: ListGlobalPrinterStatusInput) {
   const repositories = getRepositoryFactory()
   const limit = normalizeLimit(input.limit)
+  const globalSettings = await repositories.printGlobalSettings.getDefault()
+  const heartbeatWindows = getHeartbeatWindows(globalSettings.heartbeat_interval_ms)
 
-  const [printers, recentJobs] = await Promise.all([
+  const [totems, printers, recentJobs] = await Promise.all([
+    repositories.totem.listAll(limit),
     repositories.totemPrinter.listAll(limit),
     repositories.printJob.listRecentGlobal(limit * 3),
   ])
+  const db = getSupabaseAdminClient()
+  const storeIds = [...new Set(totems.map((totem) => totem.store_id))]
+  const totemIds = totems.map((totem) => totem.id)
+  const [{ data: storesData }, { data: totemNamesData }] = await Promise.all([
+    storeIds.length > 0
+      ? db.from("stores").select("id, name").in("id", storeIds)
+      : Promise.resolve({ data: [] as Array<{ id: string; name: string }> }),
+    totemIds.length > 0
+      ? db.from("totems").select("id, name").in("id", totemIds)
+      : Promise.resolve({ data: [] as Array<{ id: string; name: string }> }),
+  ])
+  const storeNameById = new Map<string, string>(
+    ((storesData as Array<{ id: string; name: string }> | null) ?? []).map((store) => [
+      store.id,
+      store.name,
+    ]),
+  )
+  const totemNameById = new Map<string, string>(
+    ((totemNamesData as Array<{ id: string; name: string }> | null) ?? []).map((totem) => [
+      totem.id,
+      totem.name,
+    ]),
+  )
 
-  const totemCache = new Map<string, Awaited<ReturnType<typeof repositories.totem.findById>>>()
+  const printerByTotem = new Map(printers.map((printer) => [printer.totem_id, printer]))
   const jobsByTotem = new Map<string, typeof recentJobs>()
 
   for (const job of recentJobs) {
@@ -64,55 +70,106 @@ export async function listGlobalPrinterStatusService(input: ListGlobalPrinterSta
   let error = 0
   let unknown = 0
   let disabled = 0
+  let noPrinter = 0
+  let maintenance = 0
+  let failed = 0
+  let pendingQueue = 0
 
-  for (const printer of printers) {
-    if (!totemCache.has(printer.totem_id)) {
-      const totem = await repositories.totem.findById(printer.totem_id)
-      totemCache.set(printer.totem_id, totem)
-    }
-    const totem = totemCache.get(printer.totem_id)
-    const status = classifyPrinterStatus({
-      isActive: printer.is_active,
-      lastHeartbeatAt: printer.last_heartbeat_at,
-      lastStatus: printer.last_status,
-      lastError: printer.last_error,
-    })
-
-    if (status === "online") online += 1
-    if (status === "offline") offline += 1
-    if (status === "degraded") degraded += 1
-    if (status === "error") error += 1
-    if (status === "unknown") unknown += 1
-    if (status === "disabled") disabled += 1
-
-    const totemJobs = jobsByTotem.get(printer.totem_id) ?? []
+  for (const totem of totems) {
+    const printer = printerByTotem.get(totem.id) ?? null
+    const totemJobs = jobsByTotem.get(totem.id) ?? []
     const pendingJobs = totemJobs.filter((job) => job.status === "pending").length
     const failedJobs = totemJobs.filter((job) => job.status === "failed").length
+    const printedJob = totemJobs.find((job) => job.status === "printed") ?? null
+    if (pendingJobs > 0) pendingQueue += 1
+
+    let status:
+      | "online"
+      | "offline"
+      | "degraded"
+      | "error"
+      | "unknown"
+      | "disabled"
+      | "no_printer"
+      | "maintenance"
+      | "failed" = "unknown"
+
+    if (totem.maintenance_mode) {
+      status = "maintenance"
+      maintenance += 1
+    } else if (!printer) {
+      status = "no_printer"
+      noPrinter += 1
+    } else if (!printer.is_active) {
+      status = "disabled"
+      disabled += 1
+    } else if (!printer.last_heartbeat_at) {
+      status = "offline"
+      offline += 1
+    } else {
+      const heartbeatTs = new Date(printer.last_heartbeat_at).getTime()
+      if (!Number.isFinite(heartbeatTs)) {
+        status = "unknown"
+        unknown += 1
+      } else {
+        const ageMs = Date.now() - heartbeatTs
+        if (ageMs <= heartbeatWindows.onlineMaxAgeMs) {
+          if (printer.last_error || failedJobs > 0) {
+            status = "failed"
+            failed += 1
+            error += 1
+          } else if (printer.last_status === "retrying") {
+            status = "degraded"
+            degraded += 1
+          } else {
+            status = "online"
+            online += 1
+          }
+        } else if (ageMs <= heartbeatWindows.degradedMaxAgeMs) {
+          status = "degraded"
+          degraded += 1
+        } else {
+          status = "offline"
+          offline += 1
+        }
+      }
+    }
 
     items.push({
-      printerId: printer.id,
-      totemId: printer.totem_id,
-      storeId: printer.store_id,
-      deviceId: totem?.device_id ?? null,
-      totemStatus: totem?.status ?? null,
-      model: printer.model,
-      connectionType: printer.connection_type,
-      ip: printer.ip,
-      port: printer.port,
-      escposProfile: printer.escpos_profile,
-      isActive: printer.is_active,
+      printerId: printer?.id ?? null,
+      totemId: totem.id,
+      totemName: totemNameById.get(totem.id) ?? null,
+      storeId: totem.store_id,
+      storeName: storeNameById.get(totem.store_id) ?? "Loja",
+      deviceId: totem.device_id ?? null,
+      totemStatus: totem.status ?? null,
+      maintenanceMode: Boolean(totem.maintenance_mode),
+      model: printer?.model ?? null,
+      connectionType: printer?.connection_type ?? null,
+      ip: printer?.ip ?? null,
+      port: printer?.port ?? null,
+      escposProfile: printer?.escpos_profile ?? null,
+      isActive: printer?.is_active ?? false,
       healthStatus: status,
-      lastHeartbeatAt: printer.last_heartbeat_at,
-      lastStatus: printer.last_status,
-      lastError: printer.last_error,
-      agentVersion: printer.agent_version,
+      lastHeartbeatAt: printer?.last_heartbeat_at ?? null,
+      lastStatus: printer?.last_status ?? null,
+      lastError: printer?.last_error ?? null,
+      agentVersion: printer?.agent_version ?? null,
       pendingJobs,
       failedJobs,
-      updatedAt: printer.updated_at,
+      lastPrintedAt: printedJob?.printed_at ?? null,
+      updatedAt: printer?.updated_at ?? null,
     })
   }
 
   return {
+    settings: {
+      heartbeatIntervalMs: globalSettings.heartbeat_interval_ms,
+      queueClaimIntervalMs: globalSettings.queue_claim_interval_ms,
+      maxRetryAttempts: globalSettings.max_retry_attempts,
+      onlineWindowMs: heartbeatWindows.onlineMaxAgeMs,
+      degradedWindowMs: heartbeatWindows.degradedMaxAgeMs,
+    },
     summary: {
       total: items.length,
       online,
@@ -121,6 +178,10 @@ export async function listGlobalPrinterStatusService(input: ListGlobalPrinterSta
       error,
       unknown,
       disabled,
+      noPrinter,
+      maintenance,
+      failed,
+      pendingQueue,
     },
     items,
   }

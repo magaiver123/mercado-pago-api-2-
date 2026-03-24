@@ -186,8 +186,14 @@ export interface PrintJobRecord {
   attempts: number
   claimed_at: string | null
   claimed_by: string | null
+  lease_expires_at: string | null
+  last_attempt_at: string | null
+  next_retry_at: string | null
   printed_at: string | null
+  printed_by_agent: string | null
   last_error: string | null
+  error_code: string | null
+  error_retryable: boolean | null
   created_at: string
   updated_at: string
 }

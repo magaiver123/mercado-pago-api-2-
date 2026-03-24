@@ -2,6 +2,7 @@ import { AppError } from "@/api/utils/app-error"
 import { sanitizeString } from "@/api/utils/sanitize"
 import { isValidUUID } from "@/api/utils/validators"
 import { getRepositoryFactory } from "@/api/repositories/repository-factory"
+import { PRINT_JOB_ACTION_RECEIPT } from "@/api/services/printing/printing-domain"
 
 interface CreateTestPrintJobInput {
   storeId: string
@@ -11,22 +12,34 @@ interface CreateTestPrintJobInput {
 export async function createTestPrintJobService(input: CreateTestPrintJobInput) {
   const totemId = sanitizeString(input.totemId)
   if (!totemId || !isValidUUID(totemId)) {
-    throw new AppError("totemId invalido", 400)
+    throw new AppError("totemId invalido", 400, "TOTEM_CONTEXT_MISSING", true, false)
   }
 
   const repositories = getRepositoryFactory()
   const totem = await repositories.totem.findById(totemId)
   if (!totem) {
-    throw new AppError("Totem nao encontrado", 404)
+    throw new AppError("Totem nao encontrado", 404, "TOTEM_CONTEXT_MISSING", true, false)
   }
 
   if (totem.store_id !== input.storeId) {
-    throw new AppError("Totem nao pertence a loja selecionada", 403)
+    throw new AppError(
+      "Totem nao pertence a loja selecionada",
+      403,
+      "STORE_CONTEXT_MISMATCH",
+      true,
+      false,
+    )
   }
 
   const printer = await repositories.totemPrinter.findActiveByTotemId(totemId)
   if (!printer) {
-    throw new AppError("Totem sem impressora ativa configurada", 422)
+    throw new AppError(
+      "Totem sem impressora ativa configurada",
+      422,
+      "PRINTER_NOT_CONFIGURED",
+      true,
+      false,
+    )
   }
 
   const now = new Date()
@@ -59,12 +72,13 @@ export async function createTestPrintJobService(input: CreateTestPrintJobInput) 
     totemId,
     storeId: input.storeId,
     orderId,
-    action: "print_receipt",
+    action: PRINT_JOB_ACTION_RECEIPT,
     payload,
   })
 
   return {
     success: true,
+    code: "QUEUED",
     jobId: created.job.id,
     jobStatus: created.job.status,
     printer: {

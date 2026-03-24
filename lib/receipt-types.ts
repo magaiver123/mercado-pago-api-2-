@@ -74,9 +74,11 @@ export function getDefaultStoreInfo() {
 export interface PrintReceiptBackendResponse {
   success: boolean
   result?: "queued" | "already_queued" | "already_printed" | "failed_previous"
+  code?: string
   jobId?: string
   jobStatus?: string
   error?: string
+  retryable?: boolean
 }
 
 export async function printReceiptViaBackend(
@@ -97,12 +99,15 @@ export async function printReceiptViaBackend(
     return {
       success: false,
       error: data?.error ?? "Falha ao enviar comprovante para a fila de impressao",
+      code: data?.code,
+      retryable: data?.retryable,
     }
   }
 
   return {
     success: data?.success === true,
     result: data?.result,
+    code: data?.code,
     jobId: data?.jobId,
     jobStatus: data?.jobStatus,
   }

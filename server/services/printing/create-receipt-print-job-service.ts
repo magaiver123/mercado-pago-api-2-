@@ -4,6 +4,11 @@ import { getRepositoryFactory } from "@/api/repositories/repository-factory"
 import { buildReceiptPrintPayload } from "@/api/services/printing/receipt-print-payload"
 import { resolveTotemPrintContextService } from "@/api/services/printing/resolve-totem-print-context-service"
 import { resolveStoreReceiptInfoService } from "@/api/services/printing/resolve-store-receipt-info-service"
+import {
+  PRINT_JOB_ACTION_RECEIPT,
+  PrintQueueCode,
+  PrintQueueResult,
+} from "@/api/services/printing/printing-domain"
 
 interface CreateReceiptPrintJobInput {
   storeId: string
@@ -14,8 +19,8 @@ interface CreateReceiptPrintJobInput {
 
 export async function createReceiptPrintJobService(input: CreateReceiptPrintJobInput) {
   const orderId = sanitizeString(input.orderId)
-  if (!orderId) {
-    throw new AppError("orderId invalido", 400)
+  if (!orderId || orderId.length > 120) {
+    throw new AppError("orderId invalido", 400, "ORDER_ID_INVALID", true, false)
   }
 
   const payload = buildReceiptPrintPayload({
@@ -24,15 +29,33 @@ export async function createReceiptPrintJobService(input: CreateReceiptPrintJobI
   })
 
   if (!payload) {
-    throw new AppError("Comprovante invalido para impressao", 400)
+    throw new AppError(
+      "Comprovante invalido para impressao",
+      400,
+      "RECEIPT_PAYLOAD_INVALID",
+      true,
+      false,
+    )
   }
 
   const { totem, printer } = await resolveTotemPrintContextService(input.deviceId)
   if (!totem.store_id || totem.store_id !== input.storeId) {
-    throw new AppError("Totem nao pertence ao contexto atual da loja", 403)
+    throw new AppError(
+      "Totem nao pertence ao contexto atual da loja",
+      403,
+      "STORE_CONTEXT_MISMATCH",
+      true,
+      false,
+    )
   }
   if (!printer) {
-    throw new AppError("Nenhuma impressora ativa vinculada a este totem", 422)
+    throw new AppError(
+      "Nenhuma impressora ativa vinculada a este totem",
+      422,
+      "PRINTER_NOT_CONFIGURED",
+      true,
+      false,
+    )
   }
 
   const repositories = getRepositoryFactory()
@@ -61,32 +84,51 @@ export async function createReceiptPrintJobService(input: CreateReceiptPrintJobI
     payload.receipt.storeLogoPath = storeReceiptInfo.storeLogoPath ?? payload.receipt.storeLogoPath
   }
 
-  const queueResult = await repositories.printJob.createOrGetByIdempotency({
-    totemId: totem.id,
-    storeId: input.storeId,
-    orderId,
-    action: "print_receipt",
-    payload,
-  })
+  const [queueResult, globalSettings] = await Promise.all([
+    repositories.printJob.createOrGetByIdempotency({
+      totemId: totem.id,
+      storeId: input.storeId,
+      orderId,
+      action: PRINT_JOB_ACTION_RECEIPT,
+      payload,
+    }),
+    repositories.printGlobalSettings.getDefault(),
+  ])
+
   const job = queueResult.job
 
-  const normalizedStatus = job.status
-  let result: "queued" | "already_queued" | "already_printed" | "failed_previous" = "queued"
+  let result: PrintQueueResult = "queued"
+  let code: PrintQueueCode = "QUEUED"
 
   if (queueResult.created) {
     result = "queued"
-  } else if (normalizedStatus === "printed") {
+    code = "QUEUED"
+  } else if (job.status === "printed") {
     result = "already_printed"
-  } else if (normalizedStatus === "failed") {
-    const requeued = await repositories.printJob.requeueFailed(job.id, totem.id)
-    result = requeued ? "queued" : "failed_previous"
-  } else if (normalizedStatus === "pending" || normalizedStatus === "claimed") {
+    code = "ORDER_ALREADY_PRINTED"
+  } else if (job.status === "failed") {
+    const requeued = await repositories.printJob.requeueFailed(
+      job.id,
+      totem.id,
+      globalSettings.max_retry_attempts,
+    )
+
+    if (requeued) {
+      result = "queued"
+      code = "FAILED_PREVIOUS_REQUEUED"
+    } else {
+      result = "failed_previous"
+      code = "REQUEUE_NOT_ALLOWED"
+    }
+  } else if (job.status === "pending" || job.status === "claimed") {
     result = "already_queued"
+    code = "ORDER_ALREADY_QUEUED"
   }
 
   return {
     success: true,
     result,
+    code,
     jobId: job.id,
     jobStatus: job.status,
     printer: {

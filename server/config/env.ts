@@ -4,7 +4,13 @@ type EnvKey =
   | "NEXT_PUBLIC_SUPABASE_URL"
   | "SUPABASE_SERVICE_ROLE_KEY"
   | "STORE_CONTEXT_SECRET"
+  | "STORE_CONTEXT_PREVIOUS_SECRET"
   | "SESSION_CONTEXT_SECRET"
+  | "SESSION_CONTEXT_PREVIOUS_SECRET"
+  | "PRINT_AGENT_HMAC_SECRET"
+  | "PRINT_AGENT_AUTH_ALLOW_LEGACY"
+  | "PRINT_AGENT_SIGNATURE_MAX_SKEW_MS"
+  | "PRINT_ADMIN_API_TOKEN"
   | "ADMIN_BYPASS_ENABLED"
   | "MQTT_URL"
   | "MQTT_USER"
@@ -71,22 +77,61 @@ export function getEmailEnv() {
 
 export function getStoreContextEnv() {
   return {
-    secret: readEnv("STORE_CONTEXT_SECRET") ?? requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
+    secret: requireEnv("STORE_CONTEXT_SECRET"),
+    previousSecret: readEnv("STORE_CONTEXT_PREVIOUS_SECRET"),
   }
 }
 
 export function getSessionContextEnv() {
   return {
-    secret:
-      readEnv("SESSION_CONTEXT_SECRET") ??
-      readEnv("STORE_CONTEXT_SECRET") ??
-      requireEnv("SUPABASE_SERVICE_ROLE_KEY"),
+    secret: requireEnv("SESSION_CONTEXT_SECRET"),
+    previousSecret: readEnv("SESSION_CONTEXT_PREVIOUS_SECRET"),
   }
 }
 
 export function getAdminBypassEnv() {
   return {
     enabled: readEnv("ADMIN_BYPASS_ENABLED") === "true",
+  }
+}
+
+function parseBoolean(value: string | undefined, fallback: boolean): boolean {
+  if (!value) return fallback
+  const normalized = value.trim().toLowerCase()
+  if (normalized === "true") return true
+  if (normalized === "false") return false
+  return fallback
+}
+
+function parseIntInRange(
+  value: string | undefined,
+  fallback: number,
+  min: number,
+  max: number,
+): number {
+  if (!value) return fallback
+  const parsed = Number.parseInt(value, 10)
+  if (!Number.isFinite(parsed)) return fallback
+  if (parsed < min || parsed > max) return fallback
+  return parsed
+}
+
+export function getPrintAgentAuthEnv() {
+  return {
+    hmacSecret: requireEnv("PRINT_AGENT_HMAC_SECRET"),
+    allowLegacyUnsigned: parseBoolean(readEnv("PRINT_AGENT_AUTH_ALLOW_LEGACY"), true),
+    signatureMaxSkewMs: parseIntInRange(
+      readEnv("PRINT_AGENT_SIGNATURE_MAX_SKEW_MS"),
+      60_000,
+      5_000,
+      300_000,
+    ),
+  }
+}
+
+export function getPrintAdminEnv() {
+  return {
+    apiToken: requireEnv("PRINT_ADMIN_API_TOKEN"),
   }
 }
 

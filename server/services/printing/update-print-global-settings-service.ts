@@ -2,6 +2,7 @@ import { AppError } from "@/api/utils/app-error"
 import { sanitizeString } from "@/api/utils/sanitize"
 import { getRepositoryFactory } from "@/api/repositories/repository-factory"
 import { isValidEscPosProfile } from "@/api/services/printing/escpos-profiles"
+import { normalizePaperWidth, normalizePort } from "@/api/services/printing/printing-domain"
 
 interface UpdatePrintGlobalSettingsInput {
   defaultConnectionType: unknown
@@ -47,9 +48,9 @@ export async function updatePrintGlobalSettingsService(
 
   const settings = await getRepositoryFactory().printGlobalSettings.updateDefault({
     defaultConnectionType: "tcp",
-    defaultPort: parseIntInRange(input.defaultPort, 9100, 1, 65535),
+    defaultPort: normalizePort(input.defaultPort, 9100),
     defaultEscposProfile: escposProfile,
-    defaultPaperWidthMm: parseIntInRange(input.defaultPaperWidthMm, 80, 58, 82),
+    defaultPaperWidthMm: normalizePaperWidth(input.defaultPaperWidthMm),
     queueClaimIntervalMs: parseIntInRange(input.queueClaimIntervalMs, 2500, 500, 60000),
     heartbeatIntervalMs: parseIntInRange(input.heartbeatIntervalMs, 10000, 1000, 120000),
     maxRetryAttempts: parseIntInRange(input.maxRetryAttempts, 5, 1, 20),

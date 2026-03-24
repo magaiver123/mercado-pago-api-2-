@@ -1,45 +1,92 @@
-import assert from "node:assert/strict";
+import assert from "node:assert/strict"
 import {
+  buildReceiptBytes,
   formatOrderNumberOrFallback,
   formatReceiptDateTime,
-  buildReceiptBytes,
-} from "./receipt-print-layout.mjs";
+} from "./receipt-print-layout.mjs"
 
-function bufferAsAscii(buffer) {
-  return buffer.toString("ascii");
+function asLatin1(buffer) {
+  return buffer.toString("latin1")
 }
 
-assert.equal(formatOrderNumberOrFallback(123, "MP-ORDER"), "00000123");
-assert.equal(formatOrderNumberOrFallback(null, "MP-ORDER"), "MP-ORDER");
+assert.equal(formatOrderNumberOrFallback(123, "MP-ORDER"), "00000123")
+assert.equal(formatOrderNumberOrFallback(null, "MP-ORDER"), "MP-ORDER")
 
-const formattedDate = formatReceiptDateTime("2026-03-22T06:44:16.887Z");
-assert.match(formattedDate, /^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/);
+const formattedDate = formatReceiptDateTime("2026-03-22T06:44:16.887Z")
+assert.match(formattedDate, /^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/)
 
-const bytes = buildReceiptBytes(
-  {
+const payload = {
+  orderId: "MP-ORDER-XYZ",
+  receipt: {
     orderId: "MP-ORDER-XYZ",
-    receipt: {
-      orderId: "MP-ORDER-XYZ",
-      orderNumber: 321,
-      createdAt: "2026-03-22T06:44:16.887Z",
-      paymentMethod: "Cartao de Debito",
-      total: 2,
-      storeName: "Loja Exemplo",
-      storeAddress: "Rua A, 100",
-      storeTaxId: "12.345.678/0001-99",
-      items: [{ name: "Agua", quantity: 2, unitPrice: 1 }],
-    },
+    orderNumber: 321,
+    createdAt: "2026-03-22T06:44:16.887Z",
+    paymentMethod: "Cartao de Debito",
+    total: 16.5,
+    subtotal: 18.5,
+    discounts: 2,
+    customerName: "Maria da Silva",
+    customerDocument: "123.456.789-01",
+    authorizationCode: "AUTH-12345",
+    accessKey: "1234 5678 9123 4567 8912",
+    storeName: "Mercado Centro",
+    storeLegalName: "Mercado Centro Comercio LTDA",
+    storeAddress: "Rua A, 100 - Centro",
+    storeTaxId: "12.345.678/0001-99",
+    storePhone: "(11) 4002-8922",
+    items: [
+      { name: "Agua Mineral sem Gas 500ml", quantity: 2, unitPrice: 3.25 },
+      { name: "Barra de Cereal Banana e Mel", quantity: 1, unitPrice: 10 },
+    ],
   },
-  {
+}
+
+const genericBytes = buildReceiptBytes(payload, {
+  escposProfile: "generic",
+  paperWidthMm: 80,
+})
+const genericRaw = asLatin1(genericBytes)
+assert.match(genericRaw, /COMPROVANTE DE COMPRA/)
+assert.match(genericRaw, /Pedido: 00000321/)
+assert.match(genericRaw, /Pagamento: Cartao de Debito/)
+assert.match(genericRaw, /TOTAL/)
+assert.match(genericRaw, /OBRIGADO PELA PREFERENCIA!/)
+
+const compactBytes = buildReceiptBytes(payload, {
+  escposProfile: "generic",
+  paperWidthMm: 58,
+})
+const compactRaw = asLatin1(compactBytes)
+assert.match(compactRaw, /ITENS/)
+assert.match(compactRaw, /Autorizacao: AUTH-12345/)
+assert.match(compactRaw, /Chave: 1234 5678 9123 4567 8912/)
+
+const accentPayload = {
+  orderId: "O-1",
+  receipt: {
+    orderId: "O-1",
+    createdAt: "2026-03-22T06:44:16.887Z",
+    paymentMethod: "Débito",
+    total: 5,
+    subtotal: 5,
+    storeName: "São João",
+    items: [{ name: "Pão de queijo", quantity: 1, unitPrice: 5 }],
+  },
+}
+const genericAccentRaw = asLatin1(
+  buildReceiptBytes(accentPayload, {
     escposProfile: "generic",
     paperWidthMm: 80,
-  },
-);
+  }),
+)
+assert.match(genericAccentRaw, /Sao Joao/)
 
-const raw = bufferAsAscii(bytes);
-assert.match(raw, /Pedido: 00000321/);
-assert.match(raw, /Data: \d{2}\/\d{2}\/\d{4} \d{2}:\d{2}/);
-assert.match(raw, /Obrigado pela preferencia!/);
-assert.doesNotMatch(raw, /Perfil ESC\/POS/);
+const bematechAccentRaw = asLatin1(
+  buildReceiptBytes(accentPayload, {
+    escposProfile: "bematech-mp4200",
+    paperWidthMm: 80,
+  }),
+)
+assert.match(bematechAccentRaw, /São João/)
 
-console.log("receipt-print-layout tests passed");
+console.log("receipt-print-layout tests passed")

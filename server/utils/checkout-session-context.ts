@@ -6,8 +6,10 @@ import { isValidUUID } from "@/api/utils/validators"
 
 const CHECKOUT_SESSION_COOKIE = "checkout_session_ctx"
 const CHECKOUT_SESSION_MAX_AGE_SECONDS = 60 * 15
+const CHECKOUT_SESSION_VERSION = 2
 
 type CheckoutSessionPayload = {
+  v: number
   sessionId: string
   userId: string
   storeId: string
@@ -46,6 +48,7 @@ function decode(value: string, secret: string): CheckoutSessionPayload | null {
     if (typeof decoded.issuedAt !== "number" || !Number.isFinite(decoded.issuedAt)) return null
 
     return {
+      v: typeof decoded.v === "number" ? decoded.v : 1,
       sessionId: decoded.sessionId,
       userId: decoded.userId,
       storeId: decoded.storeId,
@@ -76,6 +79,7 @@ export function setCheckoutSessionCookie(
   const { secret } = getSessionContextEnv()
   const value = encode(
     {
+      v: CHECKOUT_SESSION_VERSION,
       sessionId: input.sessionId,
       userId: input.userId,
       storeId: input.storeId,
@@ -101,9 +105,11 @@ export function readCheckoutSessionFromRequest(request: Request): CheckoutSessio
   const cookieValue = parseCookie(request.headers.get("cookie"), CHECKOUT_SESSION_COOKIE)
   if (!cookieValue) return null
 
-  const { secret } = getSessionContextEnv()
-  const payload = decode(cookieValue, secret)
-  if (!payload) return null
+  const { secret, previousSecret } = getSessionContextEnv()
+  const payload =
+    decode(cookieValue, secret) ??
+    (previousSecret ? decode(cookieValue, previousSecret) : null)
+  if (!payload || payload.v < 1) return null
 
   const age = Date.now() - payload.issuedAt
   if (age > CHECKOUT_SESSION_MAX_AGE_SECONDS * 1000) return null

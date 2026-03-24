@@ -6,8 +6,10 @@ import { isValidUUID } from "@/api/utils/validators"
 
 const STORE_CONTEXT_COOKIE = "store_ctx"
 const STORE_CONTEXT_MAX_AGE_SECONDS = 60 * 60 * 12
+const STORE_CONTEXT_VERSION = 2
 
 type StoreContextPayload = {
+  v: number
   storeId: string
   deviceId: string
   issuedAt: number
@@ -64,6 +66,7 @@ function decode(value: string, secret: string): StoreContextPayload | null {
     }
 
     return {
+      v: typeof decoded.v === "number" ? decoded.v : 1,
       storeId: decoded.storeId,
       deviceId: decoded.deviceId,
       issuedAt: decoded.issuedAt,
@@ -93,6 +96,7 @@ export function setStoreContextCookie(
   const { secret } = getStoreContextEnv()
   const value = encode(
     {
+      v: STORE_CONTEXT_VERSION,
       storeId: input.storeId,
       deviceId: input.deviceId,
       issuedAt: Date.now(),
@@ -117,9 +121,11 @@ export function readStoreContextFromRequest(request: Request): StoreContextPaylo
   const cookieValue = parseCookie(request.headers.get("cookie"), STORE_CONTEXT_COOKIE)
   if (!cookieValue) return null
 
-  const { secret } = getStoreContextEnv()
-  const payload = decode(cookieValue, secret)
-  if (!payload) return null
+  const { secret, previousSecret } = getStoreContextEnv()
+  const payload =
+    decode(cookieValue, secret) ??
+    (previousSecret ? decode(cookieValue, previousSecret) : null)
+  if (!payload || payload.v < 1) return null
 
   const age = Date.now() - payload.issuedAt
   if (age > STORE_CONTEXT_MAX_AGE_SECONDS * 1000) {
