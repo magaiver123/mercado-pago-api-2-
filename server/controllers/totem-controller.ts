@@ -20,7 +20,7 @@ export async function activateTotemController(request: Request) {
   try {
     body = await request.json()
   } catch {
-    return NextResponse.json({ error: "Payload invalido" }, { status: 400 })
+    return NextResponse.json({ error: "Payload inválido" }, { status: 400 })
   }
 
   const data = await activateTotemService({
@@ -36,7 +36,7 @@ export async function totemStatusController(request: Request) {
   try {
     body = await request.json()
   } catch {
-    return NextResponse.json({ error: "Device ID invalido" }, { status: 400 })
+    return NextResponse.json({ error: "Device ID inválido" }, { status: 400 })
   }
 
   const data = await validateTotemStatusService(body?.deviceId)
@@ -59,7 +59,7 @@ export async function activateAdminBypassController(request: Request) {
   try {
     body = await request.json()
   } catch {
-    return NextResponse.json({ error: "Payload invalido" }, { status: 400 })
+    return NextResponse.json({ error: "Payload inválido" }, { status: 400 })
   }
 
   const data = await activateAdminBypassService(request, {
