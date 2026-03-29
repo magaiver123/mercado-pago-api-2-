@@ -30,6 +30,16 @@ function extractErrorMessage(payload: unknown): string {
         return String((first as Record<string, unknown>).description)
       }
     }
+    const errors = data.errors
+    if (Array.isArray(errors) && errors.length > 0) {
+      const first = errors[0]
+      if (first && typeof first === "object") {
+        const description = (first as Record<string, unknown>).description
+        if (typeof description === "string" && description.trim() !== "") {
+          return description
+        }
+      }
+    }
   }
 
   return "Erro na comunicacao com Mercado Pago"
@@ -76,4 +86,3 @@ export async function mercadoPagoApiRequest<T = unknown>(params: {
     message: response.ok ? "ok" : extractErrorMessage(raw),
   }
 }
-

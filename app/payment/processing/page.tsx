@@ -4,9 +4,9 @@ import Image from "next/image";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
-import { Button } from "@/components/ui/button";
 import { useCartStore } from "@/lib/cart-store";
 import { getPaymentRouteByStatus, normalizePointOrderStatus } from "@/lib/mercadopago-point-status";
+import { SwitchPaymentButton } from "@/components/payment/switch-payment-button";
 
 type PaymentMethod = "credit_card" | "debit_card" | "pix";
 
@@ -20,6 +20,34 @@ function getPaymentMethod(value: string | null): PaymentMethod {
   return "credit_card";
 }
 
+function getFriendlyStatusTitle(status: string): string {
+  switch (status) {
+    case "created":
+      return "Pedido criado. Preparando o terminal";
+    case "pending":
+      return "Iniciando pagamento";
+    case "processing":
+      return "Pagamento sendo processado";
+    case "at_terminal":
+      return "Pagamento aguardando no terminal";
+    case "action_required":
+      return "Confirme a acao no terminal";
+    case "processed":
+      return "Pagamento aprovado";
+    case "failed":
+    case "error":
+      return "Pagamento nao autorizado";
+    case "canceled":
+      return "Pagamento cancelado";
+    case "expired":
+      return "Tempo para pagamento expirou";
+    case "refunded":
+      return "Pagamento reembolsado";
+    default:
+      return "Verificando pagamento";
+  }
+}
+
 function ProcessingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -27,7 +55,6 @@ function ProcessingContent() {
   const method = getPaymentMethod(searchParams.get("method"));
 
   const [status, setStatus] = useState<string>("processing");
-  const [cancelling, setCancelling] = useState(false);
   const [remainingTime, setRemainingTime] = useState<number>(60);
   const [createdAt, setCreatedAt] = useState<string | null>(null);
   const [timeoutReached, setTimeoutReached] = useState(false);
@@ -43,45 +70,11 @@ function ProcessingContent() {
   }, [method]);
 
   const methodIcon = method === "pix" ? "/payment-icons/pix.gif" : "/payment-icons/card.gif";
+  const statusTitle = useMemo(() => getFriendlyStatusTitle(status), [status]);
 
   useEffect(() => {
     clearCart();
   }, [clearCart]);
-
-  const handleSwitchPayment = async () => {
-    if (cancelling) return;
-
-    setCancelling(true);
-
-    try {
-      const fallbackOrderId =
-        typeof window !== "undefined"
-          ? window.sessionStorage.getItem("activeOrderId")
-          : null;
-      const cancelOrderId = orderId || fallbackOrderId;
-
-      if (cancelOrderId) {
-        const response = await fetch(`/api/mercadopago/cancel-order?orderId=${cancelOrderId}`, {
-          method: "POST",
-        });
-
-        if (!response.ok) {
-          const data = await response.json().catch(() => null);
-          throw new Error(data?.error || "Nao foi possivel cancelar o pedido");
-        }
-      }
-
-      if (typeof window !== "undefined") {
-        window.sessionStorage.removeItem("activeOrderId");
-      }
-
-      router.push("/checkout");
-    } catch (error) {
-      console.error("[processing] switch payment error:", error);
-      alert(error instanceof Error ? error.message : "Erro ao cancelar pedido.");
-      setCancelling(false);
-    }
-  };
 
   useEffect(() => {
     if (!orderId) {
@@ -158,24 +151,21 @@ function ProcessingContent() {
           className="h-auto w-[112px]"
         />
 
-        <div className="mt-8 flex h-36 w-36 items-center justify-center rounded-full border-2 border-orange-200 bg-orange-50">
-          <Image
-            src={methodIcon}
-            alt="Metodo de pagamento"
-            width={96}
-            height={96}
-            className="h-24 w-24 object-contain"
-            style={{ filter: ORANGE_ICON_FILTER }}
-          />
-        </div>
+        <Image
+          src={methodIcon}
+          alt="Metodo de pagamento"
+          width={220}
+          height={220}
+          className="mt-8 h-[220px] w-[220px] object-contain sm:h-[260px] sm:w-[260px]"
+          style={{ filter: ORANGE_ICON_FILTER }}
+        />
 
         <div className="mt-8 space-y-4">
-          <h1 className="text-3xl font-black text-black">Pagamento em andamento</h1>
+          <h1 className="text-3xl font-black text-black">{statusTitle}</h1>
           <p className="text-base font-medium leading-relaxed text-black/75">{helperText}</p>
         </div>
 
         <div className="mt-8 rounded-2xl border border-orange-200 bg-white px-4 py-3 text-xs text-black/65">
-          <p>Status: {status}</p>
           <p>Tempo restante: {remainingTime}s / 60s</p>
           <p>
             {timeoutReached
@@ -185,17 +175,7 @@ function ProcessingContent() {
         </div>
       </div>
 
-      <div className="fixed bottom-6 left-0 right-0 px-4">
-        <div className="mx-auto w-full max-w-md">
-          <Button
-            onClick={handleSwitchPayment}
-            disabled={cancelling}
-            className="h-14 w-full rounded-full bg-orange-500 text-base font-semibold text-white hover:bg-orange-600"
-          >
-            {cancelling ? "Cancelando..." : "Trocar forma de pagamento"}
-          </Button>
-        </div>
-      </div>
+      <SwitchPaymentButton />
     </main>
   );
 }

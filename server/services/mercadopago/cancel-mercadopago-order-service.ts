@@ -8,6 +8,31 @@ interface CancelOrderAuthContext {
   storeId: string
 }
 
+function extractMercadoPagoErrorCode(payload: unknown): string | null {
+  if (!payload || typeof payload !== "object") return null
+  const data = payload as Record<string, unknown>
+
+  const cause = data.cause
+  if (Array.isArray(cause) && cause.length > 0) {
+    const first = cause[0]
+    if (first && typeof first === "object") {
+      const code = (first as Record<string, unknown>).code
+      if (typeof code === "string" && code.trim() !== "") return code
+    }
+  }
+
+  const errors = data.errors
+  if (Array.isArray(errors) && errors.length > 0) {
+    const first = errors[0]
+    if (first && typeof first === "object") {
+      const code = (first as Record<string, unknown>).code
+      if (typeof code === "string" && code.trim() !== "") return code
+    }
+  }
+
+  return null
+}
+
 export async function cancelMercadoPagoOrderService(orderId: string | null, auth: CancelOrderAuthContext) {
   if (!orderId) {
     throw new AppError("Order ID e obrigatorio", 400)
@@ -33,11 +58,13 @@ export async function cancelMercadoPagoOrderService(orderId: string | null, auth
   })
 
   if (!cancelResponse.ok) {
+    const code = extractMercadoPagoErrorCode(cancelResponse.raw)
     return {
       ok: false as const,
       status: cancelResponse.status,
       body: {
         error: cancelResponse.message || "Erro ao cancelar pedido",
+        code,
         details: cancelResponse.raw,
       },
     }
