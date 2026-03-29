@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { clearAuthUser } from "@/lib/auth-store"
 import { useEffect, useRef } from "react"
+import { SwitchPaymentButton } from "@/components/payment/switch-payment-button"
 
 export default function CanceledPage() {
   const router = useRouter()
@@ -60,6 +61,7 @@ export default function CanceledPage() {
           Fazer Novo Pedido
         </Button>
       </div>
+      <SwitchPaymentButton />
     </main>
   )
 }

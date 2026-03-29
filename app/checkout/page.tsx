@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { useRouter } from "next/navigation";
 import {
@@ -29,10 +29,8 @@ export default function CheckoutPage() {
   const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(
     null
   );
-  const [showConfirmation, setShowConfirmation] = useState(false);
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showConflict, setShowConflict] = useState(false);
   const checkoutSessionIdRef = useRef<string | null>(null);
   const router = useRouter();
   const { items, getTotal } = useCartStore();
@@ -68,12 +66,7 @@ export default function CheckoutPage() {
     );
   }
 
-  const handleCreateOrder = async () => {
-    if (!selectedMethod) {
-      setError("Por favor, selecione um método de pagamento");
-      return;
-    }
-
+  const handleCreateOrder = async (methodId: PaymentMethod) => {
     const user = getAuthUser();
     if (!user) {
       router.push("/auth/login");
@@ -82,8 +75,8 @@ export default function CheckoutPage() {
 
     try {
       setIsCreatingOrder(true);
+      setSelectedMethod(methodId);
       setError(null);
-      setShowConflict(false);
 
       if (!checkoutSessionIdRef.current) {
         const startResponse = await fetch("/api/checkout/session/start", {
@@ -113,7 +106,7 @@ export default function CheckoutPage() {
             productId: item.id, // ID REAL do produto no banco
             quantity: item.quantity,
           })),
-          paymentMethodId: selectedMethod,
+          paymentMethodId: methodId,
           customerDocument: taxDocument?.value ?? null,
           customerDocumentType: taxDocument?.type ?? null,
         }),
@@ -123,8 +116,7 @@ export default function CheckoutPage() {
 
       if (!response.ok) {
         if (response.status === 409) {
-          setShowConflict(true);
-          setError(data.error || "Já existe um pedido pendente no terminal");
+          setError(data.error || "J\u00E1 existe um pedido pendente no terminal");
           return;
         }
         throw new Error(data.error || "Erro ao criar pedido");
@@ -159,7 +151,7 @@ export default function CheckoutPage() {
           quantity: item.quantity,
           unitPrice: item.price,
         })),
-        paymentMethod: getMethodName(selectedMethod),
+        paymentMethod: getMethodName(methodId),
         subtotal: total,
         total,
         storeName,
@@ -170,7 +162,11 @@ export default function CheckoutPage() {
         storeLogoPath,
       });
 
-      router.push(`/payment/processing?orderId=${orderId}`);
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem("activeOrderId", orderId);
+      }
+
+      router.push(`/payment/processing?orderId=${orderId}&method=${methodId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro desconhecido");
       checkoutSessionIdRef.current = null;
@@ -183,121 +179,29 @@ export default function CheckoutPage() {
     {
       id: "pix",
       name: "PIX",
-      subtitle: "Faça o pagamento pelo seu App do Banco",
+      subtitle: "Fa\u00E7a o pagamento pelo seu App do Banco",
       icon: DollarSign,
     },
     {
       id: "debit_card",
-      name: "Cartão de Débito",
-      subtitle: undefined,
+      name: "Cart\u00E3o de D\u00E9bito",
+      subtitle: "Aproxime ou insira seu cart\u00E3o na m\u00E1quina",
       icon: CreditCard,
     },
     {
       id: "credit_card",
-      name: "Cartão de Crédito",
-      subtitle: undefined,
+      name: "Cart\u00E3o de Cr\u00E9dito",
+      subtitle: "Aproxime ou insira seu cart\u00E3o na m\u00E1quina",
       icon: CreditCard,
     },
   ] as const;
 
-  const handleContinue = () => {
-    if (!selectedMethod) {
-      setError("Por favor, selecione um método de pagamento");
-      return;
-    }
-    setShowConfirmation(true);
-  };
-
   const handleBack = () => {
-    if (showConfirmation) {
-      setShowConfirmation(false);
-      setError(null);
-      setShowConflict(false);
-    } else {
-      router.push("/");
-    }
+    router.push("/");
   };
 
   const getMethodName = (methodId: PaymentMethod) =>
     paymentMethods.find((m) => m.id === methodId)?.name || methodId;
-
-  if (showConfirmation) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center p-4">
-        <Card className="w-full max-w-2xl border border-orange-500">
-          <CardHeader>
-            <CardTitle className="text-black text-2xl">
-              Confirmar Pagamento
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="border border-orange-200 rounded-lg p-6 space-y-4">
-              <h3 className="text-black font-semibold text-lg">
-                Resumo do Pedido
-              </h3>
-              {items.map((item) => (
-                <div key={item.id} className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded bg-orange-100 relative">
-                    <Image
-                      src={item.image_url || "/placeholder.svg"}
-                      alt={item.name}
-                      fill
-                      className="object-cover rounded"
-                    />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-black font-medium">{item.name}</p>
-                    <p className="text-black/60 text-sm">
-                      {item.quantity}x R${" "}
-                      {item.price.toFixed(2).replace(".", ",")}
-                    </p>
-                  </div>
-                  <p className="text-black font-semibold">
-                    R${" "}
-                    {(item.price * item.quantity).toFixed(2).replace(".", ",")}
-                  </p>
-                </div>
-              ))}
-            </div>
-
-            <div className="text-center space-y-2">
-              <p className="text-black/60">Método de Pagamento</p>
-              <p className="text-black text-2xl font-bold">
-                {getMethodName(selectedMethod!)}
-              </p>
-              <p className="text-black text-4xl font-bold mt-2">
-                R$ {total.toFixed(2).replace(".", ",")}
-              </p>
-            </div>
-
-            {error && (
-              <div className="p-4 bg-orange-100 text-orange-700 border border-orange-300 rounded">
-                {error}
-              </div>
-            )}
-
-            <Button
-              onClick={handleCreateOrder}
-              disabled={isCreatingOrder}
-              className="w-full bg-orange-500 hover:bg-orange-600 text-white"
-            >
-              {isCreatingOrder ? <Spinner className="mr-2 h-4 w-4" /> : null}
-              Confirmar e Enviar para Terminal
-            </Button>
-
-            <Button
-              onClick={handleBack}
-              variant="outline"
-              className="w-full border-orange-500 text-orange-600 hover:bg-orange-50"
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Voltar
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-white px-4 py-8 sm:py-10">
@@ -312,11 +216,11 @@ export default function CheckoutPage() {
             className="mb-7 h-auto w-[112px]"
           />
           <h1 className="text-4xl font-black tracking-tight text-black">
-            Como você quer pagar?
+            Como voc\u00EA quer pagar?
           </h1>
         </div>
 
-        <div className="mb-6 rounded-3xl border border-orange-200 bg-orange-50/40 px-5 py-4 text-center">
+        <div className="mb-6 text-center">
           <p className="text-sm font-medium text-black/70">Valor total</p>
           <p className="mt-1 text-3xl font-black text-black">
             R$ {total.toFixed(2).replace(".", ",")}
@@ -327,11 +231,17 @@ export default function CheckoutPage() {
           {paymentMethods.map((method) => {
             const Icon = method.icon;
             const active = selectedMethod === method.id;
+            const loadingCurrentMethod = isCreatingOrder && selectedMethod === method.id;
             return (
               <button
                 key={method.id}
-                onClick={() => setSelectedMethod(method.id)}
-                className={`w-full rounded-[2.25rem] border-2 px-6 py-5 text-left transition-all duration-200 ${
+                onClick={() => {
+                  if (!isCreatingOrder) {
+                    void handleCreateOrder(method.id);
+                  }
+                }}
+                disabled={isCreatingOrder}
+                className={`w-full rounded-[2.25rem] border-2 px-6 py-5 text-left transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-80 ${
                   active
                     ? "border-orange-500 bg-orange-500 text-white shadow-[0_18px_35px_-22px_rgba(249,115,22,1)]"
                     : "border-orange-400 bg-white text-orange-600 hover:bg-orange-50"
@@ -345,11 +255,19 @@ export default function CheckoutPage() {
                         : "border-orange-200 bg-orange-100"
                     }`}
                   >
-                    <Icon
-                      className={`h-6 w-6 ${
-                        active ? "text-white" : "text-orange-500"
-                      }`}
-                    />
+                    {loadingCurrentMethod ? (
+                      <Spinner
+                        className={`h-6 w-6 ${
+                          active ? "text-white" : "text-orange-500"
+                        }`}
+                      />
+                    ) : (
+                      <Icon
+                        className={`h-6 w-6 ${
+                          active ? "text-white" : "text-orange-500"
+                        }`}
+                      />
+                    )}
                   </div>
                   <div className="min-w-0">
                     <p
@@ -368,6 +286,15 @@ export default function CheckoutPage() {
                         {method.subtitle}
                       </p>
                     ) : null}
+                    {loadingCurrentMethod ? (
+                      <p
+                        className={`mt-2 text-xs font-semibold ${
+                          active ? "text-orange-100" : "text-orange-600"
+                        }`}
+                      >
+                        Iniciando pagamento...
+                      </p>
+                    ) : null}
                   </div>
                 </div>
               </button>
@@ -381,15 +308,7 @@ export default function CheckoutPage() {
           </div>
         )}
 
-        <div className="mt-7 space-y-3">
-          <Button
-            onClick={handleContinue}
-            disabled={!selectedMethod}
-            className="h-14 w-full rounded-full bg-orange-500 text-base font-semibold text-white hover:bg-orange-600 disabled:bg-orange-300"
-          >
-            Continuar
-          </Button>
-
+        <div className="mt-7">
           <Button
             onClick={handleBack}
             variant="outline"

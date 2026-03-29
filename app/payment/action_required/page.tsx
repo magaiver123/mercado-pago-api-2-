@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { clearAuthUser } from "@/lib/auth-store"
 import { useEffect, useRef } from "react"
+import { SwitchPaymentButton } from "@/components/payment/switch-payment-button"
 
 export default function ActionRequiredPage() {
   const router = useRouter()
@@ -55,6 +56,7 @@ export default function ActionRequiredPage() {
           Voltar ao Início
         </Button>
       </div>
+      <SwitchPaymentButton />
     </main>
   )
 }

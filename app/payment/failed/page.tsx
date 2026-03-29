@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { clearAuthUser } from "@/lib/auth-store"
 import { useEffect, useRef } from "react"
+import { SwitchPaymentButton } from "@/components/payment/switch-payment-button"
 
 export default function FailedPage() {
   const router = useRouter()
@@ -55,6 +56,7 @@ export default function FailedPage() {
           Tentar Novamente
         </Button>
       </div>
+      <SwitchPaymentButton />
     </main>
   )
 }
