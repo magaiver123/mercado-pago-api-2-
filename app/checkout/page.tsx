@@ -9,7 +9,6 @@ import {
   CreditCard,
   DollarSign,
   ArrowLeft,
-  CheckCircle,
   ShoppingBag,
 } from "lucide-react";
 import { useCartStore } from "@/lib/cart-store";
@@ -181,9 +180,24 @@ export default function CheckoutPage() {
   };
 
   const paymentMethods = [
-    { id: "credit_card", name: "Cartão de Crédito", icon: CreditCard },
-    { id: "debit_card", name: "Cartão de Débito", icon: CreditCard },
-    { id: "pix", name: "PIX", icon: DollarSign },
+    {
+      id: "pix",
+      name: "PIX",
+      subtitle: "Faça o pagamento pelo seu App do Banco",
+      icon: DollarSign,
+    },
+    {
+      id: "debit_card",
+      name: "Cartão de Débito",
+      subtitle: undefined,
+      icon: CreditCard,
+    },
+    {
+      id: "credit_card",
+      name: "Cartão de Crédito",
+      subtitle: undefined,
+      icon: CreditCard,
+    },
   ] as const;
 
   const handleContinue = () => {
@@ -286,57 +300,92 @@ export default function CheckoutPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl border border-orange-500">
-        <CardHeader>
-          <CardTitle className="text-black text-2xl">
-            Forma de Pagamento
-          </CardTitle>
-          <p className="text-black/60 mt-2">Selecione como deseja pagar</p>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <p className="text-black">
-            Valor total:{" "}
-            <span className="font-bold text-xl ml-2">
-              R$ {total.toFixed(2).replace(".", ",")}
-            </span>
+    <div className="min-h-screen bg-white px-4 py-8 sm:py-10">
+      <div className="mx-auto w-full max-w-md">
+        <div className="mb-8 flex flex-col items-center text-center">
+          <Image
+            src="/LOGOMR.png"
+            alt="Logo MR"
+            width={112}
+            height={112}
+            priority
+            className="mb-7 h-auto w-[112px]"
+          />
+          <h1 className="text-4xl font-black tracking-tight text-black">
+            Como você quer pagar?
+          </h1>
+        </div>
+
+        <div className="mb-6 rounded-3xl border border-orange-200 bg-orange-50/40 px-5 py-4 text-center">
+          <p className="text-sm font-medium text-black/70">Valor total</p>
+          <p className="mt-1 text-3xl font-black text-black">
+            R$ {total.toFixed(2).replace(".", ",")}
           </p>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {paymentMethods.map((method) => {
-              const Icon = method.icon;
-              const active = selectedMethod === method.id;
-              return (
-                <button
-                  key={method.id}
-                  onClick={() => setSelectedMethod(method.id)}
-                  className={`p-6 rounded-lg border-2 transition ${
-                    active
-                      ? "border-orange-500 bg-orange-50"
-                      : "border-gray-300 hover:border-orange-300"
-                  }`}
-                >
-                  <Icon
-                    className={`h-6 w-6 mb-2 ${
-                      active ? "text-orange-500" : "text-black/60"
+        <div className="space-y-4">
+          {paymentMethods.map((method) => {
+            const Icon = method.icon;
+            const active = selectedMethod === method.id;
+            return (
+              <button
+                key={method.id}
+                onClick={() => setSelectedMethod(method.id)}
+                className={`w-full rounded-[2.25rem] border-2 px-6 py-5 text-left transition-all duration-200 ${
+                  active
+                    ? "border-orange-500 bg-orange-500 text-white shadow-[0_18px_35px_-22px_rgba(249,115,22,1)]"
+                    : "border-orange-400 bg-white text-orange-600 hover:bg-orange-50"
+                }`}
+              >
+                <div className="flex items-center gap-4">
+                  <div
+                    className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full border ${
+                      active
+                        ? "border-white/50 bg-white/15"
+                        : "border-orange-200 bg-orange-100"
                     }`}
-                  />
-                  <p className="text-black font-semibold">{method.name}</p>
-                </button>
-              );
-            })}
+                  >
+                    <Icon
+                      className={`h-6 w-6 ${
+                        active ? "text-white" : "text-orange-500"
+                      }`}
+                    />
+                  </div>
+                  <div className="min-w-0">
+                    <p
+                      className={`text-2xl font-black leading-none ${
+                        active ? "text-white" : "text-orange-600"
+                      }`}
+                    >
+                      {method.name}
+                    </p>
+                    {method.subtitle ? (
+                      <p
+                        className={`mt-2 text-sm font-medium leading-snug ${
+                          active ? "text-orange-50" : "text-black/70"
+                        }`}
+                      >
+                        {method.subtitle}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {error && (
+          <div className="mt-5 rounded-2xl border border-orange-300 bg-orange-100 p-4 text-orange-700">
+            {error}
           </div>
+        )}
 
-          {error && (
-            <div className="p-4 bg-orange-100 text-orange-700 border border-orange-300 rounded">
-              {error}
-            </div>
-          )}
-
+        <div className="mt-7 space-y-3">
           <Button
             onClick={handleContinue}
             disabled={!selectedMethod}
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+            className="h-14 w-full rounded-full bg-orange-500 text-base font-semibold text-white hover:bg-orange-600 disabled:bg-orange-300"
           >
             Continuar
           </Button>
@@ -344,13 +393,13 @@ export default function CheckoutPage() {
           <Button
             onClick={handleBack}
             variant="outline"
-            className="w-full border-orange-500 text-orange-600 hover:bg-orange-50"
+            className="h-14 w-full rounded-full border-2 border-orange-500 text-base font-semibold text-orange-600 hover:bg-orange-50"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
             Voltar ao Menu
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
