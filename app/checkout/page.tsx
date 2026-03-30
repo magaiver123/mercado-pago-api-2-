@@ -55,7 +55,7 @@ export default function CheckoutPage() {
               Adicione produtos antes de finalizar o pedido
             </p>
             <Button
-              onClick={() => router.push("/")}
+              onClick={() => router.push("/menu")}
               className="w-full bg-orange-500 hover:bg-orange-600 text-white"
             >
               Voltar ao Menu
@@ -197,7 +197,7 @@ export default function CheckoutPage() {
   ] as const;
 
   const handleBack = () => {
-    router.push("/");
+    router.push("/menu");
   };
 
   const getMethodName = (methodId: PaymentMethod) =>
@@ -208,15 +208,15 @@ export default function CheckoutPage() {
       <div className="mx-auto w-full max-w-md">
         <div className="mb-8 flex flex-col items-center text-center">
           <Image
-            src="/LOGOMR.png"
+            src="/logologin.png"
             alt="Logo MR"
-            width={112}
-            height={112}
+            width={260}
+            height={120}
             priority
-            className="mb-7 h-auto w-[112px]"
+            className="mb-7 h-auto w-[240px] sm:w-[260px]"
           />
           <h1 className="text-4xl font-black tracking-tight text-black">
-            Como voc\u00EA quer pagar?
+            Como você quer pagar?
           </h1>
         </div>
 
