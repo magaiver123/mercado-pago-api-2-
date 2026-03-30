@@ -121,6 +121,9 @@ export default function ReceiptPage() {
       setPrintFeedback(feedback.message)
       if (feedback.lockRequest) {
         setHasPrintRequest(true)
+        // Quando o envio para impressao e confirmado sem erros, encerra o fluxo automaticamente.
+        finishFlow()
+        return
       }
     } catch {
       setPrintFeedback("Erro de conexao ao enviar comprovante para impressao.")
