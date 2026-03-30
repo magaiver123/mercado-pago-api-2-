@@ -10,9 +10,6 @@ import { SwitchPaymentButton } from "@/components/payment/switch-payment-button"
 
 type PaymentMethod = "credit_card" | "debit_card" | "pix";
 
-const ORANGE_ICON_FILTER =
-  "invert(55%) sepia(94%) saturate(1322%) hue-rotate(355deg) brightness(101%) contrast(101%)";
-
 function getPaymentMethod(value: string | null): PaymentMethod {
   if (value === "pix" || value === "debit_card" || value === "credit_card") {
     return value;
@@ -23,15 +20,15 @@ function getPaymentMethod(value: string | null): PaymentMethod {
 function getFriendlyStatusTitle(status: string): string {
   switch (status) {
     case "created":
-      return "Pedido criado. Preparando o terminal";
+      return "Preparando terminal...";
     case "pending":
-      return "Iniciando pagamento";
+      return "Iniciando pagamento...";
     case "processing":
-      return "Pagamento sendo processado";
+      return "Processando pagamento...";
     case "at_terminal":
-      return "Pagamento aguardando no terminal";
+      return "Aguardando no terminal";
     case "action_required":
-      return "Confirme a acao no terminal";
+      return "Confirme no terminal";
     case "processed":
       return "Pagamento aprovado";
     case "failed":
@@ -63,13 +60,13 @@ function ProcessingContent() {
 
   const helperText = useMemo(() => {
     if (method === "pix") {
-      return "Abra seu aplicativo do banco e escaneie o QR Code na m\u00E1quina de cart\u00E3o ao lado do tablet";
+      return "Escaneie o QR Code na maquininha.";
     }
 
-    return "Aproxime ou insira seu cart\u00E3o na m\u00E1quina de cart\u00E3o ao lado do tablet";
+    return "Aproxime ou insira seu cartao na maquininha.";
   }, [method]);
 
-  const methodIcon = method === "pix" ? "/payment-icons/pix.gif" : "/payment-icons/card.gif";
+  const methodIcon = method === "pix" ? "/payment-icons/pix.png" : "/payment-icons/card.png";
   const statusTitle = useMemo(() => getFriendlyStatusTitle(status), [status]);
 
   useEffect(() => {
@@ -143,39 +140,54 @@ function ProcessingContent() {
     <main className="min-h-screen bg-white px-4 pb-28 pt-8 sm:pt-10">
       <div className="mx-auto flex w-full max-w-md flex-col items-center text-center">
         <Image
-          src="/LOGOMR.png"
+          src="/logologin.png"
           alt="Logo MR"
-          width={112}
-          height={112}
+          width={260}
+          height={120}
           priority
-          className="h-auto w-[112px]"
+          className="h-auto w-[240px] sm:w-[260px]"
         />
 
         <Image
           src={methodIcon}
           alt="Metodo de pagamento"
-          width={220}
-          height={220}
-          className="mt-8 h-[220px] w-[220px] object-contain sm:h-[260px] sm:w-[260px]"
-          style={{ filter: ORANGE_ICON_FILTER }}
+          width={280}
+          height={280}
+          className="mt-8 h-[260px] w-[260px] animate-[iconFloat_2.4s_ease-in-out_infinite] object-contain sm:h-[300px] sm:w-[300px]"
         />
 
         <div className="mt-8 space-y-4">
-          <h1 className="text-3xl font-black text-black">{statusTitle}</h1>
-          <p className="text-base font-medium leading-relaxed text-black/75">{helperText}</p>
+          <h1 className="w-full truncate whitespace-nowrap text-2xl font-black text-black sm:text-3xl">
+            {statusTitle}
+          </h1>
+          <p className="w-full truncate whitespace-nowrap text-sm font-medium text-black/75 sm:text-base">
+            {helperText}
+          </p>
         </div>
 
         <div className="mt-8 rounded-2xl border border-orange-200 bg-white px-4 py-3 text-xs text-black/65">
           <p>Tempo restante: {remainingTime}s / 60s</p>
-          <p>
+          <p className="w-full truncate whitespace-nowrap text-[11px] sm:text-xs">
             {timeoutReached
-              ? "Ainda estamos aguardando resposta final do terminal."
-              : "Se o terminal ja iniciou, a troca cancela antes de voltar para o checkout."}
+              ? "Aguardando resposta final do terminal."
+              : "Troca disponivel enquanto o terminal nao iniciar."}
           </p>
         </div>
       </div>
 
       <SwitchPaymentButton />
+
+      <style jsx>{`
+        @keyframes iconFloat {
+          0%,
+          100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-8px);
+          }
+        }
+      `}</style>
     </main>
   );
 }
