@@ -65,7 +65,7 @@ export async function createReceiptPrintJobService(input: CreateReceiptPrintJobI
   ])
 
   if (orderMetadata) {
-    payload.receipt.orderNumber = orderMetadata.order_number ?? payload.receipt.orderNumber ?? null
+    payload.receipt.orderNumber = orderMetadata.order_number ?? null
     payload.receipt.createdAt = orderMetadata.created_at || payload.receipt.createdAt
     if (
       (!payload.receipt.paymentMethod || payload.receipt.paymentMethod === "Não informado") &&
@@ -73,6 +73,8 @@ export async function createReceiptPrintJobService(input: CreateReceiptPrintJobI
     ) {
       payload.receipt.paymentMethod = orderMetadata.payment_method
     }
+  } else {
+    payload.receipt.orderNumber = null
   }
 
   if (storeReceiptInfo) {

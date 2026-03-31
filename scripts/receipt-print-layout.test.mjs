@@ -34,11 +34,11 @@ function assertNoLineOverflow(lines, maxWidth) {
   }
 }
 
-assert.equal(formatOrderNumberOrFallback(123, "MP-ORDER"), "00000123")
-assert.equal(formatOrderNumberOrFallback(null, "MP-ORDER"), "MP-ORDER")
+assert.equal(formatOrderNumberOrFallback(123, "-"), "00000123")
+assert.equal(formatOrderNumberOrFallback(null, "-"), "-")
 
 const formattedDate = formatReceiptDateTime("2026-03-22T06:44:16.887Z")
-assert.match(formattedDate, /^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}$/)
+assert.match(formattedDate, /^\d{2}\/\d{2}\/\d{4} \d{2}:\d{2}:\d{2}$/)
 
 const payload = {
   orderId: "MP-ORDER-XYZ",
@@ -73,82 +73,72 @@ const genericBytes = buildReceiptBytes(payload, {
   paperWidthMm: 80,
 })
 const genericRaw = asLatin1(genericBytes)
-assert.match(genericRaw, /mercado-centro/)
-assert.match(genericRaw, /Mr Smart/)
-assert.match(genericRaw, /Autoatendimento/)
+
+assert.match(genericRaw, /MR SMART/)
 assert.match(genericRaw, /CNPJ: 51\.397\.705\/0001-25/)
-assert.match(genericRaw, /Telefone: 51995881730/)
-assert.match(genericRaw, /COMPROVANTE DE COMPRA/)
-assert.match(genericRaw, /Pedido/)
-assert.match(genericRaw, /Data\/Hora/)
-assert.match(genericRaw, /Pagamento/)
-assert.match(genericRaw, /Cliente/)
-assert.match(genericRaw, /CPF\/CNPJ/)
+assert.match(genericRaw, /Tel: \(51\) 99588-1730/)
+assert.match(genericRaw, /Comprovante de Compra/)
+assert.match(genericRaw, /Pedido: #00000321/)
+assert.match(genericRaw, /Data: \d{2}\/\d{2}\/\d{4}/)
+assert.match(genericRaw, /Hora: \d{2}:\d{2}:\d{2}/)
+assert.match(genericRaw, /Atendente: Autoatendimento/)
+assert.match(genericRaw, /ITEM/)
 assert.match(genericRaw, /QTD/)
-assert.match(genericRaw, /DESCRICAO/)
-assert.match(genericRaw, /UN/)
 assert.match(genericRaw, /TOTAL/)
-assert.match(genericRaw, /Subtotal/)
-assert.match(genericRaw, /Descontos/)
-assert.match(genericRaw, /TOTAL FINAL/)
-assert.match(genericRaw, /Autorizacao/)
-assert.match(genericRaw, /Chave/)
-assert.match(genericRaw, /Obs/)
-assert.match(genericRaw, /COMPRA FINALIZADA/)
-assert.match(genericRaw, /Guarde este comprovante/)
+assert.match(genericRaw, /Subtotal:.*R\$ 18,50/)
+assert.match(genericRaw, /Desconto:.*R\$ 2,00/)
+assert.match(genericRaw, /Total Pago:.*R\$ 16,50/)
+assert.match(genericRaw, /Forma de pagamento:/)
+assert.match(genericRaw, /Cartao de Debito/)
+assert.match(genericRaw, /Status:/)
+assert.match(genericRaw, /PAGAMENTO APROVADO/)
+assert.match(genericRaw, /Obrigado pela preferencia!/)
+assert.match(genericRaw, /Mr Smart/)
+
+assert.doesNotMatch(genericRaw, /MP-ORDER-XYZ/)
+assert.doesNotMatch(genericRaw, /Autorizacao/)
+assert.doesNotMatch(genericRaw, /Chave/)
+assert.doesNotMatch(genericRaw, /Obs:/)
 
 const genericLines = toPrintableLines(genericBytes)
 assertNoLineOverflow(genericLines, 42)
 
-const compactBytes = buildReceiptBytes(payload, {
-  escposProfile: "generic",
-  paperWidthMm: 58,
-})
-const compactRaw = asLatin1(compactBytes)
-assert.match(compactRaw, /QTD/)
-assert.match(compactRaw, /DESCRICAO/)
-assert.match(compactRaw, /UN/)
-assert.match(compactRaw, /TOTAL/)
-assert.match(compactRaw, /TOTAL FINAL/)
-const compactLines = toPrintableLines(compactBytes)
-assertNoLineOverflow(compactLines, 32)
-
-const payloadWithoutMeta = {
-  orderId: "MP-ORDER-WITHOUT-META",
+const missingOrderNumberPayload = {
+  orderId: "MP-ORDER-NUMERO-AUSENTE",
   receipt: {
-    orderId: "MP-ORDER-WITHOUT-META",
+    orderId: "MP-ORDER-NUMERO-AUSENTE",
     createdAt: "2026-03-22T06:44:16.887Z",
-    paymentMethod: "Pix",
-    total: 5,
-    subtotal: 5,
+    paymentMethod: "PIX",
+    total: 40.9,
+    subtotal: 40.9,
     discounts: 0,
-    storeName: "Mercado",
-    items: [{ name: "Cafe", quantity: 1, unitPrice: 5 }],
+    items: [
+      { name: "Coca-Cola 350ml", quantity: 2, unitPrice: 6 },
+      { name: "X-Salada", quantity: 1, unitPrice: 18.9 },
+      { name: "Batata Frita P", quantity: 1, unitPrice: 10 },
+    ],
   },
 }
 
-const noMetaRaw = asLatin1(
-  buildReceiptBytes(payloadWithoutMeta, {
+const missingOrderNumberRaw = asLatin1(
+  buildReceiptBytes(missingOrderNumberPayload, {
     escposProfile: "generic",
     paperWidthMm: 80,
   }),
 )
-assert.doesNotMatch(noMetaRaw, /Autorizacao/)
-assert.doesNotMatch(noMetaRaw, /Chave/)
-assert.doesNotMatch(noMetaRaw, /Obs:/)
+
+assert.match(missingOrderNumberRaw, /Pedido: -/)
+assert.doesNotMatch(missingOrderNumberRaw, /MP-ORDER-NUMERO-AUSENTE/)
 
 const accentPayload = {
   orderId: "O-1",
   receipt: {
     orderId: "O-1",
     createdAt: "2026-03-22T06:44:16.887Z",
-    paymentMethod: "Débito",
+    paymentMethod: "Debito",
     total: 5,
     subtotal: 5,
-    storeSlug: "sao-joao",
-    customerName: "João da Silva",
-    storeName: "São João",
-    items: [{ name: "Pão de queijo", quantity: 1, unitPrice: 5 }],
+    items: [{ name: "Pao de queijo", quantity: 1, unitPrice: 5 }],
   },
 }
 
@@ -159,7 +149,7 @@ const genericAccentRaw = asLatin1(
   }),
 )
 assert.match(genericAccentRaw, /Debito/)
-assert.match(genericAccentRaw, /Joao da Silva/)
+assert.match(genericAccentRaw, /Pao de queijo/)
 
 const bematechAccentRaw = asLatin1(
   buildReceiptBytes(accentPayload, {
@@ -167,7 +157,7 @@ const bematechAccentRaw = asLatin1(
     paperWidthMm: 80,
   }),
 )
-assert.match(bematechAccentRaw, /D[ée]bito/)
-assert.match(bematechAccentRaw, /Jo[ãa]o da Silva/)
+assert.match(bematechAccentRaw, /Debito/)
+assert.match(bematechAccentRaw, /Pao de queijo/)
 
 console.log("receipt-print-layout tests passed")

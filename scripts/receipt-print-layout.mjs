@@ -1,6 +1,8 @@
-const FIXED_BUSINESS_NAME = "Mr Smart Autoatendimento"
+const FIXED_BUSINESS_NAME = "MR SMART"
 const FIXED_CNPJ = "51.397.705/0001-25"
-const FIXED_PHONE = "51995881730"
+const FIXED_PHONE = "(51) 99588-1730"
+const FIXED_ATTENDANT = "Autoatendimento"
+const FIXED_PAYMENT_STATUS = "PAGAMENTO APROVADO"
 
 function supportsAccent(profile) {
   const normalized = String(profile || "").toLowerCase()
@@ -13,9 +15,8 @@ function getPaperProfile(paperWidthMm, escposProfile) {
   const width = mm <= 58 ? 32 : useWideLayout ? 48 : 42
   const compact = width <= 32
   const qtyWidth = compact ? 3 : 4
-  const unitWidth = compact ? 7 : 10
   const totalWidth = compact ? 8 : 10
-  const descWidth = Math.max(8, width - qtyWidth - unitWidth - totalWidth - 3)
+  const descWidth = Math.max(8, width - qtyWidth - totalWidth - 2)
 
   return {
     width,
@@ -25,7 +26,6 @@ function getPaperProfile(paperWidthMm, escposProfile) {
     itemColumns: {
       qty: qtyWidth,
       desc: descWidth,
-      unit: unitWidth,
       total: totalWidth,
     },
   }
@@ -36,10 +36,6 @@ function normalizePrintableText(value, preserveAccents) {
     .replace(/\r/g, "")
     .replace(/\t/g, " ")
     .replace(/\u00a0/g, " ")
-    .replace(/[‐‑‒–—]/g, "-")
-    .replace(/[“”«»]/g, "\"")
-    .replace(/[‘’]/g, "'")
-    .replace(/…/g, "...")
     .replace(/[\x00-\x08\x0B-\x1F\x7F]/g, "")
 
   if (preserveAccents) {
@@ -94,10 +90,18 @@ export function formatReceiptDateTime(value) {
   const timePart = date.toLocaleTimeString("pt-BR", {
     hour: "2-digit",
     minute: "2-digit",
+    second: "2-digit",
     hour12: false,
   })
 
   return `${datePart} ${timePart}`
+}
+
+function splitReceiptDateTime(dateTime) {
+  const text = String(dateTime || "")
+  const match = text.match(/^(\d{2}\/\d{2}\/\d{4})\s+(\d{2}:\d{2}:\d{2})$/)
+  if (!match) return { date: "--/--/----", time: "--:--:--" }
+  return { date: match[1], time: match[2] }
 }
 
 function escInit() {
@@ -118,13 +122,6 @@ function escAlign(mode) {
 
 function escBold(enabled) {
   return Buffer.from([0x1b, 0x45, enabled ? 1 : 0])
-}
-
-function escTextSize(width = 1, height = 1) {
-  const normalizedWidth = Math.min(8, Math.max(1, Math.trunc(width))) - 1
-  const normalizedHeight = Math.min(8, Math.max(1, Math.trunc(height))) - 1
-  const n = (normalizedWidth << 4) | normalizedHeight
-  return Buffer.from([0x1d, 0x21, n])
 }
 
 function escCutPartial() {
@@ -221,104 +218,60 @@ function fitRight(value, width) {
   return text.padStart(width, " ")
 }
 
-function renderLabelValue(parts, label, value, profile, options) {
-  const cleanValue = String(value ?? "").trim()
-  if (!cleanValue) return
-
-  const prefix = `${label}: `
-  const firstLineWidth = profile.width - prefix.length
-  if (firstLineWidth < 8) {
-    for (const line of wrapText(`${prefix}${cleanValue}`, profile.width)) {
-      parts.push(textLine(line, options))
-    }
-    return
-  }
-
-  const wrapped = wrapText(cleanValue, firstLineWidth)
-  parts.push(textLine(`${prefix}${wrapped[0]}`, options))
-  for (const line of wrapped.slice(1)) {
-    parts.push(textLine(`  ${line}`, options))
-  }
-}
-
-function renderHeader(parts, receipt, profile, options) {
-  const slug = String(receipt.storeSlug || receipt.storeName || "loja").trim() || "loja"
-  const legalName = String(receipt.storeLegalName || "").trim()
-  const address = String(receipt.storeAddress || "").trim()
-
-  parts.push(escAlign("center"))
-  for (const line of wrapText(slug, profile.width)) {
-    parts.push(textLine(line, options))
-  }
-
-  const titleWidth = profile.compact ? profile.width : Math.max(12, Math.floor(profile.width / 2))
-  parts.push(escBold(true))
-  parts.push(escTextSize(profile.compact ? 1 : 2, 2))
-  for (const line of wrapText(FIXED_BUSINESS_NAME, titleWidth)) {
-    parts.push(textLine(line, options))
-  }
-  parts.push(escTextSize(1, 1))
-  parts.push(escBold(false))
-
-  parts.push(textLine(`CNPJ: ${FIXED_CNPJ}`, options))
-  parts.push(textLine(`Telefone: ${FIXED_PHONE}`, options))
-
+function renderHeader(parts, profile, options) {
   parts.push(escAlign("left"))
-  if (legalName) renderLabelValue(parts, "Razao Social", legalName, profile, options)
-  if (address) renderLabelValue(parts, "Endereco", address, profile, options)
-}
-
-function renderReceiptIdentity(parts, receipt, payload, profile, options) {
-  const orderDisplayNumber = formatOrderNumberOrFallback(
-    receipt.orderNumber,
-    receipt.orderId || payload?.orderId || "-",
-  )
-
   parts.push(separatorLine(profile.majorSeparator, options))
+
   parts.push(escAlign("center"))
   parts.push(escBold(true))
-  parts.push(textLine("COMPROVANTE DE COMPRA", options))
+  parts.push(textLine(FIXED_BUSINESS_NAME, options))
   parts.push(escBold(false))
-  parts.push(separatorLine(profile.minorSeparator, options))
+  parts.push(textLine(`CNPJ: ${FIXED_CNPJ}`, options))
+  parts.push(textLine(`Tel: ${FIXED_PHONE}`, options))
 
   parts.push(escAlign("left"))
-  parts.push(textLine(alignLeftRight("Pedido", orderDisplayNumber, profile.width), options))
-  parts.push(textLine(alignLeftRight("Data/Hora", formatReceiptDateTime(receipt.createdAt), profile.width), options))
-  renderLabelValue(parts, "Pagamento", receipt.paymentMethod || "Nao informado", profile, options)
-
-  if (receipt.customerName) {
-    renderLabelValue(parts, "Cliente", receipt.customerName, profile, options)
-  }
-
-  if (receipt.customerDocument) {
-    renderLabelValue(parts, "CPF/CNPJ", receipt.customerDocument, profile, options)
-  }
+  parts.push(separatorLine(profile.majorSeparator, options))
 }
 
 function formatItemRow(values, profile) {
-  const { qty, desc, unit, total } = profile.itemColumns
-  return `${fitRight(values.qty, qty)} ${fitLeft(values.desc, desc)} ${fitRight(values.unit, unit)} ${fitRight(values.total, total)}`
+  const { qty, desc, total } = profile.itemColumns
+  return `${fitLeft(values.desc, desc)} ${fitRight(values.qty, qty)} ${fitRight(values.total, total)}`
+}
+
+function renderReceiptIdentity(parts, receipt, profile, options) {
+  const formattedOrderNumber = formatOrderNumberOrFallback(receipt.orderNumber, "-")
+  const orderLine =
+    formattedOrderNumber === "-"
+      ? "Pedido: -"
+      : `Pedido: #${formattedOrderNumber}`
+
+  const { date, time } = splitReceiptDateTime(formatReceiptDateTime(receipt.createdAt))
+
+  parts.push(textLine("Comprovante de Compra", options))
+  parts.push(textLine("", options))
+  parts.push(textLine(orderLine, options))
+  parts.push(textLine(`Data: ${date}`, options))
+  parts.push(textLine(`Hora: ${time}`, options))
+  parts.push(textLine(`Atendente: ${FIXED_ATTENDANT}`, options))
+  parts.push(textLine("", options))
+
+  parts.push(separatorLine(profile.minorSeparator, options))
+  parts.push(
+    textLine(
+      formatItemRow({ desc: "ITEM", qty: "QTD", total: "TOTAL" }, profile),
+      options,
+    ),
+  )
+  parts.push(separatorLine(profile.minorSeparator, options))
 }
 
 function renderItemsTable(parts, receipt, profile, options) {
   const items = Array.isArray(receipt.items) ? receipt.items : []
   const hasItems = items.length > 0
 
-  parts.push(separatorLine(profile.majorSeparator, options))
-  parts.push(escBold(true))
-  parts.push(textLine("ITENS", options))
-  parts.push(escBold(false))
-  parts.push(separatorLine(profile.minorSeparator, options))
-  parts.push(
-    textLine(
-      formatItemRow({ qty: "QTD", desc: "DESCRICAO", unit: "UN", total: "TOTAL" }, profile),
-      options,
-    ),
-  )
-  parts.push(separatorLine(profile.minorSeparator, options))
-
   if (!hasItems) {
     parts.push(textLine("Sem itens para exibir.", options))
+    parts.push(separatorLine(profile.minorSeparator, options))
     return
   }
 
@@ -339,9 +292,8 @@ function renderItemsTable(parts, receipt, profile, options) {
       textLine(
         formatItemRow(
           {
-            qty: String(quantity),
             desc: descLines[0] || "",
-            unit: formatMoneyCompact(unitPrice),
+            qty: String(quantity),
             total: formatMoneyCompact(itemTotal),
           },
           profile,
@@ -355,9 +307,8 @@ function renderItemsTable(parts, receipt, profile, options) {
         textLine(
           formatItemRow(
             {
-              qty: "",
               desc: continuation,
-              unit: "",
+              qty: "",
               total: "",
             },
             profile,
@@ -367,6 +318,8 @@ function renderItemsTable(parts, receipt, profile, options) {
       )
     }
   }
+
+  parts.push(separatorLine(profile.minorSeparator, options))
 }
 
 function resolveTotals(receipt) {
@@ -403,44 +356,31 @@ function resolveTotals(receipt) {
 function renderTotals(parts, receipt, profile, options) {
   const totals = resolveTotals(receipt)
 
-  parts.push(separatorLine(profile.majorSeparator, options))
-  parts.push(textLine(alignLeftRight("Subtotal", formatMoney(totals.subtotal), profile.width), options))
-  parts.push(textLine(alignLeftRight("Descontos", `- ${formatMoney(totals.discounts)}`, profile.width), options))
+  parts.push(textLine(alignLeftRight("Subtotal:", formatMoney(totals.subtotal), profile.width), options))
+  parts.push(textLine(alignLeftRight("Desconto:", formatMoney(totals.discounts), profile.width), options))
+  parts.push(textLine(alignLeftRight("Total Pago:", formatMoney(totals.total), profile.width), options))
   parts.push(separatorLine(profile.minorSeparator, options))
-  parts.push(escBold(true))
-  parts.push(escTextSize(1, 2))
-  parts.push(textLine(alignLeftRight("TOTAL FINAL", formatMoney(totals.total), profile.width), options))
-  parts.push(escTextSize(1, 1))
-  parts.push(escBold(false))
 }
 
-function renderOptionalMeta(parts, receipt, profile, options) {
-  const authCode = String(receipt.authorizationCode || "").trim()
-  const accessKey = String(receipt.accessKey || "").trim()
-  const message = String(receipt.additionalMessage || "").trim()
+function renderPaymentAndStatus(parts, receipt, profile, options) {
+  const paymentMethod = String(receipt.paymentMethod || "Nao informado").trim() || "Nao informado"
 
-  if (!authCode && !accessKey && !message) return
-
-  parts.push(separatorLine(profile.majorSeparator, options))
-  parts.push(escBold(true))
-  parts.push(textLine("DADOS ADICIONAIS", options))
-  parts.push(escBold(false))
-
-  if (authCode) renderLabelValue(parts, "Autorizacao", authCode, profile, options)
-  if (accessKey) renderLabelValue(parts, "Chave", accessKey, profile, options)
-  if (message) renderLabelValue(parts, "Obs", message, profile, options)
+  parts.push(textLine("Forma de pagamento:", options))
+  parts.push(textLine(paymentMethod, options))
+  parts.push(textLine("", options))
+  parts.push(textLine("Status:", options))
+  parts.push(textLine(FIXED_PAYMENT_STATUS, options))
+  parts.push(textLine("", options))
+  parts.push(separatorLine(profile.minorSeparator, options))
 }
 
 function renderFooter(parts, profile, options) {
-  parts.push(separatorLine(profile.majorSeparator, options))
   parts.push(escAlign("center"))
-  parts.push(escBold(true))
-  parts.push(textLine("COMPRA FINALIZADA", options))
-  parts.push(escBold(false))
-  parts.push(textLine("Guarde este comprovante.", options))
   parts.push(textLine("Obrigado pela preferencia!", options))
-  parts.push(textLine("", options))
-  parts.push(textLine("", options))
+  parts.push(textLine("Mr Smart", options))
+
+  parts.push(escAlign("left"))
+  parts.push(separatorLine(profile.majorSeparator, options))
 }
 
 export function buildReceiptBytes(payload, printer) {
@@ -454,11 +394,11 @@ export function buildReceiptBytes(payload, printer) {
   const codePage = escCodePage(printer?.escposProfile)
   if (codePage) parts.push(codePage)
 
-  renderHeader(parts, receipt, profile, options)
-  renderReceiptIdentity(parts, receipt, payload, profile, options)
+  renderHeader(parts, profile, options)
+  renderReceiptIdentity(parts, receipt, profile, options)
   renderItemsTable(parts, receipt, profile, options)
   renderTotals(parts, receipt, profile, options)
-  renderOptionalMeta(parts, receipt, profile, options)
+  renderPaymentAndStatus(parts, receipt, profile, options)
   renderFooter(parts, profile, options)
 
   parts.push(escCutPartial())
