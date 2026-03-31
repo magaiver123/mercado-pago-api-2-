@@ -66,7 +66,7 @@ function ProcessingContent() {
     return "Aproxime ou insira seu cartão na maquininha.";
   }, [method]);
 
-  const methodIcon = method === "pix" ? "/animated_phone_loop_v3.svg" : "/payment-icons/card.png";
+  const methodIcon = method === "pix" ? "/animated_phone_loop_v3.svg" : "/payment-icons/card.gif";
   const statusTitle = useMemo(() => getFriendlyStatusTitle(status), [status]);
 
   useEffect(() => {
