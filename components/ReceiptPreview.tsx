@@ -14,7 +14,7 @@ function formatCurrency(value: number) {
 function formatDate(value: string) {
   const asDate = new Date(value)
   if (Number.isNaN(asDate.getTime())) {
-    return "Data nao informada"
+    return "Data não informada"
   }
 
   return asDate.toLocaleString("pt-BR", {
@@ -48,9 +48,9 @@ export function ReceiptPreview({ receipt, className }: ReceiptPreviewProps) {
       : "/logo.svg"
 
   const storeLegalName = receipt.storeLegalName || receipt.storeName
-  const storeAddress = receipt.storeAddress || "Endereco da loja nao informado"
-  const storeTaxId = receipt.storeTaxId || "CNPJ nao informado"
-  const storePhone = receipt.storePhone || "Telefone nao informado"
+  const storeAddress = receipt.storeAddress || "Endereço da loja não informado"
+  const storeTaxId = receipt.storeTaxId || "CNPJ não informado"
+  const storePhone = receipt.storePhone || "Telefone não informado"
 
   return (
     <div
@@ -86,13 +86,13 @@ export function ReceiptPreview({ receipt, className }: ReceiptPreviewProps) {
         <div className="flex items-center justify-between gap-2">
           <span>Cliente</span>
           <span className="max-w-[65%] truncate text-right">
-            {receipt.customerName || "Consumidor nao informado"}
+            {receipt.customerName || "Consumidor não informado"}
           </span>
         </div>
         <div className="flex items-center justify-between gap-2">
           <span>Documento</span>
           <span className="max-w-[65%] truncate text-right">
-            {receipt.customerDocument || "Nao informado"}
+            {receipt.customerDocument || "Não informado"}
           </span>
         </div>
       </div>
@@ -145,13 +145,13 @@ export function ReceiptPreview({ receipt, className }: ReceiptPreviewProps) {
           <span className="font-semibold">{receipt.paymentMethod}</span>
         </div>
         <div className="flex items-center justify-between">
-          <span>Codigo autorizacao</span>
-          <span>{receipt.authorizationCode || "Nao informado"}</span>
+          <span>Código autorização</span>
+          <span>{receipt.authorizationCode || "Não informado"}</span>
         </div>
         <div className="flex items-start justify-between gap-2 pt-1">
           <span>Chave acesso</span>
           <span className="max-w-[70%] break-all text-right">
-            {receipt.accessKey || "Nao informado"}
+            {receipt.accessKey || "Não informado"}
           </span>
         </div>
       </div>

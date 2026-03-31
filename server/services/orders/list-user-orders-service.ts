@@ -28,14 +28,14 @@ function getItemCount(items: unknown) {
 
 export async function listUserOrdersService(userId: string | null) {
   if (!userId || !isValidUUID(userId)) {
-    throw new AppError("Usuario invalido", 400)
+    throw new AppError("Usuário inválido", 400)
   }
 
   const repositories = getRepositoryFactory()
 
   const user = await repositories.user.findActiveById(userId)
   if (!user) {
-    throw new AppError("Usuario nao encontrado", 404)
+    throw new AppError("Usuário não encontrado", 404)
   }
 
   const data = await repositories.order.listByUserId(userId)

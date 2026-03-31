@@ -121,7 +121,7 @@ export function readUserSessionFromRequest(request: Request): UserSessionPayload
 export function requireUserSessionFromRequest(request: Request): UserSessionPayload {
   const payload = readUserSessionFromRequest(request)
   if (!payload) {
-    throw new AppError("Sessao de usuario invalida", 401)
+    throw new AppError("Sessão de usuário inválida", 401)
   }
 
   return payload

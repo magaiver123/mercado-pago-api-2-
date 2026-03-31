@@ -34,7 +34,7 @@ export async function registerOrderController(request: Request) {
   try {
     body = await request.json()
   } catch {
-    return NextResponse.json({ error: "Dados invalidos" }, { status: 400 })
+    return NextResponse.json({ error: "Dados inválidos" }, { status: 400 })
   }
 
   const data = await registerOrderService({
@@ -54,7 +54,7 @@ export async function reconcileProcessedOrdersController(request: Request) {
   if (!bypassStatus.allowed || !bypassStatus.storeId) {
     return NextResponse.json(
       {
-        error: "Acesso negado para reconciliacao de pedidos",
+        error: "Acesso negado para reconciliação de pedidos",
         reason: bypassStatus.reason,
       },
       { status: getAdminBypassErrorStatus(bypassStatus.reason) },

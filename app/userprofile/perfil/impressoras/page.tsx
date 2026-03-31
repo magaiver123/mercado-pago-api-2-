@@ -123,7 +123,7 @@ export default function ImpressorasPage() {
       if (!totemsResponse.ok) {
         throw new Error(
           totemsData?.error ||
-            "Nao foi possivel carregar configuracoes. Ative o contexto da loja primeiro.",
+            "Não foi possível carregar configurações. Ative o contexto da loja primeiro.",
         )
       }
 
@@ -142,7 +142,7 @@ export default function ImpressorasPage() {
       setError(
         loadError instanceof Error
           ? loadError.message
-          : "Erro ao carregar dados de impressao",
+          : "Erro ao carregar dados de impressão",
       )
     } finally {
       setIsLoading(false)
@@ -170,7 +170,7 @@ export default function ImpressorasPage() {
 
       const data = await response.json().catch(() => null)
       if (!response.ok) {
-        throw new Error(data?.error ?? "Nao foi possivel ativar o contexto admin")
+        throw new Error(data?.error ?? "Não foi possível ativar o contexto admin")
       }
 
       setBanner("Contexto admin ativado. Carregando impressoras dos totens...")
@@ -227,7 +227,7 @@ export default function ImpressorasPage() {
         throw new Error(data?.error ?? "Falha ao salvar impressora")
       }
 
-      setBanner("Configuracao salva com sucesso.")
+      setBanner("Configuração salva com sucesso.")
       await loadData()
     } catch (saveError) {
       setError(
@@ -254,13 +254,13 @@ export default function ImpressorasPage() {
 
       const data = await response.json().catch(() => null)
       if (!response.ok) {
-        throw new Error(data?.error ?? "Nao foi possivel enviar teste")
+        throw new Error(data?.error ?? "Não foi possível enviar teste")
       }
 
-      setBanner("Teste enviado para a fila de impressao do totem.")
+      setBanner("Teste enviado para a fila de impressão do totem.")
       await loadData()
     } catch (testError) {
-      setError(testError instanceof Error ? testError.message : "Erro no teste de impressao")
+      setError(testError instanceof Error ? testError.message : "Erro no teste de impressão")
     } finally {
       setTestingByTotem((current) => ({ ...current, [totemId]: false }))
     }
@@ -338,7 +338,7 @@ export default function ImpressorasPage() {
                     <div>
                       <h2 className="text-lg font-semibold">Totem {totem.id.slice(0, 8)}</h2>
                       <p className="text-xs text-zinc-400">
-                        deviceId: {totem.deviceId ?? "Nao vinculado"} | status: {totem.status}
+                        deviceId: {totem.deviceId ?? "Não vinculado"} | status: {totem.status}
                         {totem.maintenanceMode ? " | manutencao" : ""}
                       </p>
                     </div>
@@ -439,18 +439,18 @@ export default function ImpressorasPage() {
                       onClick={() => sendTestPrint(totem.id)}
                       disabled={isTesting}
                     >
-                      {isTesting ? "Enviando..." : "Testar impressao"}
+                      {isTesting ? "Enviando..." : "Testar impressão"}
                     </Button>
                   </div>
 
                   {totem.printer?.last_error && (
                     <div className="mt-3 rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-200">
-                      Ultimo erro: {totem.printer.last_error}
+                      Último erro: {totem.printer.last_error}
                     </div>
                   )}
 
                   <div className="mt-4">
-                    <h3 className="text-sm font-semibold text-zinc-300">Ultimos jobs</h3>
+                    <h3 className="text-sm font-semibold text-zinc-300">Últimos jobs</h3>
                     {recentJobs.length === 0 ? (
                       <p className="mt-2 text-xs text-zinc-500">
                         Nenhum job recente para este totem.

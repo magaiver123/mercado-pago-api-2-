@@ -26,7 +26,7 @@ function normalizeLimit(value: unknown): number {
 export async function reconcileProcessedOrdersService(input: ReconcileProcessedOrdersInput) {
   const storeId = sanitizeString(input.storeId)
   if (!storeId) {
-    throw new AppError("Store ID invalido", 400)
+    throw new AppError("Store ID inválido", 400)
   }
 
   const limit = normalizeLimit(input.limit)
@@ -51,7 +51,7 @@ export async function reconcileProcessedOrdersService(input: ReconcileProcessedO
       }
 
       if (statusResult.status === "processed") {
-        // Defesa extra: se a reconciliacao retornar processed e ainda nao marcou,
+        // Defesa extra: se a reconciliação retornar processed e ainda não marcou,
         // conta como pendente para nova tentativa.
         pendingCount += 1
       } else {

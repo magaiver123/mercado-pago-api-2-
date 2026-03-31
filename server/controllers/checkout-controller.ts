@@ -32,14 +32,14 @@ export async function confirmCheckoutSessionController(request: Request) {
     checkoutSession.userId !== userSession.userId ||
     checkoutSession.storeId !== storeContext.storeId
   ) {
-    return NextResponse.json({ error: "Sessao de checkout invalida" }, { status: 403 })
+    return NextResponse.json({ error: "Sessão de checkout inválida" }, { status: 403 })
   }
 
   let body: unknown = null
   try {
     body = await request.json()
   } catch {
-    return NextResponse.json({ error: "Dados invalidos" }, { status: 400 })
+    return NextResponse.json({ error: "Dados inválidos" }, { status: 400 })
   }
 
   const data = await confirmCheckoutSessionService({

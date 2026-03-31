@@ -33,7 +33,7 @@ function getFriendlyStatusTitle(status: string): string {
       return "Pagamento aprovado";
     case "failed":
     case "error":
-      return "Pagamento nao autorizado";
+      return "Pagamento não autorizado";
     case "canceled":
       return "Pagamento cancelado";
     case "expired":
@@ -63,7 +63,7 @@ function ProcessingContent() {
       return "Escaneie o QR Code na maquininha.";
     }
 
-    return "Aproxime ou insira seu cartao na maquininha.";
+    return "Aproxime ou insira seu cartão na maquininha.";
   }, [method]);
 
   const methodIcon = method === "pix" ? "/animated_phone_loop_v3.svg" : "/payment-icons/card.png";
@@ -150,7 +150,7 @@ function ProcessingContent() {
 
         <Image
           src={methodIcon}
-          alt="Metodo de pagamento"
+          alt="Método de pagamento"
           width={280}
           height={280}
           className="mt-8 h-[260px] w-[260px] animate-[iconFloat_2.4s_ease-in-out_infinite] object-contain sm:h-[300px] sm:w-[300px]"
@@ -170,7 +170,7 @@ function ProcessingContent() {
           <p className="w-full truncate whitespace-nowrap text-[11px] sm:text-xs">
             {timeoutReached
               ? "Aguardando resposta final do terminal."
-              : "Troca disponivel enquanto o terminal nao iniciar."}
+              : "Troca disponível enquanto o terminal não iniciar."}
           </p>
         </div>
       </div>

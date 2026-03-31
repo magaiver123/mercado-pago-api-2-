@@ -66,7 +66,7 @@ export async function getOrderStatusService(orderId: string | null, options: Get
     }
 
     // Fallback de resiliencia: se webhook falhar, processa efeitos de "processed"
-    // na primeira reconciliacao do status consultado no app.
+    // na primeira reconciliação do status consultado no app.
     if (normalizedRemoteStatus === "processed" && processedFallbackMode !== "none") {
       await processMercadoPagoWebhookService({
         action: "order.processed",

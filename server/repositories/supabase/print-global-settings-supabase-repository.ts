@@ -22,7 +22,7 @@ export class PrintGlobalSettingsSupabaseRepository
       .maybeSingle()
 
     if (error) {
-      throw new AppError("Erro ao carregar configuracao global de impressao", 500)
+      throw new AppError("Erro ao carregar configuração global de impressão", 500)
     }
 
     if (data) {
@@ -36,7 +36,7 @@ export class PrintGlobalSettingsSupabaseRepository
       .single()
 
     if (createError || !created) {
-      throw new AppError("Erro ao inicializar configuracao global de impressao", 500)
+      throw new AppError("Erro ao inicializar configuração global de impressão", 500)
     }
 
     return created as PrintGlobalSettingsRecord
@@ -62,7 +62,7 @@ export class PrintGlobalSettingsSupabaseRepository
       .single()
 
     if (error || !data) {
-      throw new AppError("Erro ao salvar configuracao global de impressao", 500)
+      throw new AppError("Erro ao salvar configuração global de impressão", 500)
     }
 
     return data as PrintGlobalSettingsRecord

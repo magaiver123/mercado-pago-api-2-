@@ -11,7 +11,7 @@ export interface MercadoPagoApiResult<T = unknown> {
 }
 
 function extractErrorMessage(payload: unknown): string {
-  if (!payload) return "Erro na comunicacao com Mercado Pago"
+  if (!payload) return "Erro na comunicação com Mercado Pago"
 
   if (typeof payload === "string" && payload.trim() !== "") {
     return payload
@@ -42,7 +42,7 @@ function extractErrorMessage(payload: unknown): string {
     }
   }
 
-  return "Erro na comunicacao com Mercado Pago"
+  return "Erro na comunicação com Mercado Pago"
 }
 
 export async function mercadoPagoApiRequest<T = unknown>(params: {

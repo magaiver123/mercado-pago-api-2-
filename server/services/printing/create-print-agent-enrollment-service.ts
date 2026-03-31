@@ -31,13 +31,13 @@ function normalizePositiveInt(value: unknown, fallback: number, min: number, max
 function normalizeApiBaseUrl(value: unknown): string {
   const raw = sanitizeString(value)
   if (!raw) {
-    throw new AppError("API base URL invalida", 400, "RECEIPT_PAYLOAD_INVALID", true, false)
+    throw new AppError("API base URL inválida", 400, "RECEIPT_PAYLOAD_INVALID", true, false)
   }
   let url: URL
   try {
     url = new URL(raw)
   } catch {
-    throw new AppError("API base URL invalida", 400, "RECEIPT_PAYLOAD_INVALID", true, false)
+    throw new AppError("API base URL inválida", 400, "RECEIPT_PAYLOAD_INVALID", true, false)
   }
   if (!url.protocol.startsWith("http")) {
     throw new AppError("API base URL deve usar http ou https", 400, "RECEIPT_PAYLOAD_INVALID", true, false)
@@ -58,11 +58,11 @@ export async function createPrintAgentEnrollmentService(
   }
 
   if (requestedTotemId && !isValidUUID(requestedTotemId)) {
-    throw new AppError("totemId invalido", 400, "TOTEM_CONTEXT_MISSING", true, false)
+    throw new AppError("totemId inválido", 400, "TOTEM_CONTEXT_MISSING", true, false)
   }
 
   if (requestedStoreId && !isValidUUID(requestedStoreId)) {
-    throw new AppError("storeId invalido", 400, "STORE_CONTEXT_MISMATCH", true, false)
+    throw new AppError("storeId inválido", 400, "STORE_CONTEXT_MISMATCH", true, false)
   }
 
   const repositories = getRepositoryFactory()
@@ -73,7 +73,7 @@ export async function createPrintAgentEnrollmentService(
   const resolveByTotemId = async (totemId: string) => {
     const totem = await repositories.totem.findById(totemId)
     if (!totem) {
-      throw new AppError("Totem nao encontrado", 404, "TOTEM_CONTEXT_MISSING", true, false)
+      throw new AppError("Totem não encontrado", 404, "TOTEM_CONTEXT_MISSING", true, false)
     }
     if (totem.status !== "active") {
       throw new AppError("Totem inativo", 409, "TOTEM_INACTIVE", true, false)
@@ -85,11 +85,11 @@ export async function createPrintAgentEnrollmentService(
       throw new AppError("Totem sem device_id vinculado", 422, "DEVICE_NOT_BOUND", true, false)
     }
     if (requestedStoreId && requestedStoreId !== totem.store_id) {
-      throw new AppError("Totem nao pertence a loja informada", 403, "STORE_CONTEXT_MISMATCH", true, false)
+      throw new AppError("Totem não pertence a loja informada", 403, "STORE_CONTEXT_MISMATCH", true, false)
     }
     if (requestedDeviceId && requestedDeviceId !== totem.device_id) {
       throw new AppError(
-        "deviceId nao confere com o totem informado",
+        "deviceId não confere com o totem informado",
         409,
         "DEVICE_CONTEXT_MISMATCH",
         true,
@@ -121,7 +121,7 @@ export async function createPrintAgentEnrollmentService(
     }
     if (requestedStoreId && requestedStoreId !== totem.store_id) {
       throw new AppError(
-        "deviceId nao pertence a loja informada",
+        "deviceId não pertence a loja informada",
         403,
         "STORE_CONTEXT_MISMATCH",
         true,
@@ -140,7 +140,7 @@ export async function createPrintAgentEnrollmentService(
   }
 
   if (!deviceId) {
-    throw new AppError("Nao foi possivel resolver o deviceId do enrollment", 422, "DEVICE_NOT_BOUND", true, false)
+    throw new AppError("Não foi possível resolver o deviceId do enrollment", 422, "DEVICE_NOT_BOUND", true, false)
   }
 
   const agentId = sanitizeString(input.agentId) ?? deviceId

@@ -79,7 +79,7 @@ export default function OrderSummaryPage() {
 
     const expectedLength = taxIdType === "CPF" ? 11 : 14;
     if (normalized.length !== expectedLength) {
-      setTaxError(`${taxIdType} invalido. Confira os numeros informados.`);
+      setTaxError(`${taxIdType} inválido. Confira os números informados.`);
       return;
     }
 
@@ -244,7 +244,7 @@ export default function OrderSummaryPage() {
                   const expectedLength = taxIdType === "CPF" ? 11 : 14;
 
                   if (normalized.length > 0 && normalized.length !== expectedLength) {
-                    setTaxError(`${taxIdType} invalido. Confira os numeros informados.`);
+                    setTaxError(`${taxIdType} inválido. Confira os números informados.`);
                     return;
                   }
 

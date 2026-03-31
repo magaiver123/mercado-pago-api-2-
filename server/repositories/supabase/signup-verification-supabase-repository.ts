@@ -42,7 +42,7 @@ export class SignupVerificationSupabaseRepository
       .eq("id", signupId)
       .maybeSingle()
 
-    if (error) throw new AppError("Erro ao buscar verificacao de cadastro", 500)
+    if (error) throw new AppError("Erro ao buscar verificação de cadastro", 500)
 
     return (data as SignupVerificationRecord | null) ?? null
   }
@@ -58,7 +58,7 @@ export class SignupVerificationSupabaseRepository
       })
       .eq("id", signupId)
 
-    if (error) throw new AppError("Erro ao atualizar codigo de email", 500)
+    if (error) throw new AppError("Erro ao atualizar código de email", 500)
   }
 
   async updatePhoneCode(signupId: string, code: string, codeExpiresAt: string, sentAt: string): Promise<void> {
@@ -72,7 +72,7 @@ export class SignupVerificationSupabaseRepository
       })
       .eq("id", signupId)
 
-    if (error) throw new AppError("Erro ao atualizar codigo de telefone", 500)
+    if (error) throw new AppError("Erro ao atualizar código de telefone", 500)
   }
 
   async markEmailVerified(signupId: string, verifiedAt: string): Promise<void> {

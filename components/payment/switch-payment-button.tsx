@@ -61,19 +61,19 @@ export function SwitchPaymentButton({ className }: SwitchPaymentButtonProps) {
         return {
           ok: false as const,
           message:
-            "A Point ja recebeu a ordem no terminal. A API nao permite cancelar automaticamente nesse status. Aguarde finalizar/expirar no terminal e tente trocar novamente.",
+            "A Point já recebeu a ordem no terminal. A API não permite cancelar automaticamente nesse status. Aguarde finalizar/expirar no terminal e tente trocar novamente.",
         };
       }
 
       return {
         ok: false as const,
-        message: data?.error || "Nao foi possivel cancelar o pedido",
+        message: data?.error || "Não foi possível cancelar o pedido",
       };
     }
 
     return {
       ok: false as const,
-      message: "Nao foi possivel cancelar automaticamente. Tente novamente em alguns segundos.",
+      message: "Não foi possível cancelar automaticamente. Tente novamente em alguns segundos.",
     };
   };
 

@@ -36,7 +36,7 @@ export function encryptDeviceSecret(plaintext: string, secret: string): string {
 export function decryptDeviceSecret(ciphertext: string, secret: string): string {
   const [ivRaw, encryptedRaw, tagRaw] = String(ciphertext).split(".")
   if (!ivRaw || !encryptedRaw || !tagRaw) {
-    throw new Error("Ciphertext invalido")
+    throw new Error("Ciphertext inválido")
   }
   const iv = Buffer.from(ivRaw, "base64url")
   const encrypted = Buffer.from(encryptedRaw, "base64url")

@@ -142,7 +142,7 @@ export async function publishOpenDoorCommandService(input: PublishOpenDoorInput)
 
   const mqttEnv = getMqttEnv()
   if (!mqttEnv.url) {
-    logger.error("MQTT nao configurado para envio de comando openDoor", {
+    logger.error("MQTT não configurado para envio de comando openDoor", {
       hasUrl: Boolean(mqttEnv.url),
       storeId,
       deviceId,

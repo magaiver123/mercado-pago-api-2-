@@ -5,7 +5,7 @@ import { getSupabaseAdminClient } from "@/api/config/database"
 export async function requireActiveAdminSessionService(request: Request) {
   const session = readAdminSessionFromRequest(request)
   if (!session) {
-    throw new AppError("Sessao admin invalida", 401)
+    throw new AppError("Sessão admin inválida", 401)
   }
 
   const db = getSupabaseAdminClient()
@@ -19,7 +19,7 @@ export async function requireActiveAdminSessionService(request: Request) {
     .maybeSingle()
 
   if (error) {
-    throw new AppError("Erro ao validar sessao admin", 500, "ADMIN_SESSION_VALIDATION", false)
+    throw new AppError("Erro ao validar sessão admin", 500, "ADMIN_SESSION_VALIDATION", false)
   }
 
   if (!data) {

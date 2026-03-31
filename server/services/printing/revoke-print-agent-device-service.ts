@@ -9,12 +9,12 @@ interface RevokePrintAgentDeviceInput {
 export async function revokePrintAgentDeviceService(input: RevokePrintAgentDeviceInput) {
   const deviceId = sanitizeString(input.deviceId)
   if (!deviceId) {
-    throw new AppError("deviceId invalido", 400, "TOTEM_CONTEXT_MISSING", true, false)
+    throw new AppError("deviceId inválido", 400, "TOTEM_CONTEXT_MISSING", true, false)
   }
   const repositories = getRepositoryFactory()
   const revoked = await repositories.printAgentDevice.revokeDeviceByDeviceId(deviceId)
   if (!revoked) {
-    throw new AppError("Dispositivo nao encontrado", 404, "ORDER_ID_INVALID", true, false)
+    throw new AppError("Dispositivo não encontrado", 404, "ORDER_ID_INVALID", true, false)
   }
 
   return {

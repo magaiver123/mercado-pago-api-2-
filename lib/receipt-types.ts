@@ -64,10 +64,10 @@ export function clearReceiptFromSession() {
 export function getDefaultStoreInfo() {
   return {
     storeName: "Autoatendimento",
-    storeAddress: "Loja Totem - Endereco nao configurado",
+    storeAddress: "Loja Totem - Endereço não configurado",
     storeLegalName: "Autoatendimento Comercial Ltda.",
-    storeTaxId: "CNPJ nao informado",
-    storePhone: "Telefone nao informado",
+    storeTaxId: "CNPJ não informado",
+    storePhone: "Telefone não informado",
     storeLogoPath: "/logo.svg",
   }
 }
@@ -99,7 +99,7 @@ export async function printReceiptViaBackend(
   if (!response.ok) {
     return {
       success: false,
-      error: data?.error ?? "Falha ao enviar comprovante para a fila de impressao",
+      error: data?.error ?? "Falha ao enviar comprovante para a fila de impressão",
       code: data?.code,
       retryable: data?.retryable,
     }

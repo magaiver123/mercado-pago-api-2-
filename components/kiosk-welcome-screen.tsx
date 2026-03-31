@@ -133,7 +133,7 @@ export function KioskWelcomeScreen() {
             </button>
 
             <p className="text-center text-sm font-medium text-zinc-600">
-              Exibindo modo de contingencia. O fluxo de compra continua disponivel.
+              Exibindo modo de contingencia. O fluxo de compra continua disponível.
             </p>
           </div>
         </section>

@@ -32,7 +32,7 @@ function parsePositiveInteger(value: string | null, fallback: number, fieldName:
 
   const parsed = Number.parseInt(value, 10)
   if (!Number.isFinite(parsed) || parsed <= 0) {
-    throw new AppError(`${fieldName} invalido`, 400)
+    throw new AppError(`${fieldName} inválido`, 400)
   }
 
   return parsed
@@ -62,12 +62,12 @@ function buildAddressLine(store: Pick<PublicStoreRecord, "rua" | "numero">) {
   if (street && number) return `${street}, ${number}`
   if (street) return street
   if (number) return `Numero ${number}`
-  return "Endereco nao informado"
+  return "Endereço não informado"
 }
 
 function normalizeCityName(value: string | null) {
   const normalized = value?.trim() ?? ""
-  return normalized.length > 0 ? normalized : "Cidade nao informada"
+  return normalized.length > 0 ? normalized : "Cidade não informada"
 }
 
 function normalizeStateName(value: string | null) {

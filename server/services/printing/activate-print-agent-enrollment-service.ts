@@ -29,22 +29,22 @@ export async function activatePrintAgentEnrollmentService(
   const agentVersion = sanitizeString(input.agentVersion)
 
   if (!token || !deviceId || !apiBaseUrl || !signature) {
-    throw new AppError("Payload de ativacao invalido", 400, "RECEIPT_PAYLOAD_INVALID", true, false)
+    throw new AppError("Payload de ativação inválido", 400, "RECEIPT_PAYLOAD_INVALID", true, false)
   }
 
   const repositories = getRepositoryFactory()
   const enrollment = await repositories.printAgentDevice.findEnrollmentByTokenHash(sha256Hex(token))
   if (!enrollment) {
-    throw new AppError("Enrollment invalido", 404, "AGENT_AUTH_INVALID", true, false)
+    throw new AppError("Enrollment inválido", 404, "AGENT_AUTH_INVALID", true, false)
   }
   if (enrollment.device_id !== deviceId) {
-    throw new AppError("Enrollment invalido para este dispositivo", 401, "AGENT_AUTH_INVALID", true, false)
+    throw new AppError("Enrollment inválido para este dispositivo", 401, "AGENT_AUTH_INVALID", true, false)
   }
   if (enrollment.revoked_at) {
     throw new AppError("Enrollment revogado", 401, "AGENT_AUTH_INVALID", true, false)
   }
   if (enrollment.consumed_at) {
-    throw new AppError("Enrollment ja utilizado", 409, "AGENT_AUTH_INVALID", true, false)
+    throw new AppError("Enrollment já utilizado", 409, "AGENT_AUTH_INVALID", true, false)
   }
 
   const expiresAtTs = new Date(enrollment.expires_at).getTime()
@@ -61,7 +61,7 @@ export async function activatePrintAgentEnrollmentService(
     apiBaseUrl: enrollment.api_base_url,
   })
   if (expectedSignature !== signature || signature !== enrollment.qr_signature) {
-    throw new AppError("Assinatura do enrollment invalida", 401, "AGENT_AUTH_INVALID", true, false)
+    throw new AppError("Assinatura do enrollment inválida", 401, "AGENT_AUTH_INVALID", true, false)
   }
 
   if (apiBaseUrl !== enrollment.api_base_url) {

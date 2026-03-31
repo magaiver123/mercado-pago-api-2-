@@ -120,7 +120,7 @@ export function readCheckoutSessionFromRequest(request: Request): CheckoutSessio
 export function requireCheckoutSessionFromRequest(request: Request): CheckoutSessionPayload {
   const payload = readCheckoutSessionFromRequest(request)
   if (!payload) {
-    throw new AppError("Sessao de checkout invalida", 401)
+    throw new AppError("Sessão de checkout inválida", 401)
   }
   return payload
 }

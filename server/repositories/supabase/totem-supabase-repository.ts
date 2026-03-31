@@ -85,7 +85,7 @@ export class TotemSupabaseRepository extends BaseSupabaseRepository implements T
       .eq("activation_code", activationCode)
       .maybeSingle()
 
-    if (error) throw new AppError("Erro ao validar codigo de ativacao", 500)
+    if (error) throw new AppError("Erro ao validar código de ativação", 500)
     return (data as Pick<TotemRecord, "id" | "status" | "device_id"> | null) ?? null
   }
 
@@ -110,7 +110,7 @@ export class TotemSupabaseRepository extends BaseSupabaseRepository implements T
         return "conflict"
       }
 
-      throw new AppError("Nao foi possivel ativar o totem", 500)
+      throw new AppError("Não foi possível ativar o totem", 500)
     }
 
     if (!data || data.length === 0) {

@@ -65,7 +65,7 @@ export async function authenticatePrintAgentRequest(input: {
   const body = (input.body ?? {}) as Record<string, unknown>
   const deviceId = sanitizeString(body?.deviceId)
   if (!deviceId) {
-    throw new AppError("Device ID invalido", 400, "TOTEM_CONTEXT_MISSING", true, false)
+    throw new AppError("Device ID inválido", 400, "TOTEM_CONTEXT_MISSING", true, false)
   }
 
   const env = getPrintAgentAuthEnv()
@@ -103,7 +103,7 @@ export async function authenticatePrintAgentRequest(input: {
 
   const timestampMs = parseTimestamp(timestamp)
   if (!timestampMs) {
-    throw new AppError("Assinatura de agente invalida", 401, "AGENT_AUTH_INVALID", true, false)
+    throw new AppError("Assinatura de agente inválida", 401, "AGENT_AUTH_INVALID", true, false)
   }
 
   const now = Date.now()
@@ -124,10 +124,10 @@ export async function authenticatePrintAgentRequest(input: {
   const device = await repositories.printAgentDevice.findDeviceByDeviceId(deviceId)
   if (device) {
     if (device.status !== "active" || device.revoked_at) {
-      throw new AppError("Dispositivo de impressao revogado ou inativo", 401, "AGENT_AUTH_INVALID", true, false)
+      throw new AppError("Dispositivo de impressão revogado ou inativo", 401, "AGENT_AUTH_INVALID", true, false)
     }
     if (keyIdHeader && keyIdHeader !== device.key_id) {
-      throw new AppError("Chave do agente invalida", 401, "AGENT_AUTH_INVALID", true, false)
+      throw new AppError("Chave do agente inválida", 401, "AGENT_AUTH_INVALID", true, false)
     }
 
     let decryptedSecret = ""
@@ -138,7 +138,7 @@ export async function authenticatePrintAgentRequest(input: {
     }
 
     if (sha256HexSafe(decryptedSecret) !== device.hmac_secret_hash) {
-      throw new AppError("Integridade de credencial invalida", 401, "AGENT_AUTH_INVALID", true, false)
+      throw new AppError("Integridade de credencial inválida", 401, "AGENT_AUTH_INVALID", true, false)
     }
 
     const expectedDeviceSignature = signMessage(decryptedSecret, message)
@@ -155,13 +155,13 @@ export async function authenticatePrintAgentRequest(input: {
   }
 
   if (!env.allowGlobalFallback) {
-    throw new AppError("Assinatura de agente invalida", 401, "AGENT_AUTH_INVALID", true, false)
+    throw new AppError("Assinatura de agente inválida", 401, "AGENT_AUTH_INVALID", true, false)
   }
 
   const expectedGlobalSignature = signMessage(env.hmacSecret, message)
 
   if (!isValidSignature(expectedGlobalSignature, normalizedSignature)) {
-    throw new AppError("Assinatura de agente invalida", 401, "AGENT_AUTH_INVALID", true, false)
+    throw new AppError("Assinatura de agente inválida", 401, "AGENT_AUTH_INVALID", true, false)
   }
 
   return {

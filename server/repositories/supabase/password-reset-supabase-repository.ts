@@ -11,7 +11,7 @@ export class PasswordResetSupabaseRepository extends BaseSupabaseRepository impl
       .eq("user_id", userId)
       .is("used_at", null)
 
-    if (error) throw new AppError("Erro ao expirar codigos anteriores", 500)
+    if (error) throw new AppError("Erro ao expirar códigos anteriores", 500)
   }
 
   async create(input: CreatePasswordResetInput): Promise<void> {
@@ -50,7 +50,7 @@ export class PasswordResetSupabaseRepository extends BaseSupabaseRepository impl
       .limit(1)
       .maybeSingle()
 
-    if (error) throw new AppError("Erro ao validar codigo", 500)
+    if (error) throw new AppError("Erro ao validar código", 500)
     return (data as PasswordResetRecord | null) ?? null
   }
 
@@ -60,7 +60,7 @@ export class PasswordResetSupabaseRepository extends BaseSupabaseRepository impl
       .update({ expires_at: expiresAt })
       .eq("id", resetId)
 
-    if (error) throw new AppError("Erro ao estender expiracao do codigo", 500)
+    if (error) throw new AppError("Erro ao estender expiração do código", 500)
   }
 
   async markUsed(resetId: string, usedAt: string): Promise<void> {
@@ -69,6 +69,6 @@ export class PasswordResetSupabaseRepository extends BaseSupabaseRepository impl
       .update({ used_at: usedAt })
       .eq("id", resetId)
 
-    if (error) throw new AppError("Erro ao marcar codigo como utilizado", 500)
+    if (error) throw new AppError("Erro ao marcar código como utilizado", 500)
   }
 }

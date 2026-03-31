@@ -32,7 +32,7 @@ export async function registerWebhookEventService(
     return { duplicate: true }
   }
 
-  // Fallback seguro para ambientes que ainda nao executaram a migration.
+  // Fallback seguro para ambientes que ainda não executaram a migration.
   if (error.code === "42P01") {
     return { duplicate: false }
   }

@@ -23,7 +23,7 @@ export async function registerOrderService(input: RegisterOrderInput) {
     !input.paymentMethod ||
     typeof input.paymentMethod !== "string"
   ) {
-    throw new AppError("Dados invalidos", 400)
+    throw new AppError("Dados inválidos", 400)
   }
 
   const createdOrder = await getRepositoryFactory().order.registerOrder({

@@ -89,7 +89,7 @@ export async function agentAckPrintJobSuccessService(input: AgentAckSuccessInput
   const agentId = normalizeAgentId(input.agentId, `agent:${totem.id}`)
 
   if (!jobId) {
-    throw new AppError("jobId invalido", 400, "ORDER_ID_INVALID", true, false)
+    throw new AppError("jobId inválido", 400, "ORDER_ID_INVALID", true, false)
   }
 
   const repositories = getRepositoryFactory()
@@ -100,7 +100,7 @@ export async function agentAckPrintJobSuccessService(input: AgentAckSuccessInput
     printedAt: new Date().toISOString(),
   })
   if (result.outcome === "not_found") {
-    throw new AppError("Job nao encontrado para confirmacao", 404, "ORDER_ID_INVALID", true, false)
+    throw new AppError("Job não encontrado para confirmação", 404, "ORDER_ID_INVALID", true, false)
   }
 
   if (result.outcome !== "applied") {
@@ -142,11 +142,11 @@ export async function agentAckPrintJobFailureService(input: AgentAckFailureInput
   const agentId = normalizeAgentId(input.agentId, `agent:${totem.id}`)
 
   if (!jobId) {
-    throw new AppError("jobId invalido", 400, "ORDER_ID_INVALID", true, false)
+    throw new AppError("jobId inválido", 400, "ORDER_ID_INVALID", true, false)
   }
 
   const error =
-    sanitizeString(input.error) ?? "Falha desconhecida no agente de impressao"
+    sanitizeString(input.error) ?? "Falha desconhecida no agente de impressão"
   const classified = classifyAgentFailure(error)
   const providedErrorCode = normalizeProvidedErrorCode(input.errorCode)
   const retryable = typeof input.retryable === "boolean" ? input.retryable : classified.retryable
@@ -165,7 +165,7 @@ export async function agentAckPrintJobFailureService(input: AgentAckFailureInput
   })
 
   if (updated.outcome === "not_found") {
-    throw new AppError("Job nao encontrado para registrar falha", 404, "ORDER_ID_INVALID", true, false)
+    throw new AppError("Job não encontrado para registrar falha", 404, "ORDER_ID_INVALID", true, false)
   }
 
   if (updated.outcome !== "applied") {

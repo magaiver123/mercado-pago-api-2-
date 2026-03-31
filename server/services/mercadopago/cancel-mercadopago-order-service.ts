@@ -41,7 +41,7 @@ export async function cancelMercadoPagoOrderService(orderId: string | null, auth
   const repositories = getRepositoryFactory()
   const accessContext = await repositories.order.getAccessContextByMercadopagoOrderId(orderId)
   if (!accessContext) {
-    throw new AppError("Pedido nao encontrado", 404)
+    throw new AppError("Pedido não encontrado", 404)
   }
 
   if (accessContext.user_id !== auth.userId || accessContext.store_id !== auth.storeId) {

@@ -5,7 +5,7 @@ import { getRepositoryFactory } from "@/api/repositories/repository-factory"
 export async function validateTotemStatusService(deviceIdValue: unknown) {
   const deviceId = sanitizeString(deviceIdValue)
   if (!deviceId) {
-    throw new AppError("Device ID invalido", 400)
+    throw new AppError("Device ID inválido", 400)
   }
 
   const repositories = getRepositoryFactory()
@@ -31,7 +31,7 @@ export async function validateTotemStatusService(deviceIdValue: unknown) {
   const updated = await repositories.totem.updateLastSeenActive(totem.id, now)
 
   if (!updated) {
-    throw new AppError("Erro ao atualizar ultimo acesso do totem", 500)
+    throw new AppError("Erro ao atualizar último acesso do totem", 500)
   }
 
   return { allowed: true, reason: "active" as const, storeId: totem.store_id }

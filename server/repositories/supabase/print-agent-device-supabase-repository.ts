@@ -133,7 +133,7 @@ export class PrintAgentDeviceSupabaseRepository
       .single()
 
     if (error || !data) {
-      throw new AppError("Erro ao ativar dispositivo de impressao", 500)
+      throw new AppError("Erro ao ativar dispositivo de impressão", 500)
     }
 
     return data as PrintAgentDeviceRecord
@@ -147,7 +147,7 @@ export class PrintAgentDeviceSupabaseRepository
       .maybeSingle()
 
     if (error) {
-      throw new AppError("Erro ao buscar dispositivo de impressao", 500)
+      throw new AppError("Erro ao buscar dispositivo de impressão", 500)
     }
 
     return (data as PrintAgentDeviceRecord | null) ?? null
@@ -163,7 +163,7 @@ export class PrintAgentDeviceSupabaseRepository
       .limit(safeLimit)
 
     if (error) {
-      throw new AppError("Erro ao listar dispositivos de impressao", 500)
+      throw new AppError("Erro ao listar dispositivos de impressão", 500)
     }
 
     return (data as PrintAgentDeviceRecord[] | null) ?? []
@@ -181,7 +181,7 @@ export class PrintAgentDeviceSupabaseRepository
       .maybeSingle()
 
     if (error) {
-      throw new AppError("Erro ao revogar dispositivo de impressao", 500)
+      throw new AppError("Erro ao revogar dispositivo de impressão", 500)
     }
 
     return (data as PrintAgentDeviceRecord | null) ?? null
@@ -199,7 +199,7 @@ export class PrintAgentDeviceSupabaseRepository
       .eq("device_id", input.deviceId)
 
     if (error) {
-      throw new AppError("Erro ao atualizar status do dispositivo de impressao", 500)
+      throw new AppError("Erro ao atualizar status do dispositivo de impressão", 500)
     }
   }
 }

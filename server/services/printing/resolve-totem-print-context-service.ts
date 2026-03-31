@@ -8,14 +8,14 @@ export async function resolveTotemPrintContextService(
 ) {
   const deviceId = sanitizeString(deviceIdValue)
   if (!deviceId) {
-    throw new AppError("Device ID invalido", 400, "TOTEM_CONTEXT_MISSING", true, false)
+    throw new AppError("Device ID inválido", 400, "TOTEM_CONTEXT_MISSING", true, false)
   }
 
   const repositories = getRepositoryFactory()
   const totem = await repositories.totem.findByDeviceId(deviceId)
   if (!totem) {
     throw new AppError(
-      "Totem nao encontrado para o device informado",
+      "Totem não encontrado para o device informado",
       404,
       "TOTEM_CONTEXT_MISSING",
       true,

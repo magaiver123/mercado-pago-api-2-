@@ -18,13 +18,13 @@ export class UserSupabaseRepository extends BaseSupabaseRepository implements Us
 
   async findById(userId: string): Promise<UserRecord | null> {
     const { data, error } = await this.db.from("users").select("*").eq("id", userId).maybeSingle()
-    if (error) throw new AppError("Erro ao buscar usuario", 500)
+    if (error) throw new AppError("Erro ao buscar usuário", 500)
     return (data as UserRecord | null) ?? null
   }
 
   async findActiveById(userId: string): Promise<UserRecord | null> {
     const { data, error } = await this.db.from("users").select("*").eq("id", userId).eq("status", "ativo").maybeSingle()
-    if (error) throw new AppError("Erro ao buscar usuario", 500)
+    if (error) throw new AppError("Erro ao buscar usuário", 500)
     return (data as UserRecord | null) ?? null
   }
 
@@ -72,7 +72,7 @@ export class UserSupabaseRepository extends BaseSupabaseRepository implements Us
       .update({ last_access_at: isoDate })
       .eq("id", userId)
 
-    if (error) throw new AppError("Erro ao atualizar ultimo acesso", 500)
+    if (error) throw new AppError("Erro ao atualizar último acesso", 500)
   }
 
   async updateProfile(
@@ -92,7 +92,7 @@ export class UserSupabaseRepository extends BaseSupabaseRepository implements Us
 
     if (error) {
       if (error.code === "23505") {
-        throw new AppError("Email ja cadastrado", 409)
+        throw new AppError("Email já cadastrado", 409)
       }
       throw new AppError("Erro ao salvar alteracoes", 500)
     }

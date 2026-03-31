@@ -36,7 +36,7 @@ async function requireAdminStoreIdFromBypass(request: Request): Promise<string> 
   const bypassStatus = await getAdminBypassStatusService(request)
   if (!bypassStatus.allowed || !bypassStatus.storeId) {
     throw new AppError(
-      "Acesso negado para configuracao de impressoras",
+      "Acesso negado para configuração de impressoras",
       getAdminBypassErrorStatus(bypassStatus.reason),
     )
   }
@@ -79,7 +79,7 @@ async function requirePrintingStoreAdminAccess(request: Request, body?: unknown)
   if (hasValidPrintAdminToken(request)) {
     const storeId = getStoreIdFromBody(body) ?? getStoreIdFromQuery(request)
     if (!storeId) {
-      throw new AppError("storeId invalido", 400, "STORE_CONTEXT_MISMATCH", true, false)
+      throw new AppError("storeId inválido", 400, "STORE_CONTEXT_MISMATCH", true, false)
     }
     return storeId
   }
@@ -100,17 +100,17 @@ async function parseJsonOrThrow(
   try {
     raw = await request.text()
   } catch {
-    throw new AppError("Payload invalido", 400, code, true, false)
+    throw new AppError("Payload inválido", 400, code, true, false)
   }
 
   if (!raw || raw.trim() === "") {
-    throw new AppError("Payload invalido", 400, code, true, false)
+    throw new AppError("Payload inválido", 400, code, true, false)
   }
 
   try {
     return { raw, body: JSON.parse(raw) }
   } catch {
-    throw new AppError("Payload invalido", 400, code, true, false)
+    throw new AppError("Payload inválido", 400, code, true, false)
   }
 }
 
@@ -256,7 +256,7 @@ export async function createReceiptPrintJobController(request: Request) {
   const userSession = requireUserSessionFromRequest(request)
   if (userSession.source !== "kiosk") {
     throw new AppError(
-      "Somente sessoes de totem podem criar impressao de comprovante",
+      "Somente sessões de totem podem criar impressão de comprovante",
       403,
       "KIOSK_SESSION_INVALID",
       true,

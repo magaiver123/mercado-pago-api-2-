@@ -38,7 +38,7 @@ export async function loginByCpfController(request: Request) {
   try {
     body = await request.json()
   } catch {
-    return NextResponse.json({ error: "CPF invalido" }, { status: 400 })
+    return NextResponse.json({ error: "CPF inválido" }, { status: 400 })
   }
 
   const normalizedCpf = typeof body?.cpf === "string" ? body.cpf.replace(/\D/g, "") : ""
@@ -60,7 +60,7 @@ export async function registerController(request: Request) {
   try {
     body = await request.json()
   } catch {
-    return NextResponse.json({ error: "Dados invalidos" }, { status: 400 })
+    return NextResponse.json({ error: "Dados inválidos" }, { status: 400 })
   }
 
   const data = await registerService({
@@ -79,7 +79,7 @@ export async function loginByEmailController(request: Request) {
   try {
     body = await request.json()
   } catch {
-    return NextResponse.json({ error: "Dados invalidos" }, { status: 400 })
+    return NextResponse.json({ error: "Dados inválidos" }, { status: 400 })
   }
 
   const data = await emailLoginService({
@@ -136,7 +136,7 @@ export async function resetPasswordController(request: Request) {
   try {
     body = await request.json()
   } catch {
-    return NextResponse.json({ error: "Dados invalidos" }, { status: 400 })
+    return NextResponse.json({ error: "Dados inválidos" }, { status: 400 })
   }
 
   try {
@@ -159,7 +159,7 @@ export async function signupStartController(request: Request) {
   try {
     body = await request.json()
   } catch {
-    return NextResponse.json({ error: "Dados invalidos" }, { status: 400 })
+    return NextResponse.json({ error: "Dados inválidos" }, { status: 400 })
   }
 
   const data = await signupStartService({
@@ -178,7 +178,7 @@ export async function signupVerifyEmailController(request: Request) {
   try {
     body = await request.json()
   } catch {
-    return NextResponse.json({ error: "Dados invalidos" }, { status: 400 })
+    return NextResponse.json({ error: "Dados inválidos" }, { status: 400 })
   }
 
   const data = await signupVerifyEmailService({
@@ -194,7 +194,7 @@ export async function signupResendController(request: Request) {
   try {
     body = await request.json()
   } catch {
-    return NextResponse.json({ error: "Dados invalidos" }, { status: 400 })
+    return NextResponse.json({ error: "Dados inválidos" }, { status: 400 })
   }
 
   const data = await signupResendService({
@@ -210,7 +210,7 @@ export async function signupVerifyPhoneController(request: Request) {
   try {
     body = await request.json()
   } catch {
-    return NextResponse.json({ error: "Dados invalidos" }, { status: 400 })
+    return NextResponse.json({ error: "Dados inválidos" }, { status: 400 })
   }
 
   const data = await signupVerifyPhoneService({

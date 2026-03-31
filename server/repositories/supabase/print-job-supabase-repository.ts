@@ -46,7 +46,7 @@ export class PrintJobSupabaseRepository
     }
 
     if (error?.code !== "23505") {
-      throw new AppError("Erro ao criar job de impressao", 500, "DB_UNAVAILABLE", false, true)
+      throw new AppError("Erro ao criar job de impressão", 500, "DB_UNAVAILABLE", false, true)
     }
 
     const { data: existing, error: existingError } = await this.db
@@ -58,7 +58,7 @@ export class PrintJobSupabaseRepository
       .maybeSingle()
 
     if (existingError || !existing) {
-      throw new AppError("Erro ao recuperar job de impressao existente", 500, "DB_UNAVAILABLE", false, true)
+      throw new AppError("Erro ao recuperar job de impressão existente", 500, "DB_UNAVAILABLE", false, true)
     }
 
     return {
@@ -129,7 +129,7 @@ export class PrintJobSupabaseRepository
     }
 
     if (!isMissingColumnError(withRetryWindow.error)) {
-      throw new AppError("Erro ao consultar jobs pendentes de impressao", 500, "DB_UNAVAILABLE", false, true)
+      throw new AppError("Erro ao consultar jobs pendentes de impressão", 500, "DB_UNAVAILABLE", false, true)
     }
 
     const legacy = await this.db
@@ -142,7 +142,7 @@ export class PrintJobSupabaseRepository
       .maybeSingle()
 
     if (legacy.error) {
-      throw new AppError("Erro ao consultar jobs pendentes de impressao", 500, "DB_UNAVAILABLE", false, true)
+      throw new AppError("Erro ao consultar jobs pendentes de impressão", 500, "DB_UNAVAILABLE", false, true)
     }
 
     const candidate = legacy.data as { id?: string; attempts?: number } | null
@@ -229,7 +229,7 @@ export class PrintJobSupabaseRepository
       .maybeSingle()
 
     if (legacy.error) {
-      throw new AppError("Erro ao claimar job pendente de impressao", 500, "DB_UNAVAILABLE", false, true)
+      throw new AppError("Erro ao claimar job pendente de impressão", 500, "DB_UNAVAILABLE", false, true)
     }
 
     return (legacy.data as PrintJobRecord | null) ?? null
@@ -272,7 +272,7 @@ export class PrintJobSupabaseRepository
       if (error.code === "42883") {
         return this.claimNextPendingFallback(input)
       }
-      throw new AppError("Erro ao claimar proximo job de impressao", 500, "DB_UNAVAILABLE", false, true)
+      throw new AppError("Erro ao claimar próximo job de impressão", 500, "DB_UNAVAILABLE", false, true)
     }
 
     if (!Array.isArray(data) || data.length === 0) return null
@@ -288,7 +288,7 @@ export class PrintJobSupabaseRepository
       .maybeSingle()
 
     if (currentError) {
-      throw new AppError("Erro ao consultar job para confirmacao", 500, "DB_UNAVAILABLE", false, true)
+      throw new AppError("Erro ao consultar job para confirmação", 500, "DB_UNAVAILABLE", false, true)
     }
 
     if (!current) {
@@ -340,7 +340,7 @@ export class PrintJobSupabaseRepository
     }
 
     if (full.error && !isMissingColumnError(full.error)) {
-      throw new AppError("Erro ao confirmar impressao do job", 500, "DB_UNAVAILABLE", false, true)
+      throw new AppError("Erro ao confirmar impressão do job", 500, "DB_UNAVAILABLE", false, true)
     }
 
     const legacy = await this.db
@@ -360,7 +360,7 @@ export class PrintJobSupabaseRepository
       .maybeSingle()
 
     if (legacy.error) {
-      throw new AppError("Erro ao confirmar impressao do job", 500, "DB_UNAVAILABLE", false, true)
+      throw new AppError("Erro ao confirmar impressão do job", 500, "DB_UNAVAILABLE", false, true)
     }
 
     if (!(legacy.data as { id?: string } | null)?.id) {
@@ -455,7 +455,7 @@ export class PrintJobSupabaseRepository
     }
 
     if (full.error && !isMissingColumnError(full.error)) {
-      throw new AppError("Erro ao registrar falha de impressao", 500, "DB_UNAVAILABLE", false, true)
+      throw new AppError("Erro ao registrar falha de impressão", 500, "DB_UNAVAILABLE", false, true)
     }
 
     const legacy = await this.db
@@ -474,7 +474,7 @@ export class PrintJobSupabaseRepository
       .maybeSingle()
 
     if (legacy.error) {
-      throw new AppError("Erro ao registrar falha de impressao", 500, "DB_UNAVAILABLE", false, true)
+      throw new AppError("Erro ao registrar falha de impressão", 500, "DB_UNAVAILABLE", false, true)
     }
 
     if (!(legacy.data as { id?: string } | null)?.id) {
@@ -521,7 +521,7 @@ export class PrintJobSupabaseRepository
     }
 
     if (!isMissingColumnError(full.error)) {
-      throw new AppError("Erro ao reencaminhar job de impressao", 500, "DB_UNAVAILABLE", false, true)
+      throw new AppError("Erro ao reencaminhar job de impressão", 500, "DB_UNAVAILABLE", false, true)
     }
 
     const legacy = await this.db
@@ -540,7 +540,7 @@ export class PrintJobSupabaseRepository
       .maybeSingle()
 
     if (legacy.error) {
-      throw new AppError("Erro ao reencaminhar job de impressao", 500, "DB_UNAVAILABLE", false, true)
+      throw new AppError("Erro ao reencaminhar job de impressão", 500, "DB_UNAVAILABLE", false, true)
     }
 
     return (legacy.data as PrintJobRecord | null) ?? null
@@ -555,7 +555,7 @@ export class PrintJobSupabaseRepository
       .limit(limit)
 
     if (error) {
-      throw new AppError("Erro ao listar jobs de impressao", 500, "DB_UNAVAILABLE", false, true)
+      throw new AppError("Erro ao listar jobs de impressão", 500, "DB_UNAVAILABLE", false, true)
     }
 
     return (data as PrintJobRecord[] | null) ?? []
@@ -571,7 +571,7 @@ export class PrintJobSupabaseRepository
       .limit(safeLimit)
 
     if (error) {
-      throw new AppError("Erro ao listar jobs globais de impressao", 500, "DB_UNAVAILABLE", false, true)
+      throw new AppError("Erro ao listar jobs globais de impressão", 500, "DB_UNAVAILABLE", false, true)
     }
 
     return (data as PrintJobRecord[] | null) ?? []

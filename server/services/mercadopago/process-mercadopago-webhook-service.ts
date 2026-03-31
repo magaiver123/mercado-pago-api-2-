@@ -50,7 +50,7 @@ export async function processMercadoPagoWebhookService(body: WebhookBody, option
     if (!claimedOrder) {
       const existingOrder = await repositories.order.findForStockProcessing(mercadopagoOrderId)
       if (!existingOrder) {
-        logger.warn("Webhook recebido para pedido nao encontrado localmente", {
+        logger.warn("Webhook recebido para pedido não encontrado localmente", {
           mercadopagoOrderId,
           action,
         })
@@ -175,7 +175,7 @@ export async function processMercadoPagoWebhookService(body: WebhookBody, option
       })
       lockCommandId = lockCommand.id
     } catch (error) {
-      logger.warn("Nao foi possivel registrar lock command no outbox; seguindo com publish direto", {
+      logger.warn("Não foi possível registrar lock command no outbox; seguindo com publish direto", {
         mercadopagoOrderId,
         storeId: claimedOrder.store_id,
         error: error instanceof Error ? error.message : "unknown_error",

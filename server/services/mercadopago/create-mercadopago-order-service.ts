@@ -79,7 +79,7 @@ export async function createMercadoPagoOrderService(
 
   const user = await repositories.user.findActiveById(userId)
   if (!user) {
-    throw new AppError("Usuario nao encontrado", 404)
+    throw new AppError("Usuário não encontrado", 404)
   }
 
   let totalAmount = 0
@@ -88,7 +88,7 @@ export async function createMercadoPagoOrderService(
   for (const item of items) {
     const product = await repositories.menu.getActiveProductById(storeId, item.productId)
     if (!product || !product.is_active) {
-      throw new AppError("Produto invalido ou inativo", 400)
+      throw new AppError("Produto inválido ou inativo", 400)
     }
 
     orderItems.push({
@@ -107,7 +107,7 @@ export async function createMercadoPagoOrderService(
   }
 
   if (totalAmount <= 0) {
-    throw new AppError("Valor total invalido", 400)
+    throw new AppError("Valor total inválido", 400)
   }
 
   const mappedPaymentMethod = paymentMethodId === "pix" ? "qr" : paymentMethodId
@@ -150,7 +150,7 @@ export async function createMercadoPagoOrderService(
 
   if (!createResponse.ok) {
     if (createErrorPayload?.errors?.[0]?.code === "already_queued_order_on_terminal") {
-      throw new AppError("Ja existe um pedido pendente no terminal. Cancele manualmente no terminal e tente novamente.", 409)
+      throw new AppError("Já existe um pedido pendente no terminal. Cancele manualmente no terminal e tente novamente.", 409)
     }
 
     throw new AppError(createResponse.message || "Erro ao criar pedido no Mercado Pago", createResponse.status)
@@ -158,7 +158,7 @@ export async function createMercadoPagoOrderService(
 
   const createdOrder = createResponse.data
   if (!createdOrder?.id) {
-    throw new AppError("Resposta invalida ao criar pedido no Mercado Pago", 502)
+    throw new AppError("Resposta inválida ao criar pedido no Mercado Pago", 502)
   }
 
   let registerResult: { id: string; orderNumber: number | null } | null = null
@@ -182,7 +182,7 @@ export async function createMercadoPagoOrderService(
       idempotencyKey: `rollback-cancel-${createdOrder.id}`,
     }).catch(() => null)
 
-    throw new AppError("Nao foi possivel concluir o pedido no sistema. Tente novamente.", 500)
+    throw new AppError("Não foi possível concluir o pedido no sistema. Tente novamente.", 500)
   }
 
   return {

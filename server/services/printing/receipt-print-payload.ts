@@ -59,7 +59,7 @@ function sanitizeReceiptData(value: unknown, orderId: string): ReceiptData | nul
     customerName: sanitizeText(raw.customerName ?? null, 80),
     customerDocument: sanitizeText(raw.customerDocument ?? null, 32) ?? undefined,
     items,
-    paymentMethod: sanitizeText(raw.paymentMethod, 64) ?? "Nao informado",
+    paymentMethod: sanitizeText(raw.paymentMethod, 64) ?? "Não informado",
     subtotal: normalizedSubtotal,
     discounts: normalizedDiscounts,
     total: normalizedTotal,

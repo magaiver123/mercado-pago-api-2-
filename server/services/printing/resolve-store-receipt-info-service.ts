@@ -41,7 +41,7 @@ function buildStoreAddress(base: StoreBaseRow): string {
     .filter((part): part is string => Boolean(part))
 
   if (parts.length === 0) {
-    return "Endereco da loja nao informado"
+    return "Endereço da loja não informado"
   }
 
   return parts.join(", ")

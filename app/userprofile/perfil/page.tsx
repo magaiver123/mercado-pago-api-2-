@@ -95,7 +95,7 @@ export default function PerfilPage() {
           {
             title: "Impressoras dos Totens",
             description:
-              "Vincule impressoras termicas por totem e acompanhe jobs de impressao.",
+              "Vincule impressoras térmicas por totem e acompanhe jobs de impressão.",
             href: "/userprofile/perfil/impressoras",
             icon: Printer,
           },

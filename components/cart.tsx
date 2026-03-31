@@ -143,8 +143,8 @@ export function Cart({
 
                                     if (!success) {
                                       toast({
-                                        title: "Estoque maximo atingido",
-                                        description: `Disponivel: ${item.stock} unidade(s).`,
+                                        title: "Estoque máximo atingido",
+                                        description: `Disponível: ${item.stock} unidade(s).`,
                                         variant: "warning",
                                       });
                                     }

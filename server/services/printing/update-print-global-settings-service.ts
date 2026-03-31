@@ -38,12 +38,12 @@ export async function updatePrintGlobalSettingsService(
 ) {
   const connectionType = sanitizeString(input.defaultConnectionType)?.toLowerCase() ?? "tcp"
   if (connectionType !== "tcp") {
-    throw new AppError("Apenas conexao TCP e suportada no momento", 400)
+    throw new AppError("Apenas conexão TCP e suportada no momento", 400)
   }
 
   const escposProfile = sanitizeString(input.defaultEscposProfile) ?? "generic"
   if (!isValidEscPosProfile(escposProfile)) {
-    throw new AppError("Perfil ESC/POS global invalido", 400)
+    throw new AppError("Perfil ESC/POS global inválido", 400)
   }
 
   const settings = await getRepositoryFactory().printGlobalSettings.updateDefault({

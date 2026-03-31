@@ -24,7 +24,7 @@ interface UpsertTotemPrinterConfigInput {
 function normalizeConnectionType(value: unknown): "tcp" {
   const normalized = sanitizeString(value)?.toLowerCase()
   if (!normalized || normalized === PRINT_CONNECTION_TYPE_TCP) return PRINT_CONNECTION_TYPE_TCP
-  throw new AppError("Tipo de conexao nao suportado. Use TCP", 400)
+  throw new AppError("Tipo de conexão não suportado. Use TCP", 400)
 }
 
 function isValidPrinterAddress(value: string): boolean {
@@ -42,7 +42,7 @@ export async function upsertTotemPrinterConfigService(
   const model = sanitizeString(input.model)
 
   if (!totemId || !isValidUUID(totemId)) {
-    throw new AppError("totemId invalido", 400, "TOTEM_CONTEXT_MISSING", true, false)
+    throw new AppError("totemId inválido", 400, "TOTEM_CONTEXT_MISSING", true, false)
   }
 
   if (!ip) {
@@ -50,7 +50,7 @@ export async function upsertTotemPrinterConfigService(
   }
 
   if (!isValidPrinterAddress(ip)) {
-    throw new AppError("IP/host da impressora invalido", 400, "RECEIPT_PAYLOAD_INVALID", true, false)
+    throw new AppError("IP/host da impressora inválido", 400, "RECEIPT_PAYLOAD_INVALID", true, false)
   }
 
   if (!model) {
@@ -66,12 +66,12 @@ export async function upsertTotemPrinterConfigService(
   const repositories = getRepositoryFactory()
   const totem = await repositories.totem.findById(totemId)
   if (!totem) {
-    throw new AppError("Totem nao encontrado", 404, "TOTEM_CONTEXT_MISSING", true, false)
+    throw new AppError("Totem não encontrado", 404, "TOTEM_CONTEXT_MISSING", true, false)
   }
 
   if (totem.store_id !== input.storeId) {
     throw new AppError(
-      "Totem nao pertence a loja selecionada",
+      "Totem não pertence a loja selecionada",
       403,
       "STORE_CONTEXT_MISMATCH",
       true,

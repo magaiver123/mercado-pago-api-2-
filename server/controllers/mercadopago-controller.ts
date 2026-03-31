@@ -81,7 +81,7 @@ export async function mercadopagoWebhookController(request: Request) {
   })
 
   if (!isSignatureValid) {
-    logger.warn("Webhook Mercado Pago com assinatura invalida", {
+    logger.warn("Webhook Mercado Pago com assinatura inválida", {
       dataIdFromQuery,
       hasXSignature: Boolean(xSignature),
       hasXRequestId: Boolean(xRequestId),

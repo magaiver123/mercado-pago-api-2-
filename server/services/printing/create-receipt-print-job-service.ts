@@ -20,7 +20,7 @@ interface CreateReceiptPrintJobInput {
 export async function createReceiptPrintJobService(input: CreateReceiptPrintJobInput) {
   const orderId = sanitizeString(input.orderId)
   if (!orderId || orderId.length > 120) {
-    throw new AppError("orderId invalido", 400, "ORDER_ID_INVALID", true, false)
+    throw new AppError("orderId inválido", 400, "ORDER_ID_INVALID", true, false)
   }
 
   const payload = buildReceiptPrintPayload({
@@ -30,7 +30,7 @@ export async function createReceiptPrintJobService(input: CreateReceiptPrintJobI
 
   if (!payload) {
     throw new AppError(
-      "Comprovante invalido para impressao",
+      "Comprovante inválido para impressão",
       400,
       "RECEIPT_PAYLOAD_INVALID",
       true,
@@ -41,7 +41,7 @@ export async function createReceiptPrintJobService(input: CreateReceiptPrintJobI
   const { totem, printer } = await resolveTotemPrintContextService(input.deviceId)
   if (!totem.store_id || totem.store_id !== input.storeId) {
     throw new AppError(
-      "Totem nao pertence ao contexto atual da loja",
+      "Totem não pertence ao contexto atual da loja",
       403,
       "STORE_CONTEXT_MISMATCH",
       true,
@@ -68,7 +68,7 @@ export async function createReceiptPrintJobService(input: CreateReceiptPrintJobI
     payload.receipt.orderNumber = orderMetadata.order_number ?? payload.receipt.orderNumber ?? null
     payload.receipt.createdAt = orderMetadata.created_at || payload.receipt.createdAt
     if (
-      (!payload.receipt.paymentMethod || payload.receipt.paymentMethod === "Nao informado") &&
+      (!payload.receipt.paymentMethod || payload.receipt.paymentMethod === "Não informado") &&
       orderMetadata.payment_method
     ) {
       payload.receipt.paymentMethod = orderMetadata.payment_method

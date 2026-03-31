@@ -103,7 +103,7 @@ export async function activateAdminBypassService(
 
   const storeSlug = normalizeStoreSlug(input.storeSlug)
   if (!storeSlug) {
-    throw new AppError("storeSlug invalido. Use o slug sem < >, por exemplo: nino-imoveis", 400)
+    throw new AppError("storeSlug inválido. Use o slug sem < >, por exemplo: nino-imoveis", 400)
   }
 
   const store = await resolveActiveStoreBySlug(storeSlug)

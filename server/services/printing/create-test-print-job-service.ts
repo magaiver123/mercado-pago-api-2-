@@ -12,18 +12,18 @@ interface CreateTestPrintJobInput {
 export async function createTestPrintJobService(input: CreateTestPrintJobInput) {
   const totemId = sanitizeString(input.totemId)
   if (!totemId || !isValidUUID(totemId)) {
-    throw new AppError("totemId invalido", 400, "TOTEM_CONTEXT_MISSING", true, false)
+    throw new AppError("totemId inválido", 400, "TOTEM_CONTEXT_MISSING", true, false)
   }
 
   const repositories = getRepositoryFactory()
   const totem = await repositories.totem.findById(totemId)
   if (!totem) {
-    throw new AppError("Totem nao encontrado", 404, "TOTEM_CONTEXT_MISSING", true, false)
+    throw new AppError("Totem não encontrado", 404, "TOTEM_CONTEXT_MISSING", true, false)
   }
 
   if (totem.store_id !== input.storeId) {
     throw new AppError(
-      "Totem nao pertence a loja selecionada",
+      "Totem não pertence a loja selecionada",
       403,
       "STORE_CONTEXT_MISMATCH",
       true,
@@ -54,7 +54,7 @@ export async function createTestPrintJobService(input: CreateTestPrintJobInput) 
       createdAt: now.toISOString(),
       items: [
         {
-          name: "Teste de impressao ESC/POS",
+          name: "Teste de impressão ESC/POS",
           quantity: 1,
           unitPrice: 0,
         },

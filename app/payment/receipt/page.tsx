@@ -18,25 +18,25 @@ function mapPrintFeedback(input: { code?: string; result?: string }) {
   const code = input.code ?? ""
   if (code === "ORDER_ALREADY_PRINTED" || input.result === "already_printed") {
     return {
-      message: "Este comprovante ja foi impresso neste totem.",
+      message: "Este comprovante já foi impresso neste totem.",
       lockRequest: true,
     }
   }
   if (code === "ORDER_ALREADY_QUEUED" || input.result === "already_queued") {
     return {
-      message: "Comprovante ja estava na fila de impressao. Aguarde a impressora do totem.",
+      message: "Comprovante já estava na fila de impressão. Aguarde a impressora do totem.",
       lockRequest: true,
     }
   }
   if (code === "FAILED_PREVIOUS_REQUEUED") {
     return {
-      message: "A impressao anterior falhou e foi reenfileirada para o agente local.",
+      message: "A impressão anterior falhou e foi reenfileirada para o agente local.",
       lockRequest: true,
     }
   }
   if (code === "REQUEUE_NOT_ALLOWED" || input.result === "failed_previous") {
     return {
-      message: "A impressao anterior falhou e nao pode ser reenfileirada automaticamente.",
+      message: "A impressão anterior falhou e não pode ser reenfileirada automaticamente.",
       lockRequest: false,
     }
   }
@@ -64,7 +64,7 @@ export default function ReceiptPage() {
 
   useEffect(() => {
     if (!receipt) {
-      setError("Nao encontramos os dados do comprovante deste pedido.")
+      setError("Não encontramos os dados do comprovante deste pedido.")
       const id = setTimeout(() => {
         router.push("/payment/success")
       }, 4000)
@@ -110,7 +110,7 @@ export default function ReceiptPage() {
     try {
       const result = await printReceiptViaBackend(receipt)
       if (!result.success) {
-        setPrintFeedback(result.error ?? "Nao foi possivel enviar para impressao")
+        setPrintFeedback(result.error ?? "Não foi possível enviar para impressão")
         return
       }
 
@@ -121,12 +121,12 @@ export default function ReceiptPage() {
       setPrintFeedback(feedback.message)
       if (feedback.lockRequest) {
         setHasPrintRequest(true)
-        // Quando o envio para impressao e confirmado sem erros, encerra o fluxo automaticamente.
+        // Quando o envio para impressão e confirmado sem erros, encerra o fluxo automaticamente.
         finishFlow()
         return
       }
     } catch {
-      setPrintFeedback("Erro de conexao ao enviar comprovante para impressao.")
+      setPrintFeedback("Erro de conexão ao enviar comprovante para impressão.")
     } finally {
       setIsPrinting(false)
     }
@@ -219,7 +219,7 @@ export default function ReceiptPage() {
             </h2>
             <div className="text-xs font-semibold text-white/90 sm:text-sm">
               {isPrinting
-                ? "Enviando para impressao..."
+                ? "Enviando para impressão..."
                 : hasPrintRequest
                   ? "Solicitacao registrada"
                   : "Toque para imprimir"}

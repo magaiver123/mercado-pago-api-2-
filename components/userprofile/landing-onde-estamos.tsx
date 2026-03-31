@@ -120,7 +120,7 @@ export function UserprofileLandingOndeEstamos() {
         if (cancelled) return
         if ((error as { name?: string }).name === "AbortError") return
         setStores([])
-        setStoresError("Nao foi possivel carregar as unidades agora.")
+        setStoresError("Não foi possível carregar as unidades agora.")
       } finally {
         if (!cancelled) {
           setLoadingStores(false)
@@ -141,7 +141,7 @@ export function UserprofileLandingOndeEstamos() {
       id="onde-estamos"
       ref={sectionRef}
       className="relative py-24 sm:py-32 px-6 sm:px-4 overflow-hidden"
-      aria-label="Escolha a unidade mais proxima"
+      aria-label="Escolha a unidade mais próxima"
     >
       <div className="absolute inset-0 bg-zinc-950 pointer-events-none" />
 
@@ -153,7 +153,7 @@ export function UserprofileLandingOndeEstamos() {
           className="rounded-3xl border border-zinc-800 bg-zinc-900/45 p-5 sm:p-7"
         >
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Escolha a unidade mais proxima</h3>
+            <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">Escolha a unidade mais próxima</h3>
           </div>
 
           <p className="mt-3 text-zinc-400">Use os filtros para encontrar rapidamente a unidade ideal.</p>
@@ -164,7 +164,7 @@ export function UserprofileLandingOndeEstamos() {
               <Input
                 value={searchInput}
                 onChange={(event) => setSearchInput(event.target.value)}
-                placeholder="Buscar por nome, bairro, cidade ou endereco"
+                placeholder="Buscar por nome, bairro, cidade ou endereço"
                 className="h-11 rounded-xl border-zinc-700 bg-zinc-900/80 pl-10 text-zinc-100 placeholder:text-zinc-500"
               />
             </div>
@@ -293,7 +293,7 @@ export function UserprofileLandingOndeEstamos() {
                   onClick={() => setListPage((current) => Math.min(totalListPages, current + 1))}
                   className="rounded-full border-zinc-700 bg-zinc-900/80 text-zinc-200 hover:bg-zinc-800 hover:text-white disabled:opacity-40"
                 >
-                  Proxima
+                  Próxima
                 </Button>
               </div>
             </div>

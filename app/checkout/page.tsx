@@ -86,7 +86,7 @@ export default function CheckoutPage() {
 
         const startData = await startResponse.json().catch(() => null);
         if (!startResponse.ok || typeof startData?.checkoutSessionId !== "string") {
-          throw new Error("Nao foi possivel iniciar a sessao de checkout");
+          throw new Error("Não foi possível iniciar a sessão de checkout");
         }
 
         checkoutSessionIdRef.current = startData.checkoutSessionId;
@@ -124,7 +124,7 @@ export default function CheckoutPage() {
 
       const orderId = typeof data.orderId === "string" ? data.orderId : null;
       if (!orderId) {
-        throw new Error("Resposta invalida ao criar pedido");
+        throw new Error("Resposta inválida ao criar pedido");
       }
 
       const orderNumber =
