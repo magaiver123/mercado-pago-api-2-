@@ -26,6 +26,33 @@ function formatDate(value: string) {
   })
 }
 
+function maskCustomerName(value: string | null | undefined) {
+  const raw = String(value ?? "").trim()
+  if (!raw) return "Nao informado"
+
+  const words = raw.split(/\s+/).filter(Boolean)
+  if (words.length === 0) return "Nao informado"
+
+  return words
+    .map((word) => {
+      if (word.length <= 1) return "*"
+      const visible = Math.min(3, word.length - 1)
+      return `${word.slice(0, visible)}${"*".repeat(word.length - visible)}`
+    })
+    .join(" ")
+}
+
+function maskCustomerCpf(value: string | null | undefined) {
+  const raw = String(value ?? "").trim()
+  if (!raw) return "CPF nao informado"
+
+  const digits = raw.replace(/\D/g, "")
+  if (digits.length === 11) {
+    return `${digits.slice(0, 3)}.***.***-${digits.slice(9)}`
+  }
+
+  return raw
+}
 export function ReceiptPreview({ receipt, className }: ReceiptPreviewProps) {
   const itemsTotal = receipt.items.reduce(
     (sum, item) => sum + item.unitPrice * item.quantity,
@@ -86,13 +113,13 @@ export function ReceiptPreview({ receipt, className }: ReceiptPreviewProps) {
         <div className="flex items-center justify-between gap-2">
           <span>Cliente</span>
           <span className="max-w-[65%] truncate text-right">
-            {receipt.customerName || "Consumidor não informado"}
+            {maskCustomerName(receipt.customerName)}
           </span>
         </div>
         <div className="flex items-center justify-between gap-2">
-          <span>Documento</span>
+          <span>CPF</span>
           <span className="max-w-[65%] truncate text-right">
-            {receipt.customerDocument || "Não informado"}
+            {maskCustomerCpf(receipt.customerDocument)}
           </span>
         </div>
       </div>

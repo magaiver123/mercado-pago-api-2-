@@ -107,10 +107,26 @@ function formatCustomerCpf(value) {
   const raw = String(value ?? "").trim()
   const digits = raw.replace(/\D/g, "")
   if (digits.length === 11) {
-    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`
+    return `${digits.slice(0, 3)}.***.***-${digits.slice(9)}`
   }
 
   return raw || "CPF nao informado"
+}
+
+function formatCustomerName(value) {
+  const raw = String(value ?? "").trim()
+  if (!raw) return "Nao informado"
+
+  const words = raw.split(/\s+/).filter(Boolean)
+  if (words.length === 0) return "Nao informado"
+
+  return words
+    .map((word) => {
+      if (word.length <= 1) return "*"
+      const visible = Math.min(3, word.length - 1)
+      return `${word.slice(0, visible)}${"*".repeat(word.length - visible)}`
+    })
+    .join(" ")
 }
 
 function escInit() {
@@ -261,7 +277,8 @@ function renderReceiptIdentity(parts, receipt, profile, options) {
   parts.push(textLine(orderLine, options))
   parts.push(textLine(`Data: ${date}`, options))
   parts.push(textLine(`Hora: ${time}`, options))
-  parts.push(textLine(`Cliente: ${formatCustomerCpf(receipt.customerDocument)}`, options))
+  parts.push(textLine(`Cliente: ${formatCustomerName(receipt.customerName)}`, options))
+  parts.push(textLine(`CPF: ${formatCustomerCpf(receipt.customerDocument)}`, options))
   parts.push(textLine("", options))
 
   parts.push(separatorLine(profile.minorSeparator, options))

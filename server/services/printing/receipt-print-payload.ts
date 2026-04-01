@@ -42,10 +42,26 @@ function formatCustomerCpf(value: unknown): string {
 
   const digits = raw.replace(/\D/g, "")
   if (digits.length === 11) {
-    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`
+    return `${digits.slice(0, 3)}.***.***-${digits.slice(9)}`
   }
 
   return raw
+}
+
+function formatCustomerName(value: unknown): string {
+  const raw = sanitizeText(value, 80)
+  if (!raw) return "Nao informado"
+
+  const words = raw.split(/\s+/).filter(Boolean)
+  if (words.length === 0) return "Nao informado"
+
+  return words
+    .map((word) => {
+      if (word.length <= 1) return "*"
+      const visible = Math.min(3, word.length - 1)
+      return `${word.slice(0, visible)}${"*".repeat(word.length - visible)}`
+    })
+    .join(" ")
 }
 
 function sanitizeReceiptData(value: unknown, orderId: string): ReceiptData | null {
@@ -145,6 +161,7 @@ function buildEscPosTemplate(receipt: ReceiptData): EscPosTemplate {
 
   const formattedOrder = formatOrderNumber(receipt.orderNumber)
   const createdAt = formatReceiptDateTime(receipt.createdAt)
+  const customerName = formatCustomerName(receipt.customerName)
   const customerCpf = formatCustomerCpf(receipt.customerDocument)
   const storeName = sanitizeText(receipt.storeName, 120) ?? "Autoatendimento"
   const storeLegalName = sanitizeText(receipt.storeLegalName, 120)
@@ -186,7 +203,8 @@ function buildEscPosTemplate(receipt: ReceiptData): EscPosTemplate {
   push({ text: `Pedido: ${formattedOrder}` })
   push({ text: `Data: ${createdAt.date}` })
   push({ text: `Hora: ${createdAt.time}` })
-  push({ text: `Cliente: ${customerCpf}` })
+  push({ text: `Cliente: ${customerName}` })
+  push({ text: `CPF: ${customerCpf}` })
   push({ separator: "minor" })
   push({ text: "Itens" })
   push({ separator: "minor" })
