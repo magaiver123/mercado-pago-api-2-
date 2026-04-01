@@ -15,7 +15,6 @@ import { useCartStore } from "@/lib/cart-store";
 import Image from "next/image";
 import { getAuthUser } from "@/lib/auth-store";
 import { getDefaultStoreInfo, saveReceiptToSession } from "@/lib/receipt-types";
-import { getCheckoutTaxDocument } from "@/lib/checkout-context";
 
 type PaymentMethod = "credit_card" | "debit_card" | "pix";
 
@@ -92,7 +91,6 @@ export default function CheckoutPage() {
         checkoutSessionIdRef.current = startData.checkoutSessionId;
       }
 
-      const taxDocument = getCheckoutTaxDocument();
       const response = await fetch("/api/checkout/session/confirm", {
         method: "POST",
         headers: {
@@ -107,8 +105,6 @@ export default function CheckoutPage() {
             quantity: item.quantity,
           })),
           paymentMethodId: methodId,
-          customerDocument: taxDocument?.value ?? null,
-          customerDocumentType: taxDocument?.type ?? null,
         }),
       });
 
@@ -145,7 +141,7 @@ export default function CheckoutPage() {
         orderNumber,
         createdAt: createdAtIso,
         customerName: user.name,
-        customerDocument: taxDocument?.value ?? undefined,
+        customerDocument: user.cpf,
         items: items.map((item) => ({
           name: item.name,
           quantity: item.quantity,

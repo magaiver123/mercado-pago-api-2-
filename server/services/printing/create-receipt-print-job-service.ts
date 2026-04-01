@@ -59,10 +59,15 @@ export async function createReceiptPrintJobService(input: CreateReceiptPrintJobI
   }
 
   const repositories = getRepositoryFactory()
-  const [orderMetadata, storeReceiptInfo] = await Promise.all([
+  const [orderMetadata, orderAccessContext, storeReceiptInfo] = await Promise.all([
     repositories.order.getReceiptMetadataByMercadopagoOrderId(orderId),
+    repositories.order.getAccessContextByMercadopagoOrderId(orderId),
     resolveStoreReceiptInfoService(input.storeId),
   ])
+  const orderUser =
+    orderAccessContext?.user_id
+      ? await repositories.user.findById(orderAccessContext.user_id)
+      : null
 
   if (orderMetadata) {
     payload.receipt.orderNumber = orderMetadata.order_number ?? null
@@ -77,6 +82,15 @@ export async function createReceiptPrintJobService(input: CreateReceiptPrintJobI
     payload.receipt.orderNumber = null
   }
 
+  if (orderUser) {
+    if (orderUser.name) {
+      payload.receipt.customerName = orderUser.name
+    }
+    if (orderUser.cpf) {
+      payload.receipt.customerDocument = orderUser.cpf
+    }
+  }
+
   if (storeReceiptInfo) {
     payload.receipt.storeSlug = storeReceiptInfo.storeSlug ?? payload.receipt.storeSlug
     payload.receipt.storeName = storeReceiptInfo.storeName
@@ -87,13 +101,28 @@ export async function createReceiptPrintJobService(input: CreateReceiptPrintJobI
     payload.receipt.storeLogoPath = storeReceiptInfo.storeLogoPath ?? payload.receipt.storeLogoPath
   }
 
+  const finalizedPayload = buildReceiptPrintPayload({
+    orderId,
+    receipt: payload.receipt,
+  })
+
+  if (!finalizedPayload) {
+    throw new AppError(
+      "Comprovante invÃ¡lido para impressÃ£o",
+      400,
+      "RECEIPT_PAYLOAD_INVALID",
+      true,
+      false,
+    )
+  }
+
   const [queueResult, globalSettings] = await Promise.all([
     repositories.printJob.createOrGetByIdempotency({
       totemId: totem.id,
       storeId: input.storeId,
       orderId,
       action: PRINT_JOB_ACTION_RECEIPT,
-      payload,
+      payload: finalizedPayload,
     }),
     repositories.printGlobalSettings.getDefault(),
   ])

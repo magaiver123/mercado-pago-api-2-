@@ -255,7 +255,7 @@ export default function MenuPage() {
 
   const handleCheckout = () => {
     setIsCartOpen(false);
-    router.push("/order-summary");
+    router.push("/checkout");
   };
 
   const handleRestartOrder = () => {

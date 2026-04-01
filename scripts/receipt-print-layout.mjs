@@ -1,7 +1,6 @@
 const FIXED_BUSINESS_NAME = "MR SMART"
 const FIXED_CNPJ = "51.397.705/0001-25"
 const FIXED_PHONE = "(51) 99588-1730"
-const FIXED_ATTENDANT = "Autoatendimento"
 const FIXED_PAYMENT_STATUS = "PAGAMENTO APROVADO"
 
 function supportsAccent(profile) {
@@ -102,6 +101,16 @@ function splitReceiptDateTime(dateTime) {
   const match = text.match(/^(\d{2}\/\d{2}\/\d{4})\s+(\d{2}:\d{2}:\d{2})$/)
   if (!match) return { date: "--/--/----", time: "--:--:--" }
   return { date: match[1], time: match[2] }
+}
+
+function formatCustomerCpf(value) {
+  const raw = String(value ?? "").trim()
+  const digits = raw.replace(/\D/g, "")
+  if (digits.length === 11) {
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`
+  }
+
+  return raw || "CPF nao informado"
 }
 
 function escInit() {
@@ -252,7 +261,7 @@ function renderReceiptIdentity(parts, receipt, profile, options) {
   parts.push(textLine(orderLine, options))
   parts.push(textLine(`Data: ${date}`, options))
   parts.push(textLine(`Hora: ${time}`, options))
-  parts.push(textLine(`Atendente: ${FIXED_ATTENDANT}`, options))
+  parts.push(textLine(`Cliente: ${formatCustomerCpf(receipt.customerDocument)}`, options))
   parts.push(textLine("", options))
 
   parts.push(separatorLine(profile.minorSeparator, options))
