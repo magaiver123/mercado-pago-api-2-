@@ -129,7 +129,7 @@ export function KioskWelcomeScreen() {
                 isPulsing ? "scale-[1.01] shadow-[0_16px_28px_rgba(249,115,22,0.26)]" : "scale-100"
               }`}
             >
-              Iniciar compra
+              Toque para começar
             </button>
 
             <p className="text-center text-sm font-medium text-zinc-600">
