@@ -3,6 +3,7 @@ import { sanitizeString } from "@/api/utils/sanitize"
 import { isValidUUID } from "@/api/utils/validators"
 import { getRepositoryFactory } from "@/api/repositories/repository-factory"
 import { PRINT_JOB_ACTION_RECEIPT } from "@/api/services/printing/printing-domain"
+import { buildReceiptPrintPayload } from "@/api/services/printing/receipt-print-payload"
 
 interface CreateTestPrintJobInput {
   storeId: string
@@ -45,10 +46,8 @@ export async function createTestPrintJobService(input: CreateTestPrintJobInput) 
   const now = new Date()
   const orderId = `TEST-${totemId.slice(0, 8)}-${now.getTime()}`
 
-  const payload = {
-    type: "receipt",
+  const payload = buildReceiptPrintPayload({
     orderId,
-    requestedAt: now.toISOString(),
     receipt: {
       orderId,
       createdAt: now.toISOString(),
@@ -64,8 +63,18 @@ export async function createTestPrintJobService(input: CreateTestPrintJobInput) 
       total: 0,
       storeName: "Autoatendimento",
       additionalMessage:
-        "Se este texto saiu corretamente, o vinculo totem-impressora esta operacional.",
+        "Se este texto saiu corretamente, o vínculo totem-impressora está operacional.",
     },
+  })
+
+  if (!payload) {
+    throw new AppError(
+      "Falha ao montar payload de impressão de teste",
+      500,
+      "RECEIPT_PAYLOAD_INVALID",
+      false,
+      true,
+    )
   }
 
   const created = await repositories.printJob.createOrGetByIdempotency({
