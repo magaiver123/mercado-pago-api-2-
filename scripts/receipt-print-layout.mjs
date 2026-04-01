@@ -1,6 +1,6 @@
 const FIXED_BUSINESS_NAME = "MR SMART"
 const FIXED_CNPJ = "51.397.705/0001-25"
-const FIXED_PHONE = "(51) 99588-1730"
+const FIXED_PHONE = "(51) 995881730"
 const FIXED_PAYMENT_STATUS = "PAGAMENTO APROVADO"
 
 function supportsAccent(profile) {

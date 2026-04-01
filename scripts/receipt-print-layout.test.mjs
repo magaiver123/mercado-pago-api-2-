@@ -76,7 +76,7 @@ const genericRaw = asLatin1(genericBytes)
 
 assert.match(genericRaw, /MR SMART/)
 assert.match(genericRaw, /CNPJ: 51\.397\.705\/0001-25/)
-assert.match(genericRaw, /Tel: \(51\) 99588-1730/)
+assert.match(genericRaw, /Tel: \(51\) 995881730/)
 assert.match(genericRaw, /Comprovante de Compra/)
 assert.match(genericRaw, /Pedido: #00000321/)
 assert.match(genericRaw, /Data: \d{2}\/\d{2}\/\d{4}/)

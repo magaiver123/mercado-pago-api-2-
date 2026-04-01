@@ -66,8 +66,8 @@ export function getDefaultStoreInfo() {
     storeName: "Autoatendimento",
     storeAddress: "Loja Totem - Endereço não configurado",
     storeLegalName: "Autoatendimento Comercial Ltda.",
-    storeTaxId: "CNPJ não informado",
-    storePhone: "Telefone não informado",
+    storeTaxId: "51.397.705/0001-25",
+    storePhone: "(51) 995881730",
     storeLogoPath: "/logo.svg",
   }
 }

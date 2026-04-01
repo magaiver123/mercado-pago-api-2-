@@ -49,8 +49,8 @@ export function ReceiptPreview({ receipt, className }: ReceiptPreviewProps) {
 
   const storeLegalName = receipt.storeLegalName || receipt.storeName
   const storeAddress = receipt.storeAddress || "Endereço da loja não informado"
-  const storeTaxId = receipt.storeTaxId || "CNPJ não informado"
-  const storePhone = receipt.storePhone || "Telefone não informado"
+  const storeTaxId = receipt.storeTaxId || "51.397.705/0001-25"
+  const storePhone = receipt.storePhone || "(51) 995881730"
 
   return (
     <div
