@@ -16,6 +16,36 @@ import {
 
 type TaxIdType = "CPF" | "CNPJ";
 
+const TAX_ID_DIGIT_LENGTH: Record<TaxIdType, number> = {
+  CPF: 11,
+  CNPJ: 14,
+};
+
+function normalizeTaxId(value: string, type: TaxIdType) {
+  return value.replace(/\D/g, "").slice(0, TAX_ID_DIGIT_LENGTH[type]);
+}
+
+function formatTaxId(value: string, type: TaxIdType) {
+  const digits = normalizeTaxId(value, type);
+
+  if (type === "CPF") {
+    if (digits.length <= 3) return digits;
+    if (digits.length <= 6) return `${digits.slice(0, 3)}.${digits.slice(3)}`;
+    if (digits.length <= 9) {
+      return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6)}`;
+    }
+    return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
+  }
+
+  if (digits.length <= 2) return digits;
+  if (digits.length <= 5) return `${digits.slice(0, 2)}.${digits.slice(2)}`;
+  if (digits.length <= 8) return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5)}`;
+  if (digits.length <= 12) {
+    return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8)}`;
+  }
+  return `${digits.slice(0, 2)}.${digits.slice(2, 5)}.${digits.slice(5, 8)}/${digits.slice(8, 12)}-${digits.slice(12)}`;
+}
+
 export default function OrderSummaryPage() {
   const router = useRouter();
   const { items, getTotal } = useCartStore();
@@ -39,7 +69,7 @@ export default function OrderSummaryPage() {
     const saved = getCheckoutTaxDocument();
     if (saved) {
       setTaxIdType(saved.type);
-      setTaxIdValue(saved.value);
+      setTaxIdValue(normalizeTaxId(saved.value, saved.type));
     }
   }, []);
 
@@ -67,9 +97,16 @@ export default function OrderSummaryPage() {
 
   const formattedSubtotal = subtotal.toFixed(2).replace(".", ",");
   const formattedTotal = total.toFixed(2).replace(".", ",");
+  const formattedTaxIdValue = formatTaxId(taxIdValue, taxIdType);
+
+  const handleTaxIdTypeChange = (nextType: TaxIdType) => {
+    setTaxIdType(nextType);
+    setTaxError(null);
+    setTaxIdValue((previous) => normalizeTaxId(previous, nextType));
+  };
 
   const handleGoToPayment = () => {
-    const normalized = taxIdValue.replace(/\D/g, "");
+    const normalized = normalizeTaxId(taxIdValue, taxIdType);
 
     if (normalized.length === 0) {
       saveCheckoutTaxDocument(null);
@@ -77,7 +114,7 @@ export default function OrderSummaryPage() {
       return;
     }
 
-    const expectedLength = taxIdType === "CPF" ? 11 : 14;
+    const expectedLength = TAX_ID_DIGIT_LENGTH[taxIdType];
     if (normalized.length !== expectedLength) {
       setTaxError(`${taxIdType} inválido. Confira os números informados.`);
       return;
@@ -119,7 +156,7 @@ export default function OrderSummaryPage() {
                 </span>
                 {taxIdValue && (
                   <span className="text-sm text-black/70 mt-1">
-                    {taxIdType}: <span className="font-semibold">{taxIdValue}</span>
+                    {taxIdType}: <span className="font-semibold">{formattedTaxIdValue}</span>
                   </span>
                 )}
               </div>
@@ -188,7 +225,7 @@ export default function OrderSummaryPage() {
                     ? "bg-orange-500 hover:bg-orange-600 text-white"
                     : "border-orange-300 text-orange-700 hover:bg-orange-50"
                 }
-                onClick={() => setTaxIdType("CPF")}
+                onClick={() => handleTaxIdTypeChange("CPF")}
               >
                 CPF
               </Button>
@@ -200,7 +237,7 @@ export default function OrderSummaryPage() {
                     ? "bg-orange-500 hover:bg-orange-600 text-white"
                     : "border-orange-300 text-orange-700 hover:bg-orange-50"
                 }
-                onClick={() => setTaxIdType("CNPJ")}
+                onClick={() => handleTaxIdTypeChange("CNPJ")}
               >
                 CNPJ
               </Button>
@@ -212,17 +249,21 @@ export default function OrderSummaryPage() {
               </label>
               <input
                 type="text"
-                value={taxIdValue}
+                value={formattedTaxIdValue}
                 onChange={(event) => {
-                  const numeric = event.target.value.replace(/\D/g, "");
+                  const numeric = normalizeTaxId(event.target.value, taxIdType);
                   setTaxError(null);
                   setTaxIdValue(numeric);
                 }}
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoComplete="off"
+                maxLength={taxIdType === "CPF" ? 14 : 18}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm text-black placeholder:text-black/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-1"
                 placeholder={
                   taxIdType === "CPF"
-                    ? "Digite o CPF (apenas números)"
-                    : "Digite o CNPJ (apenas números)"
+                    ? "000.000.000-00"
+                    : "00.000.000/0000-00"
                 }
               />
             </div>
@@ -240,8 +281,8 @@ export default function OrderSummaryPage() {
                 type="button"
                 className="bg-orange-500 hover:bg-orange-600 text-white"
                 onClick={() => {
-                  const normalized = taxIdValue.replace(/\D/g, "");
-                  const expectedLength = taxIdType === "CPF" ? 11 : 14;
+                  const normalized = normalizeTaxId(taxIdValue, taxIdType);
+                  const expectedLength = TAX_ID_DIGIT_LENGTH[taxIdType];
 
                   if (normalized.length > 0 && normalized.length !== expectedLength) {
                     setTaxError(`${taxIdType} inválido. Confira os números informados.`);
@@ -262,3 +303,4 @@ export default function OrderSummaryPage() {
     </div>
   );
 }
+
