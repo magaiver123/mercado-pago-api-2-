@@ -61,6 +61,7 @@
     "mqtt": "^5.15.0",
     "next": "14.2.5",
     "next-themes": "^0.4.6",
+    "pdf-lib": "^1.17.1",
     "pdfkit": "^0.18.0",
     "qrcode.react": "^4.2.0",
     "react": "18.2.0",

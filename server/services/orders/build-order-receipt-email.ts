@@ -1,6 +1,5 @@
 import { ReceiptData } from "@/lib/receipt-types"
 import { formatOrderNumberOrFallback } from "@/lib/order-number"
-import { getEmailEnv } from "@/api/config/env"
 
 interface BuildOrderReceiptEmailInput {
   receipt: ReceiptData
@@ -11,6 +10,12 @@ interface BuiltOrderReceiptEmail {
   html: string
   text: string
   fileName: string
+}
+
+interface OrderReceiptVisualEnv {
+  emailLogoUrl: string | null
+  emailAppUrl: string
+  emailSupportWhatsappUrl: string
 }
 
 function escapeHtml(value: string) {
@@ -79,8 +84,20 @@ function maskCustomerName(value: string | null | undefined) {
     .join(" ")
 }
 
+function readOrderReceiptVisualEnv(): OrderReceiptVisualEnv {
+  const emailLogoUrlRaw = String(process.env.EMAIL_LOGO_URL ?? "").trim()
+  const emailAppUrlRaw = String(process.env.EMAIL_APP_URL ?? "").trim()
+  const emailSupportWhatsappUrlRaw = String(process.env.EMAIL_SUPPORT_WHATSAPP_URL ?? "").trim()
+
+  return {
+    emailLogoUrl: emailLogoUrlRaw || null,
+    emailAppUrl: emailAppUrlRaw || "https://mrsmart.com.br",
+    emailSupportWhatsappUrl: emailSupportWhatsappUrlRaw || "https://wa.me/5551995881730",
+  }
+}
+
 export function buildOrderReceiptEmail(input: BuildOrderReceiptEmailInput): BuiltOrderReceiptEmail {
-  const { emailLogoUrl, emailAppUrl, emailSupportWhatsappUrl } = getEmailEnv()
+  const { emailLogoUrl, emailAppUrl, emailSupportWhatsappUrl } = readOrderReceiptVisualEnv()
   const receipt = input.receipt
   const displayOrder = formatOrderNumberOrFallback(
     receipt.orderNumber,
@@ -95,7 +112,7 @@ export function buildOrderReceiptEmail(input: BuildOrderReceiptEmailInput): Buil
   const subtotal = receipt.subtotal
   const discounts = receipt.discounts ?? 0
   const total = receipt.total
-  const safeLogoUrl = escapeHtml(emailLogoUrl)
+  const safeLogoUrl = emailLogoUrl ? escapeHtml(emailLogoUrl) : null
   const safeAppUrl = escapeHtml(emailAppUrl)
   const safeSupportUrl = escapeHtml(emailSupportWhatsappUrl)
   const fileName = `comprovante-pedido-${displayOrder}.pdf`
@@ -135,10 +152,14 @@ export function buildOrderReceiptEmail(input: BuildOrderReceiptEmailInput): Buil
                   <td style="padding:24px 24px 16px 24px;border-bottom:1px solid #f3f4f6;">
                     <table role="presentation" cellpadding="0" cellspacing="0">
                       <tr>
-                        <td style="vertical-align:middle;">
+                        ${
+                          safeLogoUrl
+                            ? `<td style="vertical-align:middle;">
                           <img src="${safeLogoUrl}" alt="Mr Smart" width="44" height="44" style="display:block;border:0;" />
-                        </td>
-                        <td style="padding-left:12px;font-family:Arial,sans-serif;">
+                        </td>`
+                            : ""
+                        }
+                        <td style="${safeLogoUrl ? "padding-left:12px;" : ""}font-family:Arial,sans-serif;">
                           <div style="font-size:22px;font-weight:700;color:#111827;">Mr Smart</div>
                           <div style="margin-top:2px;font-size:12px;color:#6b7280;">Comprovante digital do seu pedido</div>
                         </td>
@@ -245,4 +266,3 @@ export function buildOrderReceiptEmail(input: BuildOrderReceiptEmailInput): Buil
     fileName,
   }
 }
-
