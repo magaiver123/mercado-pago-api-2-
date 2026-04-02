@@ -56,7 +56,7 @@ function getStatusPresentation(status: string) {
 
   switch (key) {
     case "processed":
-      return { label: "Concluido", className: "border-emerald-500/30 bg-emerald-500/15 text-emerald-300" }
+      return { label: "Concluído", className: "border-emerald-500/30 bg-emerald-500/15 text-emerald-300" }
     case "created":
     case "at_terminal":
     case "pending":
@@ -70,7 +70,7 @@ function getStatusPresentation(status: string) {
     case "expired":
       return { label: "Expirado", className: "border-orange-500/30 bg-orange-500/15 text-orange-300" }
     case "action_required":
-      return { label: "Acao necessaria", className: "border-amber-500/30 bg-amber-500/15 text-amber-300" }
+      return { label: "Ação necessária", className: "border-amber-500/30 bg-amber-500/15 text-amber-300" }
     case "refunded":
       return { label: "Reembolsado", className: "border-zinc-500/30 bg-zinc-500/15 text-zinc-300" }
     default:
@@ -152,10 +152,10 @@ function formatPaymentMethod(value: string | null | undefined) {
   const normalized = String(value ?? "").trim().toLowerCase()
 
   if (normalized === "pix" || normalized === "qr") return "PIX"
-  if (normalized === "debit_card") return "Cartao de Debito"
-  if (normalized === "credit_card") return "Cartao de Credito"
+  if (normalized === "debit_card") return "Cartão de Débito"
+  if (normalized === "credit_card") return "Cartão de Crédito"
 
-  return normalized ? (value as string).trim() : "Nao informado"
+  return normalized ? (value as string).trim() : "Não informado"
 }
 
 function formatOrderNumber(order: Pick<Order, "order_number" | "id">) {
@@ -164,7 +164,7 @@ function formatOrderNumber(order: Pick<Order, "order_number" | "id">) {
 
 function maskCustomerCpf(value: string | null | undefined) {
   const raw = String(value ?? "").trim()
-  if (!raw) return "CPF nao informado"
+  if (!raw) return "CPF não informado"
 
   const digits = raw.replace(/\D/g, "")
   if (digits.length === 11) {
@@ -176,10 +176,10 @@ function maskCustomerCpf(value: string | null | undefined) {
 
 function maskCustomerName(value: string | null | undefined) {
   const raw = String(value ?? "").trim()
-  if (!raw) return "Nao informado"
+  if (!raw) return "Não informado"
 
   const words = raw.split(/\s+/).filter(Boolean)
-  if (words.length === 0) return "Nao informado"
+  if (words.length === 0) return "Não informado"
 
   return words
     .map((word) => {
@@ -262,13 +262,13 @@ export default function PedidosPage() {
         }
 
         if (!response.ok || !Array.isArray(data)) {
-          setError("Nao foi possivel carregar seus pedidos.")
+          setError("Não foi possível carregar seus pedidos.")
           return
         }
 
         setOrders(data as Order[])
       } catch {
-        setError("Nao foi possivel carregar seus pedidos.")
+        setError("Não foi possível carregar seus pedidos.")
       } finally {
         setIsLoading(false)
       }
@@ -302,7 +302,7 @@ export default function PedidosPage() {
           ...prev,
           [order.id]: {
             type: "error",
-            message: data?.error ?? "Nao foi possivel enviar o comprovante por e-mail.",
+            message: data?.error ?? "Não foi possível enviar o comprovante por e-mail.",
           },
         }))
         return
@@ -320,7 +320,7 @@ export default function PedidosPage() {
         ...prev,
         [order.id]: {
           type: "error",
-          message: "Falha de conexao ao enviar comprovante por e-mail.",
+          message: "Falha de conexão ao enviar comprovante por e-mail.",
         },
       }))
     } finally {
@@ -339,7 +339,7 @@ export default function PedidosPage() {
 
   return (
     <UserprofilePerfilShell
-      title="Historico de Pedidos"
+      title="Histórico de Pedidos"
       description="Veja detalhes de cada compra, acione suporte e envie seu comprovante digital por e-mail."
       onLogout={handleLogout}
     >
@@ -354,7 +354,7 @@ export default function PedidosPage() {
               <Package className="h-7 w-7 text-zinc-400" />
             </div>
             <h2 className="text-lg font-semibold text-white">Nenhum pedido encontrado</h2>
-            <p className="mt-2 text-sm text-zinc-400">Quando voce concluir uma compra, ela aparecera aqui automaticamente.</p>
+            <p className="mt-2 text-sm text-zinc-400">Quando você concluir uma compra, ela aparecerá aqui automaticamente.</p>
           </div>
         ) : (
           <Accordion
@@ -458,7 +458,7 @@ export default function PedidosPage() {
                                     <p className="text-xs text-zinc-500">Qtd: {item.quantity}</p>
                                   </div>
                                   <div className="text-right">
-                                    <p className="text-xs text-zinc-500">Unitario: {formatCurrency(item.unitPrice)}</p>
+                                    <p className="text-xs text-zinc-500">Unitário: {formatCurrency(item.unitPrice)}</p>
                                     <p className="text-sm font-semibold text-zinc-100">{formatCurrency(itemTotal)}</p>
                                   </div>
                                 </div>
@@ -530,4 +530,3 @@ export default function PedidosPage() {
     </UserprofilePerfilShell>
   )
 }
-

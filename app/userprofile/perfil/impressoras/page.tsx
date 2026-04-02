@@ -282,7 +282,7 @@ export default function ImpressorasPage() {
         <header className="rounded-2xl border border-zinc-800 bg-zinc-900/45 p-5">
           <h1 className="text-2xl font-semibold">Impressoras dos Totens (ESC/POS)</h1>
           <p className="mt-2 text-sm text-zinc-400">
-            Ative o contexto admin da loja e configure 1 impressora termica por totem.
+            Ative o contexto admin da loja e configure 1 impressora térmica por totem.
           </p>
 
           <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-end">
@@ -339,7 +339,7 @@ export default function ImpressorasPage() {
                       <h2 className="text-lg font-semibold">Totem {totem.id.slice(0, 8)}</h2>
                       <p className="text-xs text-zinc-400">
                         deviceId: {totem.deviceId ?? "Não vinculado"} | status: {totem.status}
-                        {totem.maintenanceMode ? " | manutencao" : ""}
+                        {totem.maintenanceMode ? " | manutenção" : ""}
                       </p>
                     </div>
                     <div className="text-xs text-zinc-400">
