@@ -16,7 +16,12 @@ import {
 import { getKioskSlidesRoute } from "@/api/routes/kiosk-routes"
 import { getMenuBannerRoute, getMenuCategoriesRoute, getMenuProductsRoute } from "@/api/routes/menu-routes"
 import { createMercadoPagoOrderRoute, cancelMercadoPagoOrderRoute, getMercadoPagoOrderStatusRoute, mercadopagoWebhookRoute, refundMercadoPagoOrderRoute } from "@/api/routes/mercadopago-routes"
-import { registerOrderRoute, listUserOrdersRoute, reconcileProcessedOrdersRoute } from "@/api/routes/order-routes"
+import {
+  registerOrderRoute,
+  listUserOrdersRoute,
+  reconcileProcessedOrdersRoute,
+  sendOrderReceiptEmailRoute,
+} from "@/api/routes/order-routes"
 import {
   activatePrintAgentEnrollmentRoute,
   createPrintAgentEnrollmentRoute,
@@ -71,6 +76,7 @@ const routeTable: Record<string, Handler> = {
   "POST /api/checkout/session/confirm": confirmCheckoutSessionRoute,
   "POST /api/orders/register": registerOrderRoute,
   "POST /api/orders/reconcile-processed": reconcileProcessedOrdersRoute,
+  "POST /api/userprofile/orders/send-receipt-email": sendOrderReceiptEmailRoute,
   "POST /api/print/receipt": createReceiptPrintJobRoute,
   "GET /api/print/admin/totem-printers": listTotemPrinterConfigsRoute,
   "PUT /api/print/admin/totem-printers": upsertTotemPrinterConfigRoute,

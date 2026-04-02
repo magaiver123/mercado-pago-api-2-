@@ -2,7 +2,9 @@ import { NextResponse } from "next/server"
 import { listUserOrdersService } from "@/api/services/orders/list-user-orders-service"
 import { registerOrderService } from "@/api/services/orders/register-order-service"
 import { reconcileProcessedOrdersService } from "@/api/services/orders/reconcile-processed-orders-service"
+import { sendOrderReceiptEmailService } from "@/api/services/orders/send-order-receipt-email-service"
 import { getAdminBypassStatusService } from "@/api/services/totem/admin-bypass-service"
+import { AppError } from "@/api/utils/app-error"
 import { requireUserSessionFromRequest } from "@/api/utils/user-session-context"
 
 function getAdminBypassErrorStatus(reason: string): number {
@@ -69,6 +71,33 @@ export async function reconcileProcessedOrdersController(request: Request) {
   const data = await reconcileProcessedOrdersService({
     storeId: bypassStatus.storeId,
     limit: body?.limit,
+  })
+
+  return NextResponse.json(data)
+}
+
+export async function sendOrderReceiptEmailController(request: Request) {
+  const userSession = requireUserSessionFromRequest(request)
+  if (userSession.source !== "userprofile") {
+    throw new AppError(
+      "Somente sessoes do UserProfile podem solicitar comprovante por e-mail",
+      403,
+      "USERPROFILE_SESSION_REQUIRED",
+      true,
+      false,
+    )
+  }
+
+  let body: any = null
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: "Dados invalidos" }, { status: 400 })
+  }
+
+  const data = await sendOrderReceiptEmailService({
+    requesterUserId: userSession.userId,
+    orderId: body?.orderId,
   })
 
   return NextResponse.json(data)

@@ -37,7 +37,33 @@ export interface OrderRepository {
     orderId: string,
   ): Promise<{ user_id: string; store_id: string } | null>
   listPendingStockProcessingByStoreId(storeId: string, limit: number): Promise<PendingStockProcessingOrder[]>
-  listByUserId(userId: string): Promise<Array<Pick<OrderRecord, "id" | "order_number" | "status" | "total_amount" | "items" | "created_at">>>
+  listByUserId(
+    userId: string,
+  ): Promise<
+    Array<
+      Pick<
+        OrderRecord,
+        "id" | "mercadopago_order_id" | "order_number" | "status" | "payment_method" | "total_amount" | "items" | "created_at"
+      >
+    >
+  >
+  findByMercadopagoOrderId(
+    orderId: string,
+  ): Promise<
+    Pick<
+      OrderRecord,
+      | "id"
+      | "mercadopago_order_id"
+      | "order_number"
+      | "store_id"
+      | "user_id"
+      | "payment_method"
+      | "total_amount"
+      | "items"
+      | "status"
+      | "created_at"
+    > | null
+  >
   findForStockProcessing(mercadopagoOrderId: string): Promise<Pick<OrderRecord, "id" | "store_id" | "items" | "stock_processed"> | null>
   claimForProcessedHandling(
     mercadopagoOrderId: string,

@@ -101,16 +101,74 @@ export class OrderSupabaseRepository extends BaseSupabaseRepository implements O
 
   async listByUserId(
     userId: string,
-  ): Promise<Array<Pick<OrderRecord, "id" | "order_number" | "status" | "total_amount" | "items" | "created_at">>> {
+  ): Promise<
+    Array<
+      Pick<
+        OrderRecord,
+        "id" | "mercadopago_order_id" | "order_number" | "status" | "payment_method" | "total_amount" | "items" | "created_at"
+      >
+    >
+  > {
     const { data, error } = await this.db
       .from("orders")
-      .select("id, order_number, status, total_amount, items, created_at")
+      .select("id, mercadopago_order_id, order_number, status, payment_method, total_amount, items, created_at")
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
 
     if (error) throw new AppError("Erro ao carregar pedidos", 500)
-    return ((data as Array<Pick<OrderRecord, "id" | "order_number" | "status" | "total_amount" | "items" | "created_at">> | null) ??
+    return ((data as Array<
+      Pick<
+        OrderRecord,
+        "id" | "mercadopago_order_id" | "order_number" | "status" | "payment_method" | "total_amount" | "items" | "created_at"
+      >
+    > | null) ??
       [])
+  }
+
+  async findByMercadopagoOrderId(
+    orderId: string,
+  ): Promise<
+    Pick<
+      OrderRecord,
+      | "id"
+      | "mercadopago_order_id"
+      | "order_number"
+      | "store_id"
+      | "user_id"
+      | "payment_method"
+      | "total_amount"
+      | "items"
+      | "status"
+      | "created_at"
+    > | null
+  > {
+    const { data, error } = await this.db
+      .from("orders")
+      .select(
+        "id, mercadopago_order_id, order_number, store_id, user_id, payment_method, total_amount, items, status, created_at",
+      )
+      .eq("mercadopago_order_id", orderId)
+      .maybeSingle()
+
+    if (error) {
+      throw new AppError("Erro ao carregar pedido", 500)
+    }
+
+    if (!data) return null
+
+    return data as Pick<
+      OrderRecord,
+      | "id"
+      | "mercadopago_order_id"
+      | "order_number"
+      | "store_id"
+      | "user_id"
+      | "payment_method"
+      | "total_amount"
+      | "items"
+      | "status"
+      | "created_at"
+    >
   }
 
   async findForStockProcessing(mercadopagoOrderId: string): Promise<Pick<OrderRecord, "id" | "store_id" | "items" | "stock_processed"> | null> {
