@@ -1,6 +1,8 @@
 import { AppError } from "@/api/utils/app-error"
 import { isValidUUID } from "@/api/utils/validators"
 import { getRepositoryFactory } from "@/api/repositories/repository-factory"
+import { getReceiptEmailEnv } from "@/api/config/env"
+import { getRemainingReceiptEmailCooldownSeconds } from "@/api/services/orders/receipt-email-cooldown"
 
 function getItemCount(items: unknown) {
   if (!Array.isArray(items)) return 0
@@ -28,20 +30,28 @@ function getItemCount(items: unknown) {
 
 export async function listUserOrdersService(userId: string | null) {
   if (!userId || !isValidUUID(userId)) {
-    throw new AppError("Usuário inválido", 400)
+    throw new AppError("Usuario invalido", 400)
   }
 
   const repositories = getRepositoryFactory()
 
   const user = await repositories.user.findActiveById(userId)
   if (!user) {
-    throw new AppError("Usuário não encontrado", 404)
+    throw new AppError("Usuario nao encontrado", 404)
   }
 
+  const now = new Date()
+  const { cooldownSeconds } = getReceiptEmailEnv()
   const data = await repositories.order.listByUserId(userId)
+
   return data.map((order) => ({
     ...order,
     item_count: getItemCount(order.items),
+    receiptEmailCooldownRemainingSeconds: getRemainingReceiptEmailCooldownSeconds({
+      lastSentAt: order.last_receipt_email_sent_at,
+      now,
+      cooldownSeconds,
+    }),
   }))
 }
 

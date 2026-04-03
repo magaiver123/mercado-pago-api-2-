@@ -88,6 +88,7 @@ export interface OrderRecord {
   items: unknown
   stock_processed?: boolean
   created_at: string
+  last_receipt_email_sent_at?: string | null
 }
 
 export interface TotemRecord {

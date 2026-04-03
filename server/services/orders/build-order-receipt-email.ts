@@ -13,8 +13,6 @@ interface BuiltOrderReceiptEmail {
 }
 
 interface OrderReceiptVisualEnv {
-  emailLogoUrl: string | null
-  emailAppUrl: string
   emailSupportWhatsappUrl: string
 }
 
@@ -33,107 +31,25 @@ function sanitizeText(value: unknown, fallback: string) {
   return normalized || fallback
 }
 
-function formatMoney(value: number) {
-  if (!Number.isFinite(value)) return "R$ 0,00"
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(value)
-}
-
-function formatDateTime(value: string) {
-  const parsed = new Date(value)
-  const safeDate = Number.isNaN(parsed.getTime()) ? new Date() : parsed
-  return new Intl.DateTimeFormat("pt-BR", {
-    timeZone: "America/Sao_Paulo",
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: false,
-  }).format(safeDate)
-}
-
-function maskCustomerCpf(value: string | null | undefined) {
-  const raw = String(value ?? "").trim()
-  if (!raw) return "CPF nao informado"
-
-  const digits = raw.replace(/\D/g, "")
-  if (digits.length === 11) {
-    return `${digits.slice(0, 3)}.***.***-${digits.slice(9)}`
-  }
-
-  return raw
-}
-
-function maskCustomerName(value: string | null | undefined) {
-  const raw = String(value ?? "").trim()
-  if (!raw) return "Nao informado"
-
-  const words = raw.split(/\s+/).filter(Boolean)
-  if (words.length === 0) return "Nao informado"
-
-  return words
-    .map((word) => {
-      if (word.length <= 1) return "*"
-      const visible = Math.min(3, word.length - 1)
-      return `${word.slice(0, visible)}${"*".repeat(word.length - visible)}`
-    })
-    .join(" ")
-}
-
 function readOrderReceiptVisualEnv(): OrderReceiptVisualEnv {
-  const emailLogoUrlRaw = String(process.env.EMAIL_LOGO_URL ?? "").trim()
-  const emailAppUrlRaw = String(process.env.EMAIL_APP_URL ?? "").trim()
   const emailSupportWhatsappUrlRaw = String(process.env.EMAIL_SUPPORT_WHATSAPP_URL ?? "").trim()
 
   return {
-    emailLogoUrl: emailLogoUrlRaw || null,
-    emailAppUrl: emailAppUrlRaw || "https://mrsmart.com.br",
     emailSupportWhatsappUrl: emailSupportWhatsappUrlRaw || "https://wa.me/5551995881730",
   }
 }
 
 export function buildOrderReceiptEmail(input: BuildOrderReceiptEmailInput): BuiltOrderReceiptEmail {
-  const { emailLogoUrl, emailAppUrl, emailSupportWhatsappUrl } = readOrderReceiptVisualEnv()
+  const { emailSupportWhatsappUrl } = readOrderReceiptVisualEnv()
   const receipt = input.receipt
   const displayOrder = formatOrderNumberOrFallback(
     receipt.orderNumber,
     receipt.orderId.slice(0, 8).toUpperCase(),
   )
-  const safeOrder = escapeHtml(displayOrder)
-  const safeStoreName = escapeHtml(sanitizeText(receipt.storeName, "Autoatendimento"))
-  const safeDateTime = escapeHtml(formatDateTime(receipt.createdAt))
-  const safePaymentMethod = escapeHtml(sanitizeText(receipt.paymentMethod, "Nao informado"))
-  const safeCustomerName = escapeHtml(maskCustomerName(receipt.customerName))
-  const safeCustomerCpf = escapeHtml(maskCustomerCpf(receipt.customerDocument))
-  const subtotal = receipt.subtotal
-  const discounts = receipt.discounts ?? 0
-  const total = receipt.total
-  const safeLogoUrl = emailLogoUrl ? escapeHtml(emailLogoUrl) : null
-  const safeAppUrl = escapeHtml(emailAppUrl)
+  const safeGreetingName = escapeHtml(sanitizeText(receipt.customerName, "Cliente"))
   const safeSupportUrl = escapeHtml(emailSupportWhatsappUrl)
   const fileName = `comprovante-pedido-${displayOrder}.pdf`
-  const safeFileName = escapeHtml(fileName)
-  const subject = `Comprovante digital do pedido #${displayOrder} - Mr Smart`
-
-  const itemsHtml = receipt.items
-    .map((item) => {
-      const itemName = escapeHtml(sanitizeText(item.name, "Item"))
-      const itemQuantity = Number.isFinite(item.quantity) ? Math.max(1, Math.floor(item.quantity)) : 1
-      const itemUnitPrice = Number.isFinite(item.unitPrice) ? Math.max(0, item.unitPrice) : 0
-      const itemTotal = itemQuantity * itemUnitPrice
-      return `
-        <tr>
-          <td style="padding:8px 0;color:#111827;font-size:13px;line-height:1.4;">${itemName}</td>
-          <td style="padding:8px 0;color:#374151;font-size:13px;text-align:center;">${itemQuantity}</td>
-          <td style="padding:8px 0;color:#111827;font-size:13px;text-align:right;">${escapeHtml(formatMoney(itemTotal))}</td>
-        </tr>
-      `.trim()
-    })
-    .join("")
+  const subject = "Comprovante Digital - Seu documento está disponível"
 
   const html = `
     <!doctype html>
@@ -141,83 +57,81 @@ export function buildOrderReceiptEmail(input: BuildOrderReceiptEmailInput): Buil
       <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>${escapeHtml(subject)}</title>
+        <title>${subject}</title>
       </head>
-      <body style="margin:0;padding:0;background:#f4f6f8;">
-        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:28px 12px;background:#f4f6f8;">
+      <body style="margin:0;padding:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif;color:#111111;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="padding:30px 12px;background:#ffffff;">
           <tr>
             <td align="center">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:640px;background:#ffffff;border:1px solid #e5e7eb;border-radius:18px;overflow:hidden;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:700px;background:#ffffff;border:1px solid #f1f1f1;border-radius:18px;overflow:hidden;box-shadow:0 6px 20px rgba(17,17,17,0.06);">
                 <tr>
-                  <td style="padding:24px 24px 16px 24px;border-bottom:1px solid #f3f4f6;">
-                    <table role="presentation" cellpadding="0" cellspacing="0">
+                  <td style="padding:0;">
+                    <div style="height:6px;background:#f97316;"></div>
+                  </td>
+                </tr>
+                <tr>
+                  <td style="padding:26px 26px 30px 26px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
                       <tr>
-                        ${
-                          safeLogoUrl
-                            ? `<td style="vertical-align:middle;">
-                          <img src="${safeLogoUrl}" alt="Mr Smart" width="44" height="44" style="display:block;border:0;" />
-                        </td>`
-                            : ""
-                        }
-                        <td style="${safeLogoUrl ? "padding-left:12px;" : ""}font-family:Arial,sans-serif;">
-                          <div style="font-size:22px;font-weight:700;color:#111827;">Mr Smart</div>
-                          <div style="margin-top:2px;font-size:12px;color:#6b7280;">Comprovante digital do seu pedido</div>
+                        <td style="font-size:26px;font-weight:800;line-height:1;color:#111111;">
+                          <span style="color:#f97316;">Mr</span> Smart
+                        </td>
+                      </tr>
+                      <tr>
+                        <td style="padding-top:6px;font-size:13px;line-height:1.4;color:#666666;">
+                          Comprovante digital da sua operação
                         </td>
                       </tr>
                     </table>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:22px 24px 16px 24px;font-family:Arial,sans-serif;">
-                    <h1 style="margin:0 0 8px 0;font-size:22px;line-height:1.3;color:#111827;">Pedido #${safeOrder}</h1>
-                    <p style="margin:0;color:#4b5563;font-size:14px;line-height:1.6;">
-                      Seu comprovante completo est&aacute; anexado em PDF (<strong>${safeFileName}</strong>).
+
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-bottom:22px;border:1px solid #fed7aa;background:#fff7ed;border-radius:12px;">
+                      <tr>
+                        <td style="padding:14px 16px;font-size:15px;line-height:1.5;color:#111111;">
+                          <strong style="color:#ea580c;">Tudo certo por aqui.</strong> Seu comprovante digital já está disponível em anexo.
+                        </td>
+                      </tr>
+                    </table>
+
+                    <p style="margin:0 0 12px 0;color:#111111;font-size:16px;line-height:1.6;">Olá, ${safeGreetingName},</p>
+                    <p style="margin:0 0 12px 0;color:#111111;font-size:16px;line-height:1.6;">Esperamos que você esteja bem &#128522;</p>
+                    <p style="margin:0 0 14px 0;color:#111111;font-size:16px;line-height:1.6;">
+                      Seu comprovante digital já está disponível e foi anexado a este e-mail em formato PDF para sua visualização e armazenamento.
                     </p>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:0 24px 10px 24px;font-family:Arial,sans-serif;">
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border:1px solid #e5e7eb;border-radius:12px;padding:14px;">
-                      <tr><td style="font-size:13px;color:#6b7280;padding:2px 0;">Loja</td><td style="font-size:13px;color:#111827;text-align:right;padding:2px 0;">${safeStoreName}</td></tr>
-                      <tr><td style="font-size:13px;color:#6b7280;padding:2px 0;">Data e hora</td><td style="font-size:13px;color:#111827;text-align:right;padding:2px 0;">${safeDateTime}</td></tr>
-                      <tr><td style="font-size:13px;color:#6b7280;padding:2px 0;">Pagamento</td><td style="font-size:13px;color:#111827;text-align:right;padding:2px 0;">${safePaymentMethod}</td></tr>
-                      <tr><td style="font-size:13px;color:#6b7280;padding:2px 0;">Cliente</td><td style="font-size:13px;color:#111827;text-align:right;padding:2px 0;">${safeCustomerName}</td></tr>
-                      <tr><td style="font-size:13px;color:#6b7280;padding:2px 0;">CPF</td><td style="font-size:13px;color:#111827;text-align:right;padding:2px 0;">${safeCustomerCpf}</td></tr>
-                    </table>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:8px 24px 10px 24px;font-family:Arial,sans-serif;">
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                      <thead>
-                        <tr>
-                          <th align="left" style="font-size:12px;color:#6b7280;padding:8px 0;border-bottom:1px solid #e5e7eb;">Item</th>
-                          <th align="center" style="font-size:12px;color:#6b7280;padding:8px 0;border-bottom:1px solid #e5e7eb;">Qtd</th>
-                          <th align="right" style="font-size:12px;color:#6b7280;padding:8px 0;border-bottom:1px solid #e5e7eb;">Total</th>
-                        </tr>
-                      </thead>
-                      <tbody>${itemsHtml}</tbody>
-                    </table>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:0 24px 22px 24px;font-family:Arial,sans-serif;">
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="border-top:1px solid #e5e7eb;padding-top:8px;">
-                      <tr><td style="font-size:13px;color:#4b5563;padding:4px 0;">Subtotal</td><td style="font-size:13px;color:#111827;text-align:right;padding:4px 0;">${escapeHtml(formatMoney(subtotal))}</td></tr>
-                      <tr><td style="font-size:13px;color:#4b5563;padding:4px 0;">Descontos</td><td style="font-size:13px;color:#111827;text-align:right;padding:4px 0;">${escapeHtml(formatMoney(discounts))}</td></tr>
-                      <tr><td style="font-size:15px;font-weight:700;color:#111827;padding:5px 0;">Total pago</td><td style="font-size:15px;font-weight:700;color:#111827;text-align:right;padding:5px 0;">${escapeHtml(formatMoney(total))}</td></tr>
-                    </table>
-                    <div style="margin-top:14px;">
-                      <a href="${safeAppUrl}" target="_blank" rel="noopener noreferrer" style="display:inline-block;background:#f97316;color:#ffffff;text-decoration:none;font-size:13px;font-weight:700;padding:10px 14px;border-radius:10px;">Acessar minha conta</a>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:14px 24px 20px 24px;border-top:1px solid #f3f4f6;font-family:Arial,sans-serif;">
-                    <p style="margin:0;font-size:12px;line-height:1.6;color:#6b7280;">
-                      Precisa de ajuda? Fale com nosso time no
-                      <a href="${safeSupportUrl}" target="_blank" rel="noopener noreferrer" style="color:#374151;text-decoration:none;">WhatsApp</a>.
+                    <p style="margin:0 0 16px 0;color:#111111;font-size:16px;line-height:1.6;">
+                      &#128206; <strong>Arquivo anexado:</strong> Comprovante digital da sua operação
                     </p>
+                    <p style="margin:0 0 18px 0;color:#111111;font-size:16px;line-height:1.6;">
+                      Recomendamos que você salve este documento para futuras consultas ou registros.
+                    </p>
+
+                    <div style="height:1px;background:#ececec;margin:14px 0 18px 0;"></div>
+
+                    <p style="margin:0 0 10px 0;color:#111111;font-size:16px;line-height:1.6;"><strong>Informações importantes:</strong></p>
+                    <ul style="margin:0 0 20px 24px;padding:0;color:#111111;font-size:15px;line-height:1.7;">
+                      <li>Este comprovante é um documento oficial da transação realizada.</li>
+                      <li>Caso não consiga visualizar o arquivo, verifique sua caixa de spam ou tente abrir em outro dispositivo.</li>
+                      <li>Para sua segurança, não compartilhe este documento com terceiros.</li>
+                    </ul>
+
+                    <div style="height:1px;background:#ececec;margin:14px 0 18px 0;"></div>
+
+                    <p style="margin:0 0 16px 0;color:#111111;font-size:16px;line-height:1.6;">
+                      Se tiver qualquer dúvida ou precisar de suporte, nossa equipe está à disposição para ajudar.
+                    </p>
+                    <p style="margin:0 0 10px 0;color:#111111;font-size:16px;line-height:1.6;">Atenciosamente,</p>
+                    <p style="margin:0 0 14px 0;color:#111111;font-size:16px;line-height:1.6;">
+                      <strong>Mr Smart</strong><br />
+                      <a href="${safeSupportUrl}" target="_blank" rel="noopener noreferrer" style="color:#ea580c;text-decoration:underline;">Suporte via WhatsApp</a>
+                    </p>
+
+                    <a
+                      href="${safeSupportUrl}"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      style="display:inline-block;background:#f97316;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:11px 16px;border-radius:10px;"
+                    >
+                      Falar com o suporte
+                    </a>
                   </td>
                 </tr>
               </table>
@@ -228,34 +142,26 @@ export function buildOrderReceiptEmail(input: BuildOrderReceiptEmailInput): Buil
     </html>
   `.trim()
 
-  const itemsText = receipt.items
-    .map((item) => {
-      const quantity = Number.isFinite(item.quantity) ? Math.max(1, Math.floor(item.quantity)) : 1
-      const unitPrice = Number.isFinite(item.unitPrice) ? Math.max(0, item.unitPrice) : 0
-      const totalItem = quantity * unitPrice
-      return `- ${sanitizeText(item.name, "Item")} x${quantity} (${formatMoney(totalItem)})`
-    })
-    .join("\n")
-
   const text = [
-    `Mr Smart - Pedido #${displayOrder}`,
+    `Olá, ${sanitizeText(receipt.customerName, "Cliente")},`,
     "",
-    "Comprovante digital anexado em PDF.",
+    "Esperamos que você esteja bem.",
     "",
-    `Loja: ${sanitizeText(receipt.storeName, "Autoatendimento")}`,
-    `Data e hora: ${formatDateTime(receipt.createdAt)}`,
-    `Pagamento: ${sanitizeText(receipt.paymentMethod, "Nao informado")}`,
-    `Cliente: ${maskCustomerName(receipt.customerName)}`,
-    `CPF: ${maskCustomerCpf(receipt.customerDocument)}`,
+    "Seu comprovante digital já está disponível e foi anexado a este e-mail em formato PDF para sua visualização e armazenamento.",
     "",
-    "Itens:",
-    itemsText || "- Sem itens",
+    "Arquivo anexado: Comprovante digital da sua operação",
     "",
-    `Subtotal: ${formatMoney(subtotal)}`,
-    `Descontos: ${formatMoney(discounts)}`,
-    `Total pago: ${formatMoney(total)}`,
+    "Recomendamos que você salve este documento para futuras consultas ou registros.",
     "",
-    `Acessar minha conta: ${emailAppUrl}`,
+    "Informações importantes:",
+    "- Este comprovante é um documento oficial da transação realizada.",
+    "- Caso não consiga visualizar o arquivo, verifique sua caixa de spam ou tente abrir em outro dispositivo.",
+    "- Para sua segurança, não compartilhe este documento com terceiros.",
+    "",
+    "Se tiver qualquer dúvida ou precisar de suporte, nossa equipe está à disposição para ajudar.",
+    "",
+    "Atenciosamente,",
+    "Mr Smart",
     `Suporte WhatsApp: ${emailSupportWhatsappUrl}`,
   ].join("\n")
 

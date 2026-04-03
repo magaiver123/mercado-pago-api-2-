@@ -22,9 +22,12 @@ type EnvKey =
   | "MERCADOPAGO_WEBHOOK_SECRET"
   | "RESEND_API_KEY"
   | "EMAIL_FROM"
+  | "EMAIL_REPLY_TO"
   | "EMAIL_LOGO_URL"
   | "EMAIL_APP_URL"
   | "EMAIL_SUPPORT_WHATSAPP_URL"
+  | "RESEND_WEBHOOK_SECRET"
+  | "RECEIPT_EMAIL_COOLDOWN_SECONDS"
 
 function readEnv(key: EnvKey): string | undefined {
   const value = process.env[key]
@@ -70,9 +73,27 @@ export function getEmailEnv() {
   return {
     resendApiKey: requireEnv("RESEND_API_KEY"),
     emailFrom: requireEnv("EMAIL_FROM"),
+    emailReplyTo: requireEnv("EMAIL_REPLY_TO"),
     emailLogoUrl: requireEnv("EMAIL_LOGO_URL"),
     emailAppUrl: requireEnv("EMAIL_APP_URL"),
     emailSupportWhatsappUrl: requireEnv("EMAIL_SUPPORT_WHATSAPP_URL"),
+  }
+}
+
+export function getResendWebhookEnv() {
+  return {
+    webhookSecret: requireEnv("RESEND_WEBHOOK_SECRET"),
+  }
+}
+
+export function getReceiptEmailEnv() {
+  return {
+    cooldownSeconds: parseIntInRange(
+      readEnv("RECEIPT_EMAIL_COOLDOWN_SECONDS"),
+      180,
+      30,
+      3600,
+    ),
   }
 }
 

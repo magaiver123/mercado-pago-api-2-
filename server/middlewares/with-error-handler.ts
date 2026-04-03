@@ -25,6 +25,7 @@ export function withErrorHandler(handler: (request: Request) => Promise<NextResp
             error: error.message,
             code: error.code,
             retryable: error.retryable,
+            ...(error.metadata ?? {}),
           },
           { status: error.statusCode },
         )

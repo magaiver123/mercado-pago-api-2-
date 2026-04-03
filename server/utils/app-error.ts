@@ -3,6 +3,7 @@ export class AppError extends Error {
   code: string
   expose: boolean
   retryable: boolean | null
+  metadata: Record<string, unknown> | null
 
   constructor(
     message: string,
@@ -10,6 +11,7 @@ export class AppError extends Error {
     code = "APP_ERROR",
     expose = true,
     retryable: boolean | null = null,
+    metadata: Record<string, unknown> | null = null,
   ) {
     super(message)
     this.name = "AppError"
@@ -17,6 +19,7 @@ export class AppError extends Error {
     this.code = code
     this.expose = expose
     this.retryable = retryable
+    this.metadata = metadata
   }
 }
 

@@ -38,6 +38,7 @@ type Order = {
   created_at: string
   item_count: number
   items: unknown
+  receiptEmailCooldownRemainingSeconds?: number
 }
 
 type NormalizedOrderItem = {
@@ -148,6 +149,13 @@ function formatDateTime(value: string) {
   }).format(date)
 }
 
+function formatCountdown(seconds: number) {
+  const normalized = Math.max(0, Math.floor(seconds))
+  const minutes = Math.floor(normalized / 60)
+  const remainingSeconds = normalized % 60
+  return `${String(minutes).padStart(2, "0")}:${String(remainingSeconds).padStart(2, "0")}`
+}
+
 function formatPaymentMethod(value: string | null | undefined) {
   const normalized = String(value ?? "").trim().toLowerCase()
 
@@ -240,6 +248,7 @@ export default function PedidosPage() {
   const [error, setError] = useState<string | null>(null)
   const [sendingEmailOrderId, setSendingEmailOrderId] = useState<string | null>(null)
   const [feedbackByOrder, setFeedbackByOrder] = useState<Record<string, OrderFeedback>>({})
+  const [cooldownByOrder, setCooldownByOrder] = useState<Record<string, number>>({})
 
   useEffect(() => {
     const currentUser = getUserprofileAuthUser()
@@ -266,7 +275,18 @@ export default function PedidosPage() {
           return
         }
 
-        setOrders(data as Order[])
+        const normalizedOrders = data as Order[]
+        setOrders(normalizedOrders)
+        setCooldownByOrder(() => {
+          const next: Record<string, number> = {}
+          normalizedOrders.forEach((order) => {
+            const remaining = Number(order.receiptEmailCooldownRemainingSeconds ?? 0)
+            if (Number.isFinite(remaining) && remaining > 0) {
+              next[order.id] = Math.floor(remaining)
+            }
+          })
+          return next
+        })
       } catch {
         setError("Não foi possível carregar seus pedidos.")
       } finally {
@@ -277,7 +297,42 @@ export default function PedidosPage() {
     loadOrders()
   }, [router])
 
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setCooldownByOrder((prev) => {
+        let hasChanges = false
+        const next: Record<string, number> = {}
+
+        Object.entries(prev).forEach(([orderId, seconds]) => {
+          const value = Math.max(0, Math.floor(seconds) - 1)
+          if (value > 0) {
+            next[orderId] = value
+          }
+          if (value !== seconds) {
+            hasChanges = true
+          }
+        })
+
+        return hasChanges ? next : prev
+      })
+    }, 1000)
+
+    return () => window.clearInterval(timer)
+  }, [])
+
   async function handleSendReceiptEmail(order: Order) {
+    const activeCooldown = cooldownByOrder[order.id] ?? 0
+    if (activeCooldown > 0) {
+      setFeedbackByOrder((prev) => ({
+        ...prev,
+        [order.id]: {
+          type: "error",
+          message: `Aguarde ${formatCountdown(activeCooldown)} para reenviar o comprovante.`,
+        },
+      }))
+      return
+    }
+
     setFeedbackByOrder((prev) => {
       const next = { ...prev }
       delete next[order.id]
@@ -298,6 +353,29 @@ export default function PedidosPage() {
 
       const data = await response.json().catch(() => null)
       if (!response.ok) {
+        const retryAfterSeconds = Number(data?.retryAfterSeconds ?? 0)
+        if (
+          response.status === 429 &&
+          data?.code === "RECEIPT_EMAIL_COOLDOWN" &&
+          Number.isFinite(retryAfterSeconds) &&
+          retryAfterSeconds > 0
+        ) {
+          const cooldownSeconds = Math.floor(retryAfterSeconds)
+          setCooldownByOrder((prev) => ({
+            ...prev,
+            [order.id]: cooldownSeconds,
+          }))
+
+          setFeedbackByOrder((prev) => ({
+            ...prev,
+            [order.id]: {
+              type: "error",
+              message: `Voce podera solicitar novo envio em ${formatCountdown(cooldownSeconds)}.`,
+            },
+          }))
+          return
+        }
+
         setFeedbackByOrder((prev) => ({
           ...prev,
           [order.id]: {
@@ -306,6 +384,14 @@ export default function PedidosPage() {
           },
         }))
         return
+      }
+
+      const cooldownSeconds = Number(data?.cooldownSeconds ?? 180)
+      if (Number.isFinite(cooldownSeconds) && cooldownSeconds > 0) {
+        setCooldownByOrder((prev) => ({
+          ...prev,
+          [order.id]: Math.floor(cooldownSeconds),
+        }))
       }
 
       setFeedbackByOrder((prev) => ({
@@ -372,6 +458,8 @@ export default function PedidosPage() {
               const total = parseNonNegativeNumber(order.total_amount) ?? subtotal
               const discounts = Math.max(0, subtotal - total)
               const isSendingEmail = sendingEmailOrderId === order.id
+              const activeCooldown = cooldownByOrder[order.id] ?? 0
+              const isEmailButtonDisabled = isSendingEmail || activeCooldown > 0
               const feedback = feedbackByOrder[order.id]
               const supportUrl = buildSupportUrl(order, authUser)
 
@@ -487,11 +575,15 @@ export default function PedidosPage() {
                         <button
                           type="button"
                           onClick={() => void handleSendReceiptEmail(order)}
-                          disabled={isSendingEmail}
+                          disabled={isEmailButtonDisabled}
                           className="inline-flex items-center justify-center gap-2 rounded-lg border border-orange-500/35 bg-orange-500/12 px-4 py-2.5 text-sm font-medium text-orange-300 transition-colors hover:bg-orange-500/20 disabled:cursor-not-allowed disabled:opacity-70"
                         >
                           <Mail className="h-4 w-4" />
-                          {isSendingEmail ? "Enviando comprovante..." : "Enviar comprovante no e-mail"}
+                          {isSendingEmail
+                            ? "Enviando comprovante..."
+                            : activeCooldown > 0
+                              ? `Reenviar em ${formatCountdown(activeCooldown)}`
+                              : "Enviar comprovante no e-mail"}
                         </button>
 
                         <a

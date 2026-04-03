@@ -52,6 +52,7 @@ import {
   totemStatusRoute,
 } from "@/api/routes/totem-routes"
 import { getUserProfileRoute, listPublicStoresRoute, updateUserProfileRoute } from "@/api/routes/userprofile-routes"
+import { resendWebhookRoute } from "@/api/routes/email-routes"
 
 export const dynamic = "force-dynamic"
 
@@ -77,6 +78,7 @@ const routeTable: Record<string, Handler> = {
   "POST /api/orders/register": registerOrderRoute,
   "POST /api/orders/reconcile-processed": reconcileProcessedOrdersRoute,
   "POST /api/userprofile/orders/send-receipt-email": sendOrderReceiptEmailRoute,
+  "POST /api/resend/webhook": resendWebhookRoute,
   "POST /api/print/receipt": createReceiptPrintJobRoute,
   "GET /api/print/admin/totem-printers": listTotemPrinterConfigsRoute,
   "PUT /api/print/admin/totem-printers": upsertTotemPrinterConfigRoute,

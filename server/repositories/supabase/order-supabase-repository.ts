@@ -9,6 +9,34 @@ import {
   RegisterOrderResult,
 } from "@/api/repositories/contracts/order-repository"
 
+type UserOrderRow = Pick<
+  OrderRecord,
+  | "id"
+  | "mercadopago_order_id"
+  | "order_number"
+  | "status"
+  | "payment_method"
+  | "total_amount"
+  | "items"
+  | "created_at"
+  | "last_receipt_email_sent_at"
+>
+
+type FullOrderRow = Pick<
+  OrderRecord,
+  | "id"
+  | "mercadopago_order_id"
+  | "order_number"
+  | "store_id"
+  | "user_id"
+  | "payment_method"
+  | "total_amount"
+  | "items"
+  | "status"
+  | "created_at"
+  | "last_receipt_email_sent_at"
+>
+
 export class OrderSupabaseRepository extends BaseSupabaseRepository implements OrderRepository {
   async registerOrder(input: RegisterOrderInput): Promise<RegisterOrderResult> {
     const { data, error } = await this.db
@@ -101,74 +129,95 @@ export class OrderSupabaseRepository extends BaseSupabaseRepository implements O
 
   async listByUserId(
     userId: string,
-  ): Promise<
-    Array<
-      Pick<
-        OrderRecord,
-        "id" | "mercadopago_order_id" | "order_number" | "status" | "payment_method" | "total_amount" | "items" | "created_at"
-      >
-    >
-  > {
-    const { data, error } = await this.db
+  ): Promise<UserOrderRow[]> {
+    const selectWithCooldown =
+      "id, mercadopago_order_id, order_number, status, payment_method, total_amount, items, created_at, last_receipt_email_sent_at"
+    const selectLegacy =
+      "id, mercadopago_order_id, order_number, status, payment_method, total_amount, items, created_at"
+
+    const primaryQuery = await this.db
       .from("orders")
-      .select("id, mercadopago_order_id, order_number, status, payment_method, total_amount, items, created_at")
+      .select(selectWithCooldown)
       .eq("user_id", userId)
       .order("created_at", { ascending: false })
 
-    if (error) throw new AppError("Erro ao carregar pedidos", 500)
-    return ((data as Array<
-      Pick<
-        OrderRecord,
-        "id" | "mercadopago_order_id" | "order_number" | "status" | "payment_method" | "total_amount" | "items" | "created_at"
-      >
-    > | null) ??
-      [])
+    if (!primaryQuery.error) {
+      return (primaryQuery.data as UserOrderRow[] | null) ?? []
+    }
+
+    if (primaryQuery.error.code !== "42703") {
+      throw new AppError("Erro ao carregar pedidos", 500)
+    }
+
+    const fallbackQuery = await this.db
+      .from("orders")
+      .select(selectLegacy)
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false })
+
+    if (fallbackQuery.error) {
+      throw new AppError("Erro ao carregar pedidos", 500)
+    }
+
+    const legacyRows = (fallbackQuery.data as Omit<UserOrderRow, "last_receipt_email_sent_at">[] | null) ?? []
+    return legacyRows.map((row) => ({
+      ...row,
+      last_receipt_email_sent_at: null,
+    }))
   }
 
   async findByMercadopagoOrderId(
     orderId: string,
-  ): Promise<
-    Pick<
-      OrderRecord,
-      | "id"
-      | "mercadopago_order_id"
-      | "order_number"
-      | "store_id"
-      | "user_id"
-      | "payment_method"
-      | "total_amount"
-      | "items"
-      | "status"
-      | "created_at"
-    > | null
-  > {
-    const { data, error } = await this.db
+  ): Promise<FullOrderRow | null> {
+    const selectWithCooldown =
+      "id, mercadopago_order_id, order_number, store_id, user_id, payment_method, total_amount, items, status, created_at, last_receipt_email_sent_at"
+    const selectLegacy =
+      "id, mercadopago_order_id, order_number, store_id, user_id, payment_method, total_amount, items, status, created_at"
+
+    const primaryQuery = await this.db
       .from("orders")
-      .select(
-        "id, mercadopago_order_id, order_number, store_id, user_id, payment_method, total_amount, items, status, created_at",
-      )
+      .select(selectWithCooldown)
       .eq("mercadopago_order_id", orderId)
       .maybeSingle()
 
-    if (error) {
+    if (!primaryQuery.error) {
+      return (primaryQuery.data as FullOrderRow | null) ?? null
+    }
+
+    if (primaryQuery.error.code !== "42703") {
       throw new AppError("Erro ao carregar pedido", 500)
     }
 
-    if (!data) return null
+    const fallbackQuery = await this.db
+      .from("orders")
+      .select(selectLegacy)
+      .eq("mercadopago_order_id", orderId)
+      .maybeSingle()
 
-    return data as Pick<
-      OrderRecord,
-      | "id"
-      | "mercadopago_order_id"
-      | "order_number"
-      | "store_id"
-      | "user_id"
-      | "payment_method"
-      | "total_amount"
-      | "items"
-      | "status"
-      | "created_at"
-    >
+    if (fallbackQuery.error) {
+      throw new AppError("Erro ao carregar pedido", 500)
+    }
+
+    if (!fallbackQuery.data) return null
+
+    return {
+      ...(fallbackQuery.data as Omit<FullOrderRow, "last_receipt_email_sent_at">),
+      last_receipt_email_sent_at: null,
+    }
+  }
+
+  async updateReceiptEmailSentAt(orderId: string, sentAtIso: string): Promise<void> {
+    const { error } = await this.db
+      .from("orders")
+      .update({
+        last_receipt_email_sent_at: sentAtIso,
+      })
+      .eq("id", orderId)
+
+    if (!error) return
+    if (error.code === "42703") return
+
+    throw new AppError("Erro ao atualizar envio de comprovante por e-mail", 500)
   }
 
   async findForStockProcessing(mercadopagoOrderId: string): Promise<Pick<OrderRecord, "id" | "store_id" | "items" | "stock_processed"> | null> {

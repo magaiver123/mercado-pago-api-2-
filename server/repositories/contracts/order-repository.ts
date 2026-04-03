@@ -44,6 +44,7 @@ export interface OrderRepository {
       Pick<
         OrderRecord,
         "id" | "mercadopago_order_id" | "order_number" | "status" | "payment_method" | "total_amount" | "items" | "created_at"
+        | "last_receipt_email_sent_at"
       >
     >
   >
@@ -62,8 +63,10 @@ export interface OrderRepository {
       | "items"
       | "status"
       | "created_at"
+      | "last_receipt_email_sent_at"
     > | null
   >
+  updateReceiptEmailSentAt(orderId: string, sentAtIso: string): Promise<void>
   findForStockProcessing(mercadopagoOrderId: string): Promise<Pick<OrderRecord, "id" | "store_id" | "items" | "stock_processed"> | null>
   claimForProcessedHandling(
     mercadopagoOrderId: string,

@@ -1,6 +1,7 @@
 import { getSupabaseAdminClient } from "@/api/config/database"
 
 interface RegisterWebhookEventInput {
+  provider?: string
   eventKey: string
   action: string | null
   mercadopagoOrderId: string | null
@@ -17,7 +18,7 @@ export async function registerWebhookEventService(
   const db: any = getSupabaseAdminClient()
 
   const { error } = await db.from("webhook_events").insert({
-    provider: "mercadopago",
+    provider: input.provider ?? "mercadopago",
     event_key: input.eventKey,
     action: input.action,
     mercadopago_order_id: input.mercadopagoOrderId,

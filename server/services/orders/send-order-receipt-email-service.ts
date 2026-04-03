@@ -1,4 +1,3 @@
-import { Resend } from "resend"
 import { AppError, isAppError } from "@/api/utils/app-error"
 import { sanitizeString } from "@/api/utils/sanitize"
 import { logger } from "@/api/utils/logger"
@@ -8,81 +7,12 @@ import { buildReceiptPrintPayload } from "@/api/services/printing/receipt-print-
 import { resolveStoreReceiptInfoService } from "@/api/services/printing/resolve-store-receipt-info-service"
 import { buildReceiptPdfBuffer } from "@/api/services/orders/receipt-pdf-builder"
 import { buildOrderReceiptEmail } from "@/api/services/orders/build-order-receipt-email"
-
-let resendClient: Resend | null = null
-
-function readRequiredEmailSendEnv() {
-  const resendApiKey = String(process.env.RESEND_API_KEY ?? "").trim()
-  const emailFrom = String(process.env.EMAIL_FROM ?? "").trim()
-
-  if (!resendApiKey || !emailFrom) {
-    throw new AppError(
-      "Configuracao de e-mail incompleta (RESEND_API_KEY/EMAIL_FROM).",
-      500,
-      "EMAIL_CONFIG_MISSING",
-    )
-  }
-
-  return { resendApiKey, emailFrom }
-}
-
-function getResendClient() {
-  if (!resendClient) {
-    const { resendApiKey } = readRequiredEmailSendEnv()
-    resendClient = new Resend(resendApiKey)
-  }
-  return resendClient
-}
-
-function mapResendErrorToMessage(error: { statusCode?: number | null; message?: string | null }) {
-  const rawMessageOriginal = `${error.message ?? ""}`.trim()
-  const rawMessage = rawMessageOriginal.toLowerCase()
-
-  const looksLikeSenderDomainIssue =
-    error.statusCode === 403 &&
-    (rawMessage.includes("verify a domain") ||
-      rawMessage.includes("from address") ||
-      rawMessage.includes("sender not verified"))
-
-  if (looksLikeSenderDomainIssue) {
-    return "Falha ao enviar comprovante por e-mail. Configure EMAIL_FROM com um remetente de dominio verificado no Resend."
-  }
-
-  const looksLikeTestingModeRestriction =
-    error.statusCode === 403 &&
-    (
-      rawMessage.includes("testing emails") ||
-      rawMessage.includes("only send emails to yourself") ||
-      rawMessage.includes("only send emails to your own email") ||
-      rawMessage.includes("verify an email address")
-    )
-
-  if (looksLikeTestingModeRestriction) {
-    return "Falha ao enviar comprovante por e-mail. No modo de teste do Resend, envie apenas para e-mails autorizados."
-  }
-
-  const looksLikeInvalidRecipient =
-    error.statusCode === 422 &&
-    (rawMessage.includes("invalid") || rawMessage.includes("recipient") || rawMessage.includes("to"))
-
-  if (looksLikeInvalidRecipient) {
-    return "Falha ao enviar comprovante por e-mail. O e-mail do cliente parece invalido."
-  }
-
-  if (error.statusCode === 429) {
-    return "Falha ao enviar comprovante por e-mail. Limite do provedor atingido, tente novamente em instantes."
-  }
-
-  const safeMessage = rawMessageOriginal
-    .replace(/\s+/g, " ")
-    .slice(0, 220)
-
-  if (safeMessage) {
-    return `Falha ao enviar comprovante por e-mail (Resend ${error.statusCode ?? "sem status"}): ${safeMessage}`
-  }
-
-  return `Nao foi possivel enviar o comprovante por e-mail (Resend ${error.statusCode ?? "sem status"}). Tente novamente em instantes.`
-}
+import { sendTransactionalEmailService } from "@/api/services/email/send-transactional-email-service"
+import { getReceiptEmailEnv } from "@/api/config/env"
+import {
+  buildReceiptEmailIdempotencyKey,
+  getRemainingReceiptEmailCooldownSeconds,
+} from "@/api/services/orders/receipt-email-cooldown"
 
 function parseNonNegativeNumber(value: unknown): number | null {
   if (typeof value === "number" && Number.isFinite(value)) {
@@ -152,6 +82,62 @@ function normalizeOrderItems(items: unknown): ReceiptItem[] {
     .filter((item): item is ReceiptItem => Boolean(item))
 }
 
+function mapTransactionalEmailError(error: AppError) {
+  if (error.code === "EMAIL_SENDER_NOT_VERIFIED" || error.code === "EMAIL_PROVIDER_TEST_MODE_RESTRICTED") {
+    return new AppError(
+      "Falha ao enviar comprovante por e-mail. Configure EMAIL_FROM com um remetente de dominio verificado no Resend.",
+      502,
+      "EMAIL_SEND_FAILED",
+    )
+  }
+
+  if (error.code === "EMAIL_RECIPIENT_INVALID") {
+    return new AppError(
+      "Falha ao enviar comprovante por e-mail. O e-mail do cliente parece invalido.",
+      422,
+      "EMAIL_SEND_FAILED",
+    )
+  }
+
+  if (error.code === "EMAIL_RECIPIENT_SUPPRESSED") {
+    return new AppError(
+      "Nao foi possivel enviar o comprovante: este e-mail esta em lista de supressao por bounce/complaint.",
+      409,
+      "EMAIL_RECIPIENT_SUPPRESSED",
+      true,
+      false,
+    )
+  }
+
+  if (error.code === "EMAIL_PROVIDER_RATE_LIMIT" || error.code === "EMAIL_PROVIDER_UNAVAILABLE") {
+    return new AppError(
+      "Falha ao enviar comprovante por e-mail. Limite do provedor atingido, tente novamente em instantes.",
+      502,
+      "EMAIL_SEND_FAILED",
+      true,
+      true,
+    )
+  }
+
+  if (error.code === "ENV_MISSING") {
+    return new AppError(
+      "Configuracao de e-mail incompleta (RESEND_API_KEY/EMAIL_FROM/EMAIL_REPLY_TO).",
+      500,
+      "EMAIL_CONFIG_MISSING",
+    )
+  }
+
+  if (error.code === "EMAIL_PROVIDER_REJECTED") {
+    return new AppError(
+      "Nao foi possivel enviar o comprovante por e-mail. Tente novamente em instantes.",
+      502,
+      "EMAIL_SEND_FAILED",
+    )
+  }
+
+  return error
+}
+
 interface SendOrderReceiptEmailInput {
   requesterUserId: string
   orderId: unknown
@@ -172,6 +158,25 @@ export async function sendOrderReceiptEmailService(input: SendOrderReceiptEmailI
 
   if (order.user_id !== input.requesterUserId) {
     throw new AppError("Acesso negado para este pedido", 403)
+  }
+
+  const now = new Date()
+  const { cooldownSeconds } = getReceiptEmailEnv()
+  const retryAfterSeconds = getRemainingReceiptEmailCooldownSeconds({
+    lastSentAt: order.last_receipt_email_sent_at,
+    now,
+    cooldownSeconds,
+  })
+
+  if (retryAfterSeconds > 0) {
+    throw new AppError(
+      `Aguarde ${retryAfterSeconds}s para solicitar novo envio de comprovante.`,
+      429,
+      "RECEIPT_EMAIL_COOLDOWN",
+      true,
+      true,
+      { retryAfterSeconds },
+    )
   }
 
   const user = await repositories.user.findById(order.user_id)
@@ -221,10 +226,15 @@ export async function sendOrderReceiptEmailService(input: SendOrderReceiptEmailI
     const emailTemplate = buildOrderReceiptEmail({
       receipt: payload.receipt,
     })
-    const { emailFrom } = readRequiredEmailSendEnv()
 
-    const { error } = await getResendClient().emails.send({
-      from: emailFrom,
+    const idempotencyKey = buildReceiptEmailIdempotencyKey({
+      orderId: order.mercadopago_order_id,
+      now,
+      cooldownSeconds,
+    })
+
+    const sendResult = await sendTransactionalEmailService({
+      emailType: "order_receipt",
       to: user.email,
       subject: emailTemplate.subject,
       html: emailTemplate.html,
@@ -236,42 +246,33 @@ export async function sendOrderReceiptEmailService(input: SendOrderReceiptEmailI
           contentType: "application/pdf",
         },
       ],
+      idempotencyKey,
+      userId: user.id,
+      orderId: order.mercadopago_order_id,
     })
 
-    if (error) {
+    await repositories.order.updateReceiptEmailSentAt(order.id, now.toISOString())
+
+    return {
+      success: true,
+      cooldownSeconds,
+      nextAllowedAt: new Date(now.getTime() + cooldownSeconds * 1000).toISOString(),
+      resendMessageId: sendResult.providerMessageId,
+    }
+  } catch (error) {
+    if (isAppError(error)) {
+      if (error.code === "RECEIPT_EMAIL_COOLDOWN") {
+        throw error
+      }
+
+      const mappedError = mapTransactionalEmailError(error)
       logger.error("Falha ao enviar comprovante digital por e-mail", {
         orderId: order.mercadopago_order_id,
         userId: user.id,
-        reason: error.message,
-        name: error.name,
-        statusCode: (error as { statusCode?: number }).statusCode,
+        code: mappedError.code,
+        message: mappedError.message,
       })
-      throw new AppError(
-        mapResendErrorToMessage(error),
-        502,
-        "EMAIL_SEND_FAILED",
-      )
-    }
-  } catch (error) {
-    if (
-      isAppError(error) &&
-      (error.code === "EMAIL_CONFIG_MISSING" || error.code === "EMAIL_SEND_FAILED")
-    ) {
-      throw error
-    }
-
-    if (isAppError(error)) {
-      logger.error("Falha ao montar comprovante digital por e-mail", {
-        orderId: order.mercadopago_order_id,
-        userId: user.id,
-        code: error.code,
-        message: error.message,
-      })
-      throw new AppError(
-        "Nao foi possivel gerar o comprovante digital deste pedido. Tente novamente em instantes.",
-        500,
-        "RECEIPT_EMAIL_BUILD_FAILED",
-      )
+      throw mappedError
     }
 
     logger.error("Erro inesperado ao enviar comprovante digital por e-mail", {
@@ -289,9 +290,5 @@ export async function sendOrderReceiptEmailService(input: SendOrderReceiptEmailI
       502,
       "EMAIL_SEND_FAILED",
     )
-  }
-
-  return {
-    success: true,
   }
 }
