@@ -6,20 +6,29 @@ import { publishOpenDoorCommandService } from "@/api/services/mqtt/publish-open-
 interface TestOpenLockInput {
   storeId: unknown
   socketId?: unknown
+  lockId?: unknown
 }
 
 export async function testOpenLockService(input: TestOpenLockInput) {
   const storeId = sanitizeString(input.storeId)
   if (!storeId) {
-    throw new AppError("Store ID inválido", 400)
+    throw new AppError("Store ID invalido", 400)
   }
 
   const socketId = sanitizeString(input.socketId) ?? `test-${Date.now()}`
+  const lockId = sanitizeString(input.lockId)
   const repositories = getRepositoryFactory()
-  const lock = await repositories.storeLock.findPrimaryEnabledByStoreId(storeId)
+
+  const lock = lockId
+    ? await repositories.storeLock.findEnabledById(lockId)
+    : await repositories.storeLock.findPrimaryEnabledByStoreId(storeId)
 
   if (!lock || !lock.device_id) {
-    throw new AppError("Fechadura não configurada para esta loja", 404)
+    throw new AppError("Fechadura nao configurada para esta loja", 404)
+  }
+
+  if (lock.store_id !== storeId) {
+    throw new AppError("Fechadura nao pertence a loja selecionada", 400)
   }
 
   const publishResult = await publishOpenDoorCommandService({
@@ -36,6 +45,7 @@ export async function testOpenLockService(input: TestOpenLockInput) {
   return {
     success: true,
     storeId,
+    lockId: lock.id,
     deviceId: lock.device_id,
     topic: publishResult.topic,
     socketId,

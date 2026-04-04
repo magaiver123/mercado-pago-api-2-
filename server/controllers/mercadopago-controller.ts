@@ -10,6 +10,7 @@ import { requireStoreContextFromRequest } from "@/api/utils/store-context"
 import { logger } from "@/api/utils/logger"
 import { requireUserSessionFromRequest } from "@/api/utils/user-session-context"
 import { registerWebhookEventService } from "@/api/services/mercadopago/register-webhook-event-service"
+import { isValidUUID } from "@/api/utils/validators"
 
 export async function createMercadoPagoOrderController(request: Request) {
   const storeContext = requireStoreContextFromRequest(request)
@@ -22,7 +23,12 @@ export async function createMercadoPagoOrderController(request: Request) {
     return NextResponse.json({ error: "Invalid request payload" }, { status: 400 })
   }
 
-  const data = await createMercadoPagoOrderService(body, storeContext.storeId, userSession.userId)
+  const fridgeId = typeof body?.fridgeId === "string" ? body.fridgeId.trim() : ""
+  if (!isValidUUID(fridgeId)) {
+    return NextResponse.json({ error: "fridgeId invalido" }, { status: 400 })
+  }
+
+  const data = await createMercadoPagoOrderService(body, storeContext.storeId, userSession.userId, fridgeId)
   return NextResponse.json(data)
 }
 

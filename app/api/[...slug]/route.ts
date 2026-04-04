@@ -14,6 +14,22 @@ import {
   verifyResetCodeRoute,
 } from "@/api/routes/auth-routes"
 import { getKioskSlidesRoute } from "@/api/routes/kiosk-routes"
+import {
+  adjustAdminFridgeInventoryRoute,
+  createAdminFridgeRoute,
+  createAdminLockRoute,
+  getNextFridgeCodeRoute,
+  inactivateAdminFridgeRoute,
+  listAdminFridgeInventoryRoute,
+  listAdminFridgesRoute,
+  listAdminLockDiagnosticsRoute,
+  listAdminLocksRoute,
+  listOperationalFridgesRoute,
+  setAdminFridgeInventoryMixRoute,
+  testAdminLockOpenRoute,
+  updateAdminFridgeRoute,
+  updateAdminLockRoute,
+} from "@/api/routes/fridge-routes"
 import { getMenuBannerRoute, getMenuCategoriesRoute, getMenuProductsRoute } from "@/api/routes/menu-routes"
 import { createMercadoPagoOrderRoute, cancelMercadoPagoOrderRoute, getMercadoPagoOrderStatusRoute, mercadopagoWebhookRoute, refundMercadoPagoOrderRoute } from "@/api/routes/mercadopago-routes"
 import {
@@ -60,6 +76,20 @@ type Handler = (request: Request) => Promise<NextResponse>
 
 const routeTable: Record<string, Handler> = {
   "POST /api/locks/test-open": testOpenLockRoute,
+  "GET /api/fridges/available": listOperationalFridgesRoute,
+  "GET /api/admin/fridges": listAdminFridgesRoute,
+  "GET /api/admin/fridges/next-code": getNextFridgeCodeRoute,
+  "POST /api/admin/fridges": createAdminFridgeRoute,
+  "PUT /api/admin/fridges": updateAdminFridgeRoute,
+  "POST /api/admin/fridges/inactivate": inactivateAdminFridgeRoute,
+  "GET /api/admin/locks": listAdminLocksRoute,
+  "POST /api/admin/locks": createAdminLockRoute,
+  "PUT /api/admin/locks": updateAdminLockRoute,
+  "POST /api/admin/locks/test-open": testAdminLockOpenRoute,
+  "GET /api/admin/locks/diagnostics": listAdminLockDiagnosticsRoute,
+  "GET /api/admin/fridge-inventory": listAdminFridgeInventoryRoute,
+  "POST /api/admin/fridge-inventory/mix": setAdminFridgeInventoryMixRoute,
+  "POST /api/admin/fridge-inventory/adjust": adjustAdminFridgeInventoryRoute,
   "POST /api/auth/login": loginByCpfRoute,
   "POST /api/auth/logout": logoutRoute,
   "POST /api/auth/register": registerRoute,

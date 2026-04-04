@@ -3,6 +3,7 @@ import { createMercadoPagoOrderService } from "@/api/services/mercadopago/create
 interface ConfirmCheckoutSessionInput {
   body: unknown
   storeId: string
+  fridgeId: string
   userId: string
   checkoutSessionId: string
 }
@@ -13,6 +14,10 @@ export async function confirmCheckoutSessionService(input: ConfirmCheckoutSessio
     checkoutSessionId: input.checkoutSessionId,
   }
 
-  return createMercadoPagoOrderService(bodyWithSession, input.storeId, input.userId)
+  return createMercadoPagoOrderService(
+    bodyWithSession,
+    input.storeId,
+    input.userId,
+    input.fridgeId,
+  )
 }
-

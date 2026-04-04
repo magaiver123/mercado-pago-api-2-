@@ -8,10 +8,23 @@ import {
 } from "@/api/utils/checkout-session-context"
 import { requireStoreContextFromRequest } from "@/api/utils/store-context"
 import { requireUserSessionFromRequest } from "@/api/utils/user-session-context"
+import { isValidUUID } from "@/api/utils/validators"
 
 export async function startCheckoutSessionController(request: Request) {
   const storeContext = requireStoreContextFromRequest(request)
   const userSession = requireUserSessionFromRequest(request)
+
+  let body: any = null
+  try {
+    body = await request.json()
+  } catch {
+    return NextResponse.json({ error: "Dados invalidos" }, { status: 400 })
+  }
+
+  const fridgeId = typeof body?.fridgeId === "string" ? body.fridgeId.trim() : ""
+  if (!isValidUUID(fridgeId)) {
+    return NextResponse.json({ error: "fridgeId invalido" }, { status: 400 })
+  }
 
   const started = startCheckoutSessionService()
   const response = NextResponse.json(started)
@@ -19,6 +32,7 @@ export async function startCheckoutSessionController(request: Request) {
     sessionId: started.checkoutSessionId,
     userId: userSession.userId,
     storeId: storeContext.storeId,
+    fridgeId,
   })
   return response
 }
@@ -32,19 +46,20 @@ export async function confirmCheckoutSessionController(request: Request) {
     checkoutSession.userId !== userSession.userId ||
     checkoutSession.storeId !== storeContext.storeId
   ) {
-    return NextResponse.json({ error: "Sessão de checkout inválida" }, { status: 403 })
+    return NextResponse.json({ error: "Sessao de checkout invalida" }, { status: 403 })
   }
 
   let body: unknown = null
   try {
     body = await request.json()
   } catch {
-    return NextResponse.json({ error: "Dados inválidos" }, { status: 400 })
+    return NextResponse.json({ error: "Dados invalidos" }, { status: 400 })
   }
 
   const data = await confirmCheckoutSessionService({
     body,
     storeId: storeContext.storeId,
+    fridgeId: checkoutSession.fridgeId,
     userId: userSession.userId,
     checkoutSessionId: checkoutSession.sessionId,
   })
@@ -53,4 +68,3 @@ export async function confirmCheckoutSessionController(request: Request) {
   clearCheckoutSessionCookie(response)
   return response
 }
-

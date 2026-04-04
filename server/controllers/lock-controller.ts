@@ -28,6 +28,7 @@ export async function testOpenLockController(request: Request) {
   const data = await testOpenLockService({
     storeId: bypassStatus.storeId,
     socketId: body?.socketId,
+    lockId: body?.lockId ?? body?.lock_id,
   })
 
   return NextResponse.json(data)

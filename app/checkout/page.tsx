@@ -14,6 +14,7 @@ import {
 import { useCartStore } from "@/lib/cart-store";
 import Image from "next/image";
 import { getAuthUser } from "@/lib/auth-store";
+import { getSelectedFridge } from "@/lib/fridge-store";
 import { getDefaultStoreInfo, saveReceiptToSession } from "@/lib/receipt-types";
 
 type PaymentMethod = "credit_card" | "debit_card" | "pix";
@@ -31,6 +32,7 @@ export default function CheckoutPage() {
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const checkoutSessionIdRef = useRef<string | null>(null);
+  const selectedFridgeIdRef = useRef<string | null>(null);
   const router = useRouter();
   const { items, getTotal } = useCartStore();
 
@@ -40,7 +42,16 @@ export default function CheckoutPage() {
     const user = getAuthUser();
     if (!user) {
       router.push("/");
+      return;
     }
+
+    const fridge = getSelectedFridge();
+    if (!fridge) {
+      router.push("/fridge");
+      return;
+    }
+
+    selectedFridgeIdRef.current = fridge.id;
   }, [router]);
 
   if (items.length === 0) {
@@ -71,6 +82,10 @@ export default function CheckoutPage() {
       router.push("/auth/login");
       return;
     }
+    if (!selectedFridgeIdRef.current) {
+      router.push("/fridge");
+      return;
+    }
 
     try {
       setIsCreatingOrder(true);
@@ -81,6 +96,9 @@ export default function CheckoutPage() {
         const startResponse = await fetch("/api/checkout/session/start", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fridgeId: selectedFridgeIdRef.current,
+          }),
         });
 
         const startData = await startResponse.json().catch(() => null);
@@ -105,6 +123,7 @@ export default function CheckoutPage() {
             quantity: item.quantity,
           })),
           paymentMethodId: methodId,
+          fridgeId: selectedFridgeIdRef.current,
         }),
       });
 

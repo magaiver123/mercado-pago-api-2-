@@ -39,10 +39,11 @@ type FullOrderRow = Pick<
 
 export class OrderSupabaseRepository extends BaseSupabaseRepository implements OrderRepository {
   async registerOrder(input: RegisterOrderInput): Promise<RegisterOrderResult> {
-    const { data, error } = await this.db
+    const insertWithFridge = await this.db
       .from("orders")
       .insert({
         store_id: input.storeId,
+        fridge_id: input.fridgeId ?? null,
         user_id: input.userId,
         mercadopago_order_id: input.mercadopagoOrderId,
         total_amount: input.totalAmount,
@@ -52,6 +53,28 @@ export class OrderSupabaseRepository extends BaseSupabaseRepository implements O
       })
       .select("id, order_number")
       .single()
+
+    let data = insertWithFridge.data
+    let error = insertWithFridge.error
+
+    if (error?.code === "42703") {
+      const legacyInsert = await this.db
+        .from("orders")
+        .insert({
+          store_id: input.storeId,
+          user_id: input.userId,
+          mercadopago_order_id: input.mercadopagoOrderId,
+          total_amount: input.totalAmount,
+          payment_method: input.paymentMethod,
+          status: input.status,
+          items: input.items,
+        })
+        .select("id, order_number")
+        .single()
+
+      data = legacyInsert.data
+      error = legacyInsert.error
+    }
 
     if (error || !data) {
       if (error?.code === "23505") {
@@ -220,22 +243,44 @@ export class OrderSupabaseRepository extends BaseSupabaseRepository implements O
     throw new AppError("Erro ao atualizar envio de comprovante por e-mail", 500)
   }
 
-  async findForStockProcessing(mercadopagoOrderId: string): Promise<Pick<OrderRecord, "id" | "store_id" | "items" | "stock_processed"> | null> {
-    const { data, error } = await this.db
+  async findForStockProcessing(
+    mercadopagoOrderId: string,
+  ): Promise<Pick<OrderRecord, "id" | "store_id" | "fridge_id" | "items" | "stock_processed"> | null> {
+    const first = await this.db
       .from("orders")
-      .select("id, store_id, items, stock_processed")
+      .select("id, store_id, fridge_id, items, stock_processed")
       .eq("mercadopago_order_id", mercadopagoOrderId)
       .single()
 
+    let data = first.data
+    let error = first.error
+
+    if (error?.code === "42703") {
+      const legacy = await this.db
+        .from("orders")
+        .select("id, store_id, items, stock_processed")
+        .eq("mercadopago_order_id", mercadopagoOrderId)
+        .single()
+
+      data = legacy.data
+      error = legacy.error
+      if (data) {
+        data = {
+          ...data,
+          fridge_id: null,
+        }
+      }
+    }
+
     if (error || !data) return null
-    return data as Pick<OrderRecord, "id" | "store_id" | "items" | "stock_processed">
+    return data as Pick<OrderRecord, "id" | "store_id" | "fridge_id" | "items" | "stock_processed">
   }
 
   async claimForProcessedHandling(
     mercadopagoOrderId: string,
     lockAt: string,
-  ): Promise<Pick<OrderRecord, "id" | "store_id" | "items" | "stock_processed"> | null> {
-    const { data, error } = await this.db
+  ): Promise<Pick<OrderRecord, "id" | "store_id" | "fridge_id" | "items" | "stock_processed"> | null> {
+    const first = await this.db
       .from("orders")
       .update({
         processing_lock_at: lockAt,
@@ -243,8 +288,11 @@ export class OrderSupabaseRepository extends BaseSupabaseRepository implements O
       .eq("mercadopago_order_id", mercadopagoOrderId)
       .eq("stock_processed", false)
       .is("processing_lock_at", null)
-      .select("id, store_id, items, stock_processed")
+      .select("id, store_id, fridge_id, items, stock_processed")
       .maybeSingle()
+
+    let data = first.data
+    let error = first.error
 
     if (error) {
       // Backward compatibility: environments sem migration 012 (sem processing_lock_at).
@@ -257,7 +305,7 @@ export class OrderSupabaseRepository extends BaseSupabaseRepository implements O
     }
 
     if (!data) return null
-    return data as Pick<OrderRecord, "id" | "store_id" | "items" | "stock_processed">
+    return data as Pick<OrderRecord, "id" | "store_id" | "fridge_id" | "items" | "stock_processed">
   }
 
   async releaseProcessingLock(orderId: string): Promise<void> {

@@ -2,6 +2,7 @@ import { AppError } from "@/api/utils/app-error"
 import { getRepositoryFactory } from "@/api/repositories/repository-factory"
 import { isValidUUID } from "@/api/utils/validators"
 import { getMercadoPagoPointEnv } from "@/api/config/env"
+import { getSupabaseAdminClient } from "@/api/config/database"
 import { mercadoPagoApiRequest } from "@/api/services/mercadopago/mercadopago-api"
 import { logger } from "@/api/utils/logger"
 import { normalizePointOrderStatus } from "@/lib/mercadopago-point-status"
@@ -53,10 +54,22 @@ function isValidOrderRequest(body: unknown): body is CreateOrderInput {
   return true
 }
 
+function normalizeLockInfo(lockData: any) {
+  const status = typeof lockData?.status === "string" ? lockData.status : lockData?.enabled ? "active" : "inactive"
+  const enabled = lockData?.enabled === true
+  const deviceId = typeof lockData?.device_id === "string" ? lockData.device_id.trim() : ""
+  return {
+    status,
+    enabled,
+    deviceId,
+  }
+}
+
 export async function createMercadoPagoOrderService(
   body: unknown,
   storeId: string,
   sessionUserId: string,
+  fridgeId: string,
 ) {
   if (!isValidOrderRequest(body)) {
     throw new AppError("Invalid request payload", 400)
@@ -66,6 +79,9 @@ export async function createMercadoPagoOrderService(
   }
   if (!isValidUUID(sessionUserId)) {
     throw new AppError("User session is invalid", 401)
+  }
+  if (!isValidUUID(fridgeId)) {
+    throw new AppError("Fridge context is invalid", 400)
   }
 
   const { terminalId } = getMercadoPagoPointEnv()
@@ -79,16 +95,64 @@ export async function createMercadoPagoOrderService(
 
   const user = await repositories.user.findActiveById(userId)
   if (!user) {
-    throw new AppError("Usuário não encontrado", 404)
+    throw new AppError("Usuario nao encontrado", 404)
+  }
+
+  const db: any = getSupabaseAdminClient()
+  const fridgeResult = await db
+    .from("fridges")
+    .select(
+      `
+      id,
+      store_id,
+      status,
+      lock_id,
+      store_locks!inner (
+        id,
+        status,
+        enabled,
+        device_id
+      )
+    `,
+    )
+    .eq("id", fridgeId)
+    .eq("store_id", storeId)
+    .maybeSingle()
+
+  if (fridgeResult.error) {
+    if (fridgeResult.error.code === "42P01" || fridgeResult.error.code === "42703") {
+      throw new AppError("Modulo de geladeiras ainda nao aplicado no banco", 503)
+    }
+    throw new AppError("Erro ao validar geladeira do pedido", 500)
+  }
+
+  if (!fridgeResult.data) {
+    throw new AppError("Geladeira invalida para esta loja", 404)
+  }
+
+  const fridgeData: any = fridgeResult.data
+  if (fridgeData.status !== "active") {
+    throw new AppError("Geladeira inativa para novos pedidos", 409)
+  }
+
+  const rawLockData: any = Array.isArray(fridgeData.store_locks)
+    ? fridgeData.store_locks[0]
+    : fridgeData.store_locks
+  const lockInfo = normalizeLockInfo(rawLockData)
+  const hasOperationalLock =
+    lockInfo.enabled && lockInfo.status === "active" && lockInfo.deviceId !== ""
+
+  if (!hasOperationalLock) {
+    throw new AppError("Geladeira sem fechadura ativa/configurada", 409)
   }
 
   let totalAmount = 0
   const orderItems: Array<{ id: string; name: string; quantity: number; price: number }> = []
 
   for (const item of items) {
-    const product = await repositories.menu.getActiveProductById(storeId, item.productId)
+    const product = await repositories.menu.getActiveProductById(storeId, item.productId, fridgeId)
     if (!product || !product.is_active) {
-      throw new AppError("Produto inválido ou inativo", 400)
+      throw new AppError("Produto invalido ou inativo para esta geladeira", 400)
     }
 
     orderItems.push({
@@ -98,7 +162,7 @@ export async function createMercadoPagoOrderService(
       price: product.price,
     })
 
-    const currentStock = await repositories.stock.getCurrentStock(storeId, product.id)
+    const currentStock = await repositories.stock.getCurrentStock(storeId, product.id, fridgeId)
     if (typeof currentStock !== "number" || currentStock < item.quantity) {
       throw new AppError("Estoque insuficiente para concluir o pedido", 409)
     }
@@ -107,7 +171,7 @@ export async function createMercadoPagoOrderService(
   }
 
   if (totalAmount <= 0) {
-    throw new AppError("Valor total inválido", 400)
+    throw new AppError("Valor total invalido", 400)
   }
 
   const mappedPaymentMethod = paymentMethodId === "pix" ? "qr" : paymentMethodId
@@ -133,8 +197,8 @@ export async function createMercadoPagoOrderService(
   }
 
   const idempotencyKey = checkoutSessionId
-    ? `order-${storeId}-${userId}-${checkoutSessionId}`
-    : `order-${externalReference}-${userId}`
+    ? `order-${storeId}-${fridgeId}-${userId}-${checkoutSessionId}`
+    : `order-${storeId}-${fridgeId}-${externalReference}-${userId}`
   const createResponse = await mercadoPagoApiRequest<{
     id: string
     status: string
@@ -150,7 +214,7 @@ export async function createMercadoPagoOrderService(
 
   if (!createResponse.ok) {
     if (createErrorPayload?.errors?.[0]?.code === "already_queued_order_on_terminal") {
-      throw new AppError("Já existe um pedido pendente no terminal. Cancele manualmente no terminal e tente novamente.", 409)
+      throw new AppError("Ja existe um pedido pendente no terminal. Cancele manualmente no terminal e tente novamente.", 409)
     }
 
     throw new AppError(createResponse.message || "Erro ao criar pedido no Mercado Pago", createResponse.status)
@@ -158,7 +222,7 @@ export async function createMercadoPagoOrderService(
 
   const createdOrder = createResponse.data
   if (!createdOrder?.id) {
-    throw new AppError("Resposta inválida ao criar pedido no Mercado Pago", 502)
+    throw new AppError("Resposta invalida ao criar pedido no Mercado Pago", 502)
   }
 
   let registerResult: { id: string; orderNumber: number | null } | null = null
@@ -166,6 +230,7 @@ export async function createMercadoPagoOrderService(
   try {
     registerResult = await repositories.order.registerOrder({
       storeId,
+      fridgeId,
       userId,
       mercadopagoOrderId: createdOrder.id,
       totalAmount,
@@ -182,7 +247,7 @@ export async function createMercadoPagoOrderService(
       idempotencyKey: `rollback-cancel-${createdOrder.id}`,
     }).catch(() => null)
 
-    throw new AppError("Não foi possível concluir o pedido no sistema. Tente novamente.", 500)
+    throw new AppError("Nao foi possivel concluir o pedido no sistema. Tente novamente.", 500)
   }
 
   return {
@@ -192,5 +257,6 @@ export async function createMercadoPagoOrderService(
     externalReference: createdOrder.external_reference,
     totalAmount: totalAmount.toFixed(2),
     paymentMethod: paymentMethodId,
+    fridgeId,
   }
 }

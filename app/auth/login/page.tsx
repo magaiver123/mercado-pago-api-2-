@@ -75,7 +75,7 @@ export default function LoginPage() {
         email: data.email,
       });
 
-      router.push("/menu");
+      router.push("/fridge");
     } catch (loginError: unknown) {
       setError(loginError instanceof Error ? loginError.message : "Erro ao fazer login");
     } finally {

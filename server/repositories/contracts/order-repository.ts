@@ -2,6 +2,7 @@ import { OrderRecord } from "@/api/types/domain"
 
 export interface RegisterOrderInput {
   storeId: string
+  fridgeId?: string | null
   userId: string
   mercadopagoOrderId: string
   totalAmount: number
@@ -67,11 +68,13 @@ export interface OrderRepository {
     > | null
   >
   updateReceiptEmailSentAt(orderId: string, sentAtIso: string): Promise<void>
-  findForStockProcessing(mercadopagoOrderId: string): Promise<Pick<OrderRecord, "id" | "store_id" | "items" | "stock_processed"> | null>
+  findForStockProcessing(
+    mercadopagoOrderId: string,
+  ): Promise<Pick<OrderRecord, "id" | "store_id" | "fridge_id" | "items" | "stock_processed"> | null>
   claimForProcessedHandling(
     mercadopagoOrderId: string,
     lockAt: string,
-  ): Promise<Pick<OrderRecord, "id" | "store_id" | "items" | "stock_processed"> | null>
+  ): Promise<Pick<OrderRecord, "id" | "store_id" | "fridge_id" | "items" | "stock_processed"> | null>
   releaseProcessingLock(orderId: string): Promise<void>
   updateStatusByMercadopagoOrderId(mercadopagoOrderId: string, status: string): Promise<void>
   markStockProcessed(orderId: string): Promise<void>

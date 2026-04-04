@@ -6,13 +6,14 @@ import { isValidUUID } from "@/api/utils/validators"
 
 const CHECKOUT_SESSION_COOKIE = "checkout_session_ctx"
 const CHECKOUT_SESSION_MAX_AGE_SECONDS = 60 * 15
-const CHECKOUT_SESSION_VERSION = 2
+const CHECKOUT_SESSION_VERSION = 3
 
 type CheckoutSessionPayload = {
   v: number
   sessionId: string
   userId: string
   storeId: string
+  fridgeId: string
   issuedAt: number
 }
 
@@ -42,8 +43,8 @@ function decode(value: string, secret: string): CheckoutSessionPayload | null {
       Buffer.from(encodedPayload, "base64url").toString("utf8"),
     ) as Partial<CheckoutSessionPayload>
 
-    if (!decoded?.sessionId || !decoded?.userId || !decoded?.storeId || !decoded?.issuedAt) return null
-    if (!isValidUUID(decoded.userId) || !isValidUUID(decoded.storeId)) return null
+    if (!decoded?.sessionId || !decoded?.userId || !decoded?.storeId || !decoded?.fridgeId || !decoded?.issuedAt) return null
+    if (!isValidUUID(decoded.userId) || !isValidUUID(decoded.storeId) || !isValidUUID(decoded.fridgeId)) return null
     if (typeof decoded.sessionId !== "string" || decoded.sessionId.trim() === "") return null
     if (typeof decoded.issuedAt !== "number" || !Number.isFinite(decoded.issuedAt)) return null
 
@@ -52,6 +53,7 @@ function decode(value: string, secret: string): CheckoutSessionPayload | null {
       sessionId: decoded.sessionId,
       userId: decoded.userId,
       storeId: decoded.storeId,
+      fridgeId: decoded.fridgeId,
       issuedAt: decoded.issuedAt,
     }
   } catch {
@@ -74,7 +76,7 @@ function parseCookie(cookieHeader: string | null, key: string): string | null {
 
 export function setCheckoutSessionCookie(
   response: NextResponse,
-  input: { sessionId: string; userId: string; storeId: string },
+  input: { sessionId: string; userId: string; storeId: string; fridgeId: string },
 ) {
   const { secret } = getSessionContextEnv()
   const value = encode(
@@ -83,6 +85,7 @@ export function setCheckoutSessionCookie(
       sessionId: input.sessionId,
       userId: input.userId,
       storeId: input.storeId,
+      fridgeId: input.fridgeId,
       issuedAt: Date.now(),
     },
     secret,

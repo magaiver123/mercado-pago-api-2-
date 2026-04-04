@@ -80,6 +80,7 @@ export interface OrderRecord {
   id: string
   order_number: number | null
   store_id: string
+  fridge_id?: string | null
   user_id: string
   mercadopago_order_id: string
   total_amount: number
@@ -130,9 +131,33 @@ export interface MenuBannerSlide {
 export interface StoreLockRecord {
   id: string
   store_id: string
-  device_id: string
+  device_id: string | null
+  status: "pending" | "active" | "inactive" | string
   enabled: boolean
   is_primary: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface FridgeRecord {
+  id: string
+  store_id: string
+  name: string
+  code: string
+  status: "active" | "inactive" | string
+  is_primary: boolean
+  lock_id: string
+  created_at: string
+  updated_at: string
+}
+
+export interface FridgeInventoryRecord {
+  id: string
+  store_id: string
+  fridge_id: string
+  product_id: string
+  quantity: number
+  is_active: boolean
   created_at: string
   updated_at: string
 }

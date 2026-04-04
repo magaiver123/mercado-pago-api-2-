@@ -9,6 +9,7 @@ import { Cart } from "@/components/cart";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { clearAuthUser, getAuthUser } from "@/lib/auth-store";
+import { getSelectedFridge } from "@/lib/fridge-store";
 import { useToast } from "@/components/ui/use-toast";
 
 type Category = {
@@ -75,6 +76,8 @@ export default function MenuPage() {
   const [addedProductId, setAddedProductId] = useState<string | null>(null);
   const [customerName, setCustomerName] = useState("Cliente");
   const [menuBanners, setMenuBanners] = useState<MenuBannerSlide[]>([]);
+  const [selectedFridgeId, setSelectedFridgeId] = useState<string | null>(null);
+  const [selectedFridgeLabel, setSelectedFridgeLabel] = useState<string>("");
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const [incomingBannerIndex, setIncomingBannerIndex] = useState<number | null>(null);
   const [isBannerAnimating, setIsBannerAnimating] = useState(false);
@@ -99,8 +102,16 @@ export default function MenuPage() {
       return;
     }
 
+    const fridge = getSelectedFridge();
+    if (!fridge) {
+      router.push("/fridge");
+      return;
+    }
+
     const firstName = user.name?.trim().split(/\s+/)[0] || "Cliente";
     setCustomerName(firstName);
+    setSelectedFridgeId(fridge.id);
+    setSelectedFridgeLabel(`${fridge.name} (${fridge.code})`);
   }, [router]);
 
   useEffect(() => {
@@ -205,9 +216,14 @@ export default function MenuPage() {
   }, []);
 
   useEffect(() => {
+    if (!selectedFridgeId) return;
+
     async function loadCategories() {
       try {
-        const response = await fetch("/api/menu/categories");
+        const response = await fetch(
+          `/api/menu/categories?fridge_id=${selectedFridgeId}`,
+          { cache: "no-store" }
+        );
         const data = await response.json();
         const categoryList = Array.isArray(data) ? data : [];
         setCategories(categoryList);
@@ -221,17 +237,18 @@ export default function MenuPage() {
     }
 
     loadCategories();
-  }, []);
+  }, [selectedFridgeId]);
 
   useEffect(() => {
-    if (!selectedCategory) return;
+    if (!selectedCategory || !selectedFridgeId) return;
     let active = true;
 
     async function loadProducts() {
       setLoadingProducts(true);
       try {
         const response = await fetch(
-          `/api/menu/products?category_id=${selectedCategory}`
+          `/api/menu/products?category_id=${selectedCategory}&fridge_id=${selectedFridgeId}`,
+          { cache: "no-store" }
         );
         const data = await response.json();
         if (!active) return;
@@ -248,12 +265,16 @@ export default function MenuPage() {
     return () => {
       active = false;
     };
-  }, [selectedCategory]);
+  }, [selectedCategory, selectedFridgeId]);
 
   const itemCount = getItemCount();
   const total = getTotal();
 
   const handleCheckout = () => {
+    if (!selectedFridgeId) {
+      router.push("/fridge");
+      return;
+    }
     setIsCartOpen(false);
     router.push("/checkout");
   };
@@ -380,6 +401,11 @@ export default function MenuPage() {
                 Oi, {customerName}
                 <span className="text-orange-500">!</span>
               </h2>
+              {selectedFridgeLabel ? (
+                <p className="mt-2 text-xs font-semibold uppercase tracking-[0.1em] text-zinc-500">
+                  Geladeira: {selectedFridgeLabel}
+                </p>
+              ) : null}
             </div>
 
             <div
