@@ -196,7 +196,7 @@ export async function createMercadoPagoOrderService(
   }
 
   const mappedPaymentMethod = paymentMethodId === "pix" ? "qr" : paymentMethodId
-  const orderPayload = {
+  const orderPayloadBase = {
     type: "point",
     external_reference: externalReference,
     description,
@@ -209,11 +209,6 @@ export async function createMercadoPagoOrderService(
         terminal_id: terminalId,
         print_on_terminal: "no_ticket",
       },
-      ...(mappedPaymentMethod && {
-        payment_method: {
-          default_type: mappedPaymentMethod,
-        },
-      }),
     },
   }
 
@@ -232,16 +227,61 @@ export async function createMercadoPagoOrderService(
     path: "/v1/orders",
     method: "POST",
     idempotencyKey,
-    body: orderPayload,
+    body: {
+      ...orderPayloadBase,
+      ...(mappedPaymentMethod
+        ? {
+            config: {
+              ...orderPayloadBase.config,
+              payment_method: {
+                default_type: mappedPaymentMethod,
+              },
+            },
+          }
+        : {}),
+    },
   })
 
-  const createErrorPayload = createResponse.raw as { errors?: Array<{ code?: string }> } | null
+  let effectiveCreateResponse = createResponse
+  let createErrorPayload = effectiveCreateResponse.raw as { errors?: Array<{ code?: string }> } | null
 
-  if (!createResponse.ok) {
+  const shouldRetryWithoutPaymentMethod =
+    !effectiveCreateResponse.ok &&
+    mappedPaymentMethod !== null &&
+    mappedPaymentMethod !== undefined &&
+    effectiveCreateResponse.message.toLowerCase().includes("invalid value for property")
+
+  if (shouldRetryWithoutPaymentMethod) {
+    logger.warn("Mercado Pago recusou payment_method.default_type; retry sem preferencia de metodo", {
+      status: effectiveCreateResponse.status,
+      message: effectiveCreateResponse.message,
+      raw: effectiveCreateResponse.raw,
+      mappedPaymentMethod,
+      storeId,
+      fridgeId,
+      terminalId,
+    })
+
+    const retryResponse = await mercadoPagoApiRequest<{
+      id: string
+      status: string
+      external_reference: string
+    }>({
+      path: "/v1/orders",
+      method: "POST",
+      idempotencyKey: `${idempotencyKey}-pmfb`,
+      body: orderPayloadBase,
+    })
+
+    effectiveCreateResponse = retryResponse
+    createErrorPayload = effectiveCreateResponse.raw as { errors?: Array<{ code?: string }> } | null
+  }
+
+  if (!effectiveCreateResponse.ok) {
     logger.warn("Mercado Pago recusou criacao de pedido", {
-      status: createResponse.status,
-      message: createResponse.message,
-      raw: createResponse.raw,
+      status: effectiveCreateResponse.status,
+      message: effectiveCreateResponse.message,
+      raw: effectiveCreateResponse.raw,
       storeId,
       fridgeId,
       paymentMethodId,
@@ -252,10 +292,13 @@ export async function createMercadoPagoOrderService(
       throw new AppError("Ja existe um pedido pendente no terminal. Cancele manualmente no terminal e tente novamente.", 409)
     }
 
-    throw new AppError(createResponse.message || "Erro ao criar pedido no Mercado Pago", createResponse.status)
+    throw new AppError(
+      effectiveCreateResponse.message || "Erro ao criar pedido no Mercado Pago",
+      effectiveCreateResponse.status,
+    )
   }
 
-  const createdOrder = createResponse.data
+  const createdOrder = effectiveCreateResponse.data
   if (!createdOrder?.id) {
     throw new AppError("Resposta invalida ao criar pedido no Mercado Pago", 502)
   }
