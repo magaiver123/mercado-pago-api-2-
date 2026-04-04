@@ -10,8 +10,17 @@ export interface MercadoPagoApiResult<T = unknown> {
   message: string
 }
 
+function firstNonEmptyString(...values: unknown[]): string | null {
+  for (const value of values) {
+    if (typeof value === "string" && value.trim() !== "") {
+      return value.trim()
+    }
+  }
+  return null
+}
+
 function extractErrorMessage(payload: unknown): string {
-  if (!payload) return "Erro na comunicação com Mercado Pago"
+  if (!payload) return "Erro na comunicacao com Mercado Pago"
 
   if (typeof payload === "string" && payload.trim() !== "") {
     return payload
@@ -19,30 +28,46 @@ function extractErrorMessage(payload: unknown): string {
 
   if (typeof payload === "object") {
     const data = payload as Record<string, unknown>
-    const message = data.message
-    if (typeof message === "string" && message.trim() !== "") return message
-    const error = data.error
-    if (typeof error === "string" && error.trim() !== "") return error
+    const directMessage = firstNonEmptyString(
+      data.message,
+      data.error,
+      data.detail,
+      data.error_description,
+      data.status_detail,
+      data.title,
+    )
+    if (directMessage) return directMessage
+
     const cause = data.cause
     if (Array.isArray(cause) && cause.length > 0) {
       const first = cause[0]
-      if (first && typeof first === "object" && typeof (first as Record<string, unknown>).description === "string") {
-        return String((first as Record<string, unknown>).description)
+      if (first && typeof first === "object") {
+        const causeMessage = firstNonEmptyString(
+          (first as Record<string, unknown>).description,
+          (first as Record<string, unknown>).message,
+          (first as Record<string, unknown>).detail,
+          (first as Record<string, unknown>).code,
+        )
+        if (causeMessage) return causeMessage
       }
     }
+
     const errors = data.errors
     if (Array.isArray(errors) && errors.length > 0) {
       const first = errors[0]
       if (first && typeof first === "object") {
-        const description = (first as Record<string, unknown>).description
-        if (typeof description === "string" && description.trim() !== "") {
-          return description
-        }
+        const errorsMessage = firstNonEmptyString(
+          (first as Record<string, unknown>).description,
+          (first as Record<string, unknown>).message,
+          (first as Record<string, unknown>).detail,
+          (first as Record<string, unknown>).code,
+        )
+        if (errorsMessage) return errorsMessage
       }
     }
   }
 
-  return "Erro na comunicação com Mercado Pago"
+  return "Erro na comunicacao com Mercado Pago"
 }
 
 export async function mercadoPagoApiRequest<T = unknown>(params: {
@@ -63,11 +88,31 @@ export async function mercadoPagoApiRequest<T = unknown>(params: {
     headers["X-Idempotency-Key"] = idempotencyKey
   }
 
-  const response = await fetch(`https://api.mercadopago.com${path}`, {
-    method,
-    headers,
-    body: body === undefined ? undefined : JSON.stringify(body),
-  })
+  const abortController = new AbortController()
+  const timeoutHandle = setTimeout(() => abortController.abort(), 15000)
+  let response: Response
+
+  try {
+    response = await fetch(`https://api.mercadopago.com${path}`, {
+      method,
+      headers,
+      body: body === undefined ? undefined : JSON.stringify(body),
+      signal: abortController.signal,
+    })
+  } catch (error) {
+    const isTimeout = error instanceof Error && error.name === "AbortError"
+    return {
+      ok: false,
+      status: 504,
+      data: null,
+      raw: null,
+      message: isTimeout
+        ? "Tempo limite na comunicacao com Mercado Pago"
+        : "Falha de conexao com Mercado Pago",
+    }
+  } finally {
+    clearTimeout(timeoutHandle)
+  }
 
   const contentType = response.headers.get("content-type")
   let raw: unknown = null

@@ -213,6 +213,16 @@ export async function createMercadoPagoOrderService(
   const createErrorPayload = createResponse.raw as { errors?: Array<{ code?: string }> } | null
 
   if (!createResponse.ok) {
+    logger.warn("Mercado Pago recusou criacao de pedido", {
+      status: createResponse.status,
+      message: createResponse.message,
+      raw: createResponse.raw,
+      storeId,
+      fridgeId,
+      paymentMethodId,
+      terminalId,
+    })
+
     if (createErrorPayload?.errors?.[0]?.code === "already_queued_order_on_terminal") {
       throw new AppError("Ja existe um pedido pendente no terminal. Cancele manualmente no terminal e tente novamente.", 409)
     }
