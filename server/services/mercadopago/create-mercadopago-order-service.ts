@@ -1,3 +1,4 @@
+import { createHash } from "crypto"
 import { AppError } from "@/api/utils/app-error"
 import { getRepositoryFactory } from "@/api/repositories/repository-factory"
 import { isValidUUID } from "@/api/utils/validators"
@@ -63,6 +64,26 @@ function normalizeLockInfo(lockData: any) {
     enabled,
     deviceId,
   }
+}
+
+function buildIdempotencyKey(input: {
+  storeId: string
+  fridgeId: string
+  userId: string
+  checkoutSessionId?: string
+  externalReference: string
+}) {
+  const rawBase = [
+    "order",
+    input.storeId,
+    input.fridgeId,
+    input.userId,
+    input.checkoutSessionId ?? input.externalReference,
+  ].join("|")
+
+  const digest = createHash("sha256").update(rawBase).digest("hex")
+  // Mercado Pago limita em 128 chars; mantemos margem de seguranca.
+  return `order-${input.storeId.slice(0, 8)}-${input.fridgeId.slice(0, 8)}-${digest.slice(0, 40)}`
 }
 
 export async function createMercadoPagoOrderService(
@@ -196,9 +217,13 @@ export async function createMercadoPagoOrderService(
     },
   }
 
-  const idempotencyKey = checkoutSessionId
-    ? `order-${storeId}-${fridgeId}-${userId}-${checkoutSessionId}`
-    : `order-${storeId}-${fridgeId}-${externalReference}-${userId}`
+  const idempotencyKey = buildIdempotencyKey({
+    storeId,
+    fridgeId,
+    userId,
+    checkoutSessionId,
+    externalReference,
+  })
   const createResponse = await mercadoPagoApiRequest<{
     id: string
     status: string
