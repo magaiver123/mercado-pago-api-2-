@@ -73,17 +73,46 @@ function buildIdempotencyKey(input: {
   checkoutSessionId?: string
   externalReference: string
 }) {
-  const rawBase = [
-    "order",
-    input.storeId,
-    input.fridgeId,
-    input.userId,
-    input.checkoutSessionId ?? input.externalReference,
-  ].join("|")
+  // Mantem o formato historico da chave usado antes da regressao do commit 8ed9.
+  const legacyKey = input.checkoutSessionId
+    ? `order-${input.storeId}-${input.userId}-${input.checkoutSessionId}`
+    : `order-${input.externalReference}-${input.userId}`
 
-  const digest = createHash("sha256").update(rawBase).digest("hex")
-  // Mercado Pago limita em 128 chars; mantemos margem de seguranca.
-  return `order-${input.storeId.slice(0, 8)}-${input.fridgeId.slice(0, 8)}-${digest.slice(0, 40)}`
+  if (legacyKey.length <= 128) {
+    return legacyKey
+  }
+
+  // Fallback defensivo para nao ultrapassar o limite da API do Mercado Pago.
+  const digest = createHash("sha256").update(legacyKey).digest("hex")
+  return `order-${digest.slice(0, 48)}`
+}
+
+function buildRetryIdempotencyKey(baseIdempotencyKey: string, suffix: string) {
+  const candidate = `${baseIdempotencyKey}-${suffix}`
+  if (candidate.length <= 128) {
+    return candidate
+  }
+
+  const digest = createHash("sha256").update(candidate).digest("hex")
+  return `order-${digest.slice(0, 48)}`
+}
+
+function hasInvalidValueForProperty(value: unknown): boolean {
+  if (typeof value === "string") {
+    return value.toLowerCase().includes("invalid value for property")
+  }
+
+  if (Array.isArray(value)) {
+    return value.some((entry) => hasInvalidValueForProperty(entry))
+  }
+
+  if (value && typeof value === "object") {
+    return Object.values(value as Record<string, unknown>).some((entry) =>
+      hasInvalidValueForProperty(entry),
+    )
+  }
+
+  return false
 }
 
 export async function createMercadoPagoOrderService(
@@ -249,7 +278,8 @@ export async function createMercadoPagoOrderService(
     !effectiveCreateResponse.ok &&
     mappedPaymentMethod !== null &&
     mappedPaymentMethod !== undefined &&
-    effectiveCreateResponse.message.toLowerCase().includes("invalid value for property")
+    (hasInvalidValueForProperty(effectiveCreateResponse.message) ||
+      hasInvalidValueForProperty(effectiveCreateResponse.raw))
 
   if (shouldRetryWithoutPaymentMethod) {
     logger.warn("Mercado Pago recusou payment_method.default_type; retry sem preferencia de metodo", {
@@ -269,7 +299,7 @@ export async function createMercadoPagoOrderService(
     }>({
       path: "/v1/orders",
       method: "POST",
-      idempotencyKey: `${idempotencyKey}-pmfb`,
+      idempotencyKey: buildRetryIdempotencyKey(idempotencyKey, "pmfb"),
       body: orderPayloadBase,
     })
 
