@@ -115,6 +115,15 @@ function hasInvalidValueForProperty(value: unknown): boolean {
   return false
 }
 
+function normalizeMercadoPagoDescription(value: string): string {
+  const compact = value.trim().replace(/\s+/g, " ")
+  if (compact.length <= 150) {
+    return compact
+  }
+
+  return `${compact.slice(0, 147).trimEnd()}...`
+}
+
 export async function createMercadoPagoOrderService(
   body: unknown,
   storeId: string,
@@ -137,6 +146,7 @@ export async function createMercadoPagoOrderService(
   const { terminalId } = getMercadoPagoPointEnv()
   const { description, items, paymentMethodId, checkoutSessionId } = body
   const userId = sessionUserId
+  const mercadopagoDescription = normalizeMercadoPagoDescription(description)
   const externalReference =
     typeof body.externalReference === "string" && body.externalReference.trim() !== ""
       ? body.externalReference.trim()
@@ -228,7 +238,7 @@ export async function createMercadoPagoOrderService(
   const orderPayloadBase = {
     type: "point",
     external_reference: externalReference,
-    description,
+    description: mercadopagoDescription,
     expiration_time: "PT30M",
     transactions: {
       payments: [{ amount: totalAmount.toFixed(2) }],

@@ -19,6 +19,22 @@ function firstNonEmptyString(...values: unknown[]): string | null {
   return null
 }
 
+function firstArrayDetails(values: unknown): string | null {
+  if (!Array.isArray(values)) {
+    return null
+  }
+
+  const details = values
+    .filter((entry): entry is string => typeof entry === "string" && entry.trim() !== "")
+    .map((entry) => entry.trim())
+
+  if (details.length === 0) {
+    return null
+  }
+
+  return details.join("; ")
+}
+
 function extractErrorMessage(payload: unknown): string {
   if (!payload) return "Erro na comunicacao com Mercado Pago"
 
@@ -56,12 +72,17 @@ function extractErrorMessage(payload: unknown): string {
     if (Array.isArray(errors) && errors.length > 0) {
       const first = errors[0]
       if (first && typeof first === "object") {
+        const detailsMessage = firstArrayDetails((first as Record<string, unknown>).details)
         const errorsMessage = firstNonEmptyString(
           (first as Record<string, unknown>).description,
           (first as Record<string, unknown>).message,
           (first as Record<string, unknown>).detail,
           (first as Record<string, unknown>).code,
         )
+        if (errorsMessage && detailsMessage) {
+          return `${errorsMessage}: ${detailsMessage}`
+        }
+        if (detailsMessage) return detailsMessage
         if (errorsMessage) return errorsMessage
       }
     }
